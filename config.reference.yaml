@@ -1,0 +1,210 @@
+# llamaconfig — Full Reference Config
+# Every supported field is listed with its default value and a description.
+# Copy this file to ~/.llamaconfig/configs/<name>.yaml and remove what you don't need.
+# Minimal required fields: version, name, model.source, model.repo + model.file (or model.path / model.url)
+
+# ── Identity ──────────────────────────────────────────────────────────────────
+
+version: 1                        # config schema version, always 1
+name: my-model                    # unique name used in all CLI commands
+description: ""                   # optional human-readable description
+tags: []                          # optional labels, e.g. [instruct, 7b, gguf]
+
+meta:
+  author: ""                      # optional author name
+  created_at: ""                  # optional creation date (free-form string)
+  updated_at: ""                  # optional last update date
+  notes: ""                       # optional free-form notes
+
+# ── Mode ──────────────────────────────────────────────────────────────────────
+
+# server      → starts llama-server, exposes an OpenAI-compatible HTTP API
+# interactive → starts llama-cli, opens a terminal chat session (no HTTP server)
+mode: server                      # default: server
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+
+model:
+  # source controls where the model file comes from
+  # huggingface → download from huggingface.co (requires repo + file)
+  # url         → download from a direct URL (requires url)
+  # local       → use a file already on disk (requires path)
+  source: huggingface
+
+  # --- HuggingFace (source: huggingface) ---
+  repo: bartowski/google_gemma-4-E2B-it-GGUF   # HuggingFace repo in user/repo format
+  file: google_gemma-4-E2B-it-Q4_K_M.gguf      # exact filename inside the repo
+
+  # --- Direct URL (source: url) ---
+  # url: https://example.com/model.gguf
+
+  # --- Local file (source: local) ---
+  # path: /absolute/path/to/model.gguf
+
+  # Optional: sha256 checksum for integrity verification
+  # Format: "sha256:<hex>"  e.g. sha256:abc123...
+  checksum: ""
+
+  download:
+    resume: true                  # resume interrupted downloads (default: true)
+    connections: 4                # parallel download connections (default: 4)
+    verify_checksum: false        # verify checksum after download (default: false)
+    cache_dir: ""                 # override cache directory (default: ~/.llamaconfig/cache)
+
+  # --- Speculative decoding (optional) ---
+  # Requires a smaller draft model from the same family.
+  # draft:
+  #   source: huggingface
+  #   repo: bartowski/some-draft-GGUF
+  #   file: draft-model-Q4_K_M.gguf
+  #   draft_n: 5                  # tokens to draft ahead (default: 5)
+
+  # --- Multimodal projection (optional, for vision models) ---
+  # mmproj:
+  #   source: huggingface
+  #   repo: user/repo-GGUF
+  #   file: mmproj-model.gguf
+
+# ── Server ────────────────────────────────────────────────────────────────────
+# Only applies when mode: server
+
+server:
+  host: 127.0.0.1                 # bind address (default: 127.0.0.1)
+  port: 8080                      # listen port (default: 8080)
+  api_key: ""                     # bearer token for Authorization header (default: none)
+  parallel: 1                     # number of concurrent request slots (default: 1)
+  cors_origins: []                # allowed CORS origins, e.g. ["https://myapp.com"]
+  read_timeout: 600s              # HTTP read timeout (default: 600s)
+  write_timeout: 600s             # HTTP write timeout (default: 600s)
+
+  endpoints:
+    health: true                  # GET /health (default: true)
+    completions: true             # POST /v1/completions (default: true)
+    chat: true                    # POST /v1/chat/completions (default: true)
+    embeddings: false             # POST /v1/embeddings (default: false)
+    metrics: false                # GET /metrics (Prometheus, default: false)
+    slots: true                   # GET /slots (default: true)
+
+# ── Hardware Profiles ─────────────────────────────────────────────────────────
+# llamaconfig auto-selects the matching profile at runtime based on detected hardware.
+# Override at startup with: llamaconfig up <name> --profile cpu
+#
+# Profile selection order:
+#   apple_silicon → macOS + ARM64
+#   nvidia        → NVIDIA GPU detected (nvidia-smi)
+#   amd           → AMD GPU detected (sysfs / wmic)
+#   intel_gpu     → Intel GPU detected (sysfs)
+#   cpu           → fallback
+
+hardware_profiles:
+
+  apple_silicon:
+    n_gpu_layers: 99              # layers to offload to GPU (-1 = all, 0 = CPU only)
+    metal: true                   # enable Apple Metal backend
+    threads: 8                    # CPU threads for non-GPU layers
+    threads_batch: 8              # CPU threads for batch processing
+
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true                    # enable CUDA backend
+    threads: 8
+    threads_batch: 8
+    # devices: ["0"]              # specific CUDA device IDs (default: all)
+    # tensor_split: [0.5, 0.5]   # VRAM split across multiple GPUs (must sum to 1.0)
+
+  amd:
+    n_gpu_layers: 99
+    rocm: true                    # enable ROCm backend
+    threads: 8
+    threads_batch: 8
+
+  intel_gpu:
+    n_gpu_layers: 99
+    sycl: true                    # enable SYCL/oneAPI backend
+    threads: 8
+    threads_batch: 8
+
+  cpu:
+    n_gpu_layers: 0               # all layers on CPU
+    threads: 8
+    threads_batch: 8
+    # cpu_range: "0-7"            # restrict to specific CPU cores (Linux)
+    # cpu_strict: false           # strict CPU affinity (default: false)
+    # numa: ""                    # NUMA strategy: distribute | isolate | numactl | mirror
+
+# ── Context ───────────────────────────────────────────────────────────────────
+
+context:
+  n_ctx: 4096                     # context window size in tokens (default: 4096)
+  n_batch: 512                    # prompt processing batch size (default: 512)
+  n_ubatch: 512                   # physical batch size, <= n_batch (default: n_batch)
+  n_keep: 0                       # tokens to keep from initial prompt on context overflow (default: 0)
+  cache_type_k: f16               # key cache type: f32 | f16 | bf16 | q8_0 | q4_0 | q4_1 (default: f16)
+  cache_type_v: f16               # value cache type: same options as cache_type_k (default: f16)
+  mmap: true                      # memory-map model file (default: true)
+  mlock: false                    # lock model in RAM, prevent swap (default: false)
+  flash_attention: true           # enable Flash Attention (default: false, recommended: true)
+  n_cpu_moe: 0                    # CPU layers for MoE experts (0 = use n_gpu_layers logic)
+
+# ── Sampling ──────────────────────────────────────────────────────────────────
+
+sampling:
+  temperature: 0.8                # randomness; 0 = deterministic, 1 = creative (default: 0.8)
+  top_k: 40                       # sample from top K tokens (default: 40)
+  top_p: 0.95                     # nucleus sampling probability (default: 0.95)
+  min_p: 0.05                     # minimum probability threshold (default: 0.05)
+  repeat_penalty: 1.0             # penalize repeated tokens (1.0 = disabled, default: 1.0)
+  repeat_last_n: 64               # tokens to look back for repeat penalty (default: 64)
+
+  # DRY (Don't Repeat Yourself) sampling — suppresses repetitive patterns
+  dry_multiplier: 0.0             # DRY penalty multiplier (0 = disabled, default: 0)
+  dry_base: 1.75                  # DRY exponential base (default: 1.75)
+  dry_allowed_length: 2           # token sequence length before DRY kicks in (default: 2)
+  dry_penalty_last_n: -1          # DRY look-back window (-1 = full context, default: -1)
+
+  # Mirostat adaptive sampling (alternative to top_k/top_p)
+  # mirostat: 0                   # 0 = disabled, 1 = Mirostat v1, 2 = Mirostat v2
+  # mirostat_tau: 5.0             # target entropy (default: 5.0)
+  # mirostat_eta: 0.1             # learning rate (default: 0.1)
+
+  # samplers: ""                  # sampler order override, e.g. "top_k;top_p;temp"
+
+# ── Chat ──────────────────────────────────────────────────────────────────────
+
+chat:
+  system_prompt: ""               # system prompt prepended to every conversation
+  template: ""                    # chat template name (leave empty to use model's built-in)
+                                  # examples: llama3, chatml, gemma, mistral, phi3
+  jinja: false                    # use Jinja2 template engine (default: false)
+  template_kwargs: {}             # extra key-value pairs passed to the chat template
+
+# ── RoPE (Rotary Position Embedding) ─────────────────────────────────────────
+# Only needed to extend context beyond the model's trained limit.
+
+rope:
+  scaling: ""                     # scaling type: linear | yarn | longrope (default: none)
+  freq_base: 0                    # RoPE frequency base (0 = use model default)
+  freq_scale: 0                   # RoPE frequency scale (0 = use model default)
+  # YaRN-specific:
+  yarn_ext_factor: -1.0           # extrapolation mix factor (-1 = auto, default: -1.0)
+  yarn_attn_factor: 1.0           # attention scaling factor (default: 1.0)
+  yarn_orig_ctx: 0                # original context size the model was trained on
+
+# ── Resources ─────────────────────────────────────────────────────────────────
+
+resources:
+  vram_limit: ""                  # VRAM cap, e.g. "8GB" (informational, not enforced by llama.cpp)
+  vram_buffer: 512MB              # reserved VRAM headroom (default: 512MB)
+  memory_limit: ""                # RAM cap, e.g. "16GB" (informational)
+  cpu_limit: ""                   # CPU usage cap, e.g. "80%" (informational)
+  cpu_priority: normal            # process priority: low | normal | high (default: normal)
+  fallback_to_cpu: true           # fall back to CPU if GPU offload fails (default: true)
+  request_timeout: 120s           # per-request timeout (default: 120s)
+  max_concurrent: 0               # max concurrent requests (0 = unlimited)
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+
+logging:
+  level: info                     # log level: debug | info | warn | error (default: info)
+  file: ""                        # log file path (default: ~/.llamaconfig/logs/<name>.log)
+  colors: auto                    # color output: auto | always | never (default: auto)
