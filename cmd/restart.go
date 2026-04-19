@@ -1,0 +1,99 @@
+package cmd
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/kiliczsh/llamaconfig/internal/config"
+	"github.com/kiliczsh/llamaconfig/internal/hardware"
+	"github.com/kiliczsh/llamaconfig/internal/runner"
+	"github.com/spf13/cobra"
+)
+
+func newRestartCmd() *cobra.Command {
+	var flagAll bool
+
+	cmd := &cobra.Command{
+		Use:   "restart [name]",
+		Short: "Stop and start a model",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			appCtx := appCtxFrom(cmd.Context())
+			p := appCtx.Printer
+
+			sf, err := appCtx.StateStore.Load()
+			if err != nil {
+				return err
+			}
+
+			var targets []string
+			if flagAll {
+				for name, ms := range sf.Models {
+					if ms.Status == "running" {
+						targets = append(targets, name)
+					}
+				}
+			} else {
+				if len(args) == 0 {
+					return fmt.Errorf("provide a model name or use --all")
+				}
+				targets = []string{args[0]}
+			}
+
+			r := runner.New()
+			for _, name := range targets {
+				ms, ok := sf.Models[name]
+				if !ok {
+					p.Warn("model %q not found in state", name)
+					continue
+				}
+
+				// Stop
+				if ms.Status == "running" {
+					p.Info("stopping %s...", name)
+					if err := r.Stop(cmd.Context(), ms, 10); err != nil {
+						p.Error("stop %q: %v", name, err)
+						continue
+					}
+					ms.Status = "stopped"
+					_ = appCtx.StateStore.Put(ms)
+				}
+
+				// Reload config and start
+				cfg, err := config.Load(name, appCtx.ConfigDir)
+				if err != nil {
+					p.Error("reload config %q: %v", name, err)
+					continue
+				}
+				config.ApplyDefaults(cfg)
+
+				hw := hardware.Detect()
+				rc, err := config.Resolve(cfg, hw, appCtx.LlamaBin)
+				if err != nil {
+					p.Error("resolve %q: %v", name, err)
+					continue
+				}
+
+				p.Info("starting %s...", name)
+				newMS, err := r.Start(context.Background(), rc)
+				if err != nil {
+					p.Error("start %q: %v", name, err)
+					continue
+				}
+
+				_ = appCtx.StateStore.Put(newMS)
+
+				if err := runner.WaitHealthy(cmd.Context(), cfg.Server.Host, cfg.Server.Port); err != nil {
+					p.Error("%s health check failed: %v", name, err)
+					continue
+				}
+
+				p.Success("restarted %s on port %d", name, cfg.Server.Port)
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVar(&flagAll, "all", false, "restart all running models")
+	return cmd
+}

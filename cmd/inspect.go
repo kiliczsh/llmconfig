@@ -1,0 +1,56 @@
+package cmd
+
+import (
+	"fmt"
+
+	"github.com/kiliczsh/llamaconfig/internal/config"
+	"github.com/kiliczsh/llamaconfig/internal/hardware"
+	"github.com/kiliczsh/llamaconfig/internal/runner"
+	"github.com/spf13/cobra"
+)
+
+func newInspectCmd() *cobra.Command {
+	var flagProfile string
+
+	cmd := &cobra.Command{
+		Use:   "inspect <name>",
+		Short: "Show the llama.cpp command that would be run",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			appCtx := appCtxFrom(cmd.Context())
+
+			cfg, err := config.Load(name, appCtx.ConfigDir)
+			if err != nil {
+				return err
+			}
+			config.ApplyDefaults(cfg)
+			if err := config.Validate(cfg); err != nil {
+				return err
+			}
+
+			var hw *hardware.DetectionResult
+			if flagProfile != "" {
+				hw = profileOverride(flagProfile)
+			} else {
+				hw = hardware.Detect()
+			}
+
+			rc, err := config.Resolve(cfg, hw, appCtx.LlamaBin)
+			if err != nil {
+				return err
+			}
+
+			if cfg.Mode == "interactive" {
+				cliBin := runner.DeriveCLIBinary(appCtx.LlamaBin)
+				fmt.Println(runner.FormatInteractiveArgs(cliBin, rc))
+			} else {
+				fmt.Println(runner.FormatArgs(appCtx.LlamaBin, rc))
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&flagProfile, "profile", "", "inspect for a specific hardware profile")
+	return cmd
+}
