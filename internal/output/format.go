@@ -2,6 +2,8 @@ package output
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -38,4 +40,16 @@ func FormatTime(t time.Time) string {
 		return "-"
 	}
 	return t.Format("2006-01-02 15:04:05")
+}
+
+// ShortenPath replaces the home directory prefix with ~.
+func ShortenPath(p string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return p
+	}
+	if strings.HasPrefix(p, home) {
+		return "~" + p[len(home):]
+	}
+	return p
 }

@@ -5,8 +5,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/kiliczsh/llamaconfig/internal/config"
+	"github.com/kiliczsh/llamaconfig/internal/output"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -17,11 +19,69 @@ func newConfigCmd() *cobra.Command {
 		Short: "Manage model configs",
 	}
 	cmd.AddCommand(
+		newConfigListCmd(),
 		newConfigShowCmd(),
 		newConfigEditCmd(),
 		newConfigPathCmd(),
 	)
 	return cmd
+}
+
+func newConfigListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List all model configs",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			appCtx := appCtxFrom(cmd.Context())
+			p := appCtx.Printer
+
+			entries, err := os.ReadDir(appCtx.ConfigDir)
+			if err != nil {
+				if os.IsNotExist(err) {
+					p.Info("no configs found (dir: %s)", appCtx.ConfigDir)
+					return nil
+				}
+				return err
+			}
+
+			type row struct {
+				name string
+				mode string
+				port string
+				path string
+			}
+			var rows []row
+			for _, e := range entries {
+				if e.IsDir() || !strings.HasSuffix(e.Name(), ".yaml") {
+					continue
+				}
+				name := strings.TrimSuffix(e.Name(), ".yaml")
+				fullPath := filepath.Join(appCtx.ConfigDir, e.Name())
+				mode, port := "-", "-"
+				if cfg, err := config.Load(name, appCtx.ConfigDir); err == nil {
+					mode = cfg.Mode
+					if cfg.Server.Port > 0 {
+						port = fmt.Sprintf("%d", cfg.Server.Port)
+					}
+				}
+				rows = append(rows, row{name, mode, port, fullPath})
+			}
+
+			if len(rows) == 0 {
+				p.Info("no configs found in %s", appCtx.ConfigDir)
+				return nil
+			}
+
+			headers := []string{"NAME", "MODE", "PORT", "PATH"}
+			tableRows := make([][]string, len(rows))
+			for i, r := range rows {
+				tableRows[i] = []string{r.name, r.mode, r.port, output.ShortenPath(r.path)}
+			}
+			p.Table(headers, tableRows)
+			return nil
+		},
+	}
 }
 
 func newConfigShowCmd() *cobra.Command {
