@@ -64,12 +64,12 @@ func printStatsOnce(appCtx *AppContext, format string) error {
 }
 
 type statsRow struct {
-	Name    string
-	PID     int
-	Port    int
-	Uptime  string
-	CPU     string
-	MemMB   string
+	Name   string
+	PID    int
+	Port   int
+	Uptime string
+	CPU    string
+	MemMB  string
 }
 
 func gatherStats(appCtx *AppContext) ([]statsRow, error) {

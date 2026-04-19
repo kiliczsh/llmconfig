@@ -43,11 +43,11 @@ func newInitCmd() *cobra.Command {
 
 			// Fields to collect
 			var (
-				name       string
-				repo       string
-				file       string
-				port       string = "8080"
-				mode       string = "server"
+				name         string
+				repo         string
+				file         string
+				port         string = "8080"
+				mode         string = "server"
 				systemPrompt string
 			)
 

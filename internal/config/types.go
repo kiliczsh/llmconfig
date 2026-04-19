@@ -48,10 +48,10 @@ type DownloadSpec struct {
 }
 
 type DraftSpec struct {
-	Source  string `yaml:"source"`
-	Repo    string `yaml:"repo"`
-	File    string `yaml:"file"`
-	DraftN  int    `yaml:"draft_n"`
+	Source string `yaml:"source"`
+	Repo   string `yaml:"repo"`
+	File   string `yaml:"file"`
+	DraftN int    `yaml:"draft_n"`
 }
 
 type MMProjSpec struct {

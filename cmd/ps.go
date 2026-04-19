@@ -92,4 +92,3 @@ func renderPsTable(p *output.Printer, models []*state.ModelState) error {
 	p.Table(headers, rows)
 	return nil
 }
-

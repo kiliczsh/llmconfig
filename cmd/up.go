@@ -170,14 +170,14 @@ func downloadModel(ctx context.Context, cfg *config.Config, rc *config.RunConfig
 	}
 
 	req := &downloader.Request{
-		Repo:        cfg.Model.Repo,
-		File:        cfg.Model.File,
-		URL:         cfg.Model.URL,
-		Token:       token,
-		CacheDir:    cacheDir,
-		Resume:      cfg.Model.Download.Resume,
-		Connections: cfg.Model.Download.Connections,
-		Checksum:    cfg.Model.Checksum,
+		Repo:           cfg.Model.Repo,
+		File:           cfg.Model.File,
+		URL:            cfg.Model.URL,
+		Token:          token,
+		CacheDir:       cacheDir,
+		Resume:         cfg.Model.Download.Resume,
+		Connections:    cfg.Model.Download.Connections,
+		Checksum:       cfg.Model.Checksum,
 		VerifyChecksum: cfg.Model.Download.VerifyChecksum,
 	}
 
