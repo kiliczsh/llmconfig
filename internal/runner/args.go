@@ -38,9 +38,6 @@ func BuildArgs(rc *config.RunConfig) []string {
 	if cfg.Server.Parallel > 1 {
 		add("--parallel", strconv.Itoa(cfg.Server.Parallel))
 	}
-	if cfg.Server.QueueSize > 0 {
-		add("--queue-size", strconv.Itoa(cfg.Server.QueueSize))
-	}
 	for _, origin := range cfg.Server.CORSOrigins {
 		add("--cors", origin)
 	}
@@ -90,7 +87,9 @@ func BuildArgs(rc *config.RunConfig) []string {
 	}
 	addIf("--no-mmap", !ctx.MMap)
 	addIf("--mlock", ctx.MLock)
-	addIf("--flash-attn", ctx.FlashAttention)
+	if ctx.FlashAttention {
+		add("--flash-attn", "on")
+	}
 	if ctx.NCPUMoE > 0 {
 		add("--cpu-moe-layers", strconv.Itoa(ctx.NCPUMoE))
 	}
