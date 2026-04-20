@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/kiliczsh/llamaconfig/internal/runner"
 	"github.com/spf13/cobra"
 )
@@ -33,10 +31,15 @@ func newDownCmd() *cobra.Command {
 					}
 				}
 			} else {
-				if len(args) == 0 {
-					return fmt.Errorf("provide a model name or use --all")
+				var arg string
+				if len(args) > 0 {
+					arg = args[0]
 				}
-				targets = []string{args[0]}
+				name, err := pickRunningModel(arg, sf)
+				if err != nil {
+					return err
+				}
+				targets = []string{name}
 			}
 
 			if len(targets) == 0 {

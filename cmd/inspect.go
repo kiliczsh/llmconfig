@@ -13,12 +13,19 @@ func newInspectCmd() *cobra.Command {
 	var flagProfile string
 
 	cmd := &cobra.Command{
-		Use:   "inspect <name>",
+		Use:   "inspect [name]",
 		Short: "Show the llama.cpp command that would be run",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
 			appCtx := appCtxFrom(cmd.Context())
+			var arg string
+			if len(args) > 0 {
+				arg = args[0]
+			}
+			name, err := pickConfig(arg, appCtx.ConfigDir)
+			if err != nil {
+				return err
+			}
 
 			cfg, err := config.Load(name, appCtx.ConfigDir)
 			if err != nil {

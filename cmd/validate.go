@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/kiliczsh/llamaconfig/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -23,10 +21,16 @@ func newValidateCmd() *cobra.Command {
 
 			if flagFile != "" {
 				cfg, err = config.LoadFile(flagFile)
-			} else if len(args) == 1 {
-				cfg, err = config.Load(args[0], appCtx.ConfigDir)
 			} else {
-				return fmt.Errorf("provide a model name or --file <path>")
+				var arg string
+				if len(args) == 1 {
+					arg = args[0]
+				}
+				name, pickErr := pickConfig(arg, appCtx.ConfigDir)
+				if pickErr != nil {
+					return pickErr
+				}
+				cfg, err = config.Load(name, appCtx.ConfigDir)
 			}
 			if err != nil {
 				return err

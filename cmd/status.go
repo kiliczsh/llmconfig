@@ -10,15 +10,28 @@ import (
 
 func newStatusCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "status <name>",
+		Use:   "status [name]",
 		Short: "Show detailed status of a model",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
+			appCtxPre := appCtxFrom(cmd.Context())
+			sf, err := appCtxPre.StateStore.Load()
+			if err != nil {
+				return err
+			}
+			var arg string
+			if len(args) > 0 {
+				arg = args[0]
+			}
+			name, err := pickRunningModel(arg, sf)
+			if err != nil {
+				return err
+			}
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer
 
 			ms, err := appCtx.StateStore.Get(name)
+			_ = sf
 			if err != nil {
 				return err
 			}

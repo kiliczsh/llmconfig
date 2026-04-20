@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kiliczsh/llamaconfig/internal/config"
 	"github.com/kiliczsh/llamaconfig/internal/hardware"
@@ -34,10 +33,15 @@ func newRestartCmd() *cobra.Command {
 					}
 				}
 			} else {
-				if len(args) == 0 {
-					return fmt.Errorf("provide a model name or use --all")
+				var arg string
+				if len(args) > 0 {
+					arg = args[0]
 				}
-				targets = []string{args[0]}
+				name, err := pickRunningModel(arg, sf)
+				if err != nil {
+					return err
+				}
+				targets = []string{name}
 			}
 
 			r := runner.New()

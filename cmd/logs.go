@@ -18,13 +18,25 @@ func newLogsCmd() *cobra.Command {
 	var flagSince string
 
 	cmd := &cobra.Command{
-		Use:   "logs <name>",
+		Use:   "logs [name]",
 		Short: "Show model logs",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
 			appCtx := appCtxFrom(cmd.Context())
+			sf, err := appCtx.StateStore.Load()
+			if err != nil {
+				return err
+			}
+			var arg string
+			if len(args) > 0 {
+				arg = args[0]
+			}
+			name, err := pickRunningModel(arg, sf)
+			if err != nil {
+				return err
+			}
 			p := appCtx.Printer
+			_ = sf
 
 			ms, err := appCtx.StateStore.Get(name)
 			if err != nil {
