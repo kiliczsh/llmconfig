@@ -6,14 +6,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const Version = "0.1.0"
+var version = "dev"
+
+func SetVersion(v string) {
+	version = v
+}
 
 func newVersionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Print llamaconfig version",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("llamaconfig %s\n", Version)
+			fmt.Printf("llamaconfig %s\n", version)
 			return nil
 		},
 	}
