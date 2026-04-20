@@ -93,17 +93,20 @@ curl http://127.0.0.1:8080/v1/chat/completions \
 ### 5. Stop
 
 ```bash
-llamaconfig down gemma-4-e2b
-llamaconfig down --all          # stop all running models
+llamaconfig down                # interactive selector if multiple models running
+llamaconfig down gemma-4-e2b   # stop by name
+llamaconfig down --all         # stop all running models
 ```
 
 ---
 
 ## Commands
 
+> Commands marked with `*` show an interactive selector when called without a name and multiple models exist. If only one model is available it is selected automatically.
+
 ### `up <name>`
 
-Start a model server.
+Start a model server. If the model is already running, prints its URL and exits successfully.
 
 ```bash
 llamaconfig up gemma-4-e2b
@@ -124,13 +127,14 @@ Flags:
 
 ---
 
-### `down [name]`
+### `down [name]` `*`
 
-Stop a running model.
+Stop a running model. Without a name, shows an interactive selector.
 
 ```bash
-llamaconfig down gemma-4-e2b
-llamaconfig down --all
+llamaconfig down                         # interactive selector
+llamaconfig down gemma-4-e2b            # stop by name
+llamaconfig down --all                  # stop all running models
 llamaconfig down gemma-4-e2b --timeout 30s
 ```
 
@@ -150,11 +154,12 @@ Output columns: `NAME`, `STATUS`, `PORT`, `PROFILE`, `UPTIME`, `PID`
 
 ---
 
-### `logs <name>`
+### `logs [name]` `*`
 
-Show model logs.
+Show model logs. Without a name, shows an interactive selector.
 
 ```bash
+llamaconfig logs                         # interactive selector
 llamaconfig logs gemma-4-e2b
 llamaconfig logs gemma-4-e2b -n 100
 llamaconfig logs gemma-4-e2b --follow
@@ -182,11 +187,12 @@ llamaconfig stats --format json
 
 ---
 
-### `status <name>`
+### `status [name]` `*`
 
-Detailed info for a single model.
+Detailed info for a single model. Without a name, shows an interactive selector.
 
 ```bash
+llamaconfig status                       # interactive selector
 llamaconfig status gemma-4-e2b
 llamaconfig status gemma-4-e2b --json
 ```
@@ -195,11 +201,12 @@ Shows: PID, port, profile, uptime, config path, log file path, status.
 
 ---
 
-### `restart [name]`
+### `restart [name]` `*`
 
-Stop and start a model, reloading config.
+Stop and start a model, reloading config. Without a name, shows an interactive selector.
 
 ```bash
+llamaconfig restart                      # interactive selector
 llamaconfig restart gemma-4-e2b
 llamaconfig restart --all
 ```
@@ -249,22 +256,24 @@ llamaconfig models --format json
 
 ---
 
-### `validate [name]`
+### `validate [name]` `*`
 
-Validate a config without starting anything.
+Validate a config without starting anything. Without a name, shows an interactive selector.
 
 ```bash
+llamaconfig validate                     # interactive selector
 llamaconfig validate gemma-4-e2b
 llamaconfig validate --file ./path/to/config.yaml
 ```
 
 ---
 
-### `inspect <name>`
+### `inspect [name]` `*`
 
-Show the exact llama.cpp command that would be run.
+Show the exact llama.cpp command that would be run. Without a name, shows an interactive selector.
 
 ```bash
+llamaconfig inspect                      # interactive selector
 llamaconfig inspect gemma-4-e2b
 llamaconfig inspect gemma-4-e2b --profile cpu    # inspect for a specific profile
 ```

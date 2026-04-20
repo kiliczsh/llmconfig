@@ -40,26 +40,28 @@ curl http://127.0.0.1:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"gemma-4-e2b","messages":[{"role":"user","content":"Hello!"}]}'
 
-# 5. Stop
-llamaconfig down gemma-4-e2b
+# 5. Stop (no name needed if only one model is running)
+llamaconfig down
 ```
 
 ## Commands
 
+Commands marked with `*` show an interactive selector when no name is given and multiple models exist.
+
 | Command | Description |
 |---------|-------------|
-| `up <name>` | Start a model |
-| `down [name]` | Stop a model |
+| `up <name>` | Start a model (reuses if already running) |
+| `down [name]` `*` | Stop a running model |
 | `ps` | List running models |
-| `logs <name>` | Show model logs |
+| `logs [name]` `*` | Show model logs |
 | `stats` | Resource usage |
-| `status <name>` | Detailed model info |
-| `restart <name>` | Stop and start |
+| `status [name]` `*` | Detailed model info |
+| `restart [name]` `*` | Stop and start |
 | `pull <repo>` | Download from HuggingFace |
 | `init` | Create config interactively |
 | `models` | List all models |
-| `inspect <name>` | Show llama.cpp command |
-| `validate <name>` | Validate config |
+| `inspect [name]` `*` | Show llama.cpp command |
+| `validate [name]` `*` | Validate config |
 | `hardware` | Show detected hardware |
 | `config list` | List all configs |
 | `config edit <name>` | Edit config in $EDITOR |
@@ -112,10 +114,6 @@ sampling:
   temperature: 0.7
   top_p: 0.95
   top_k: 40
-
-context:
-  n_ctx: 4096
-  flash_attention: true
 ```
 
 Hardware profile is selected automatically at runtime. See [DOCS.md](DOCS.md) for the full config reference.
