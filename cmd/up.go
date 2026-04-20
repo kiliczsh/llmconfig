@@ -52,7 +52,8 @@ func newUpCmd() *cobra.Command {
 			if existing != nil && existing.Status == "running" {
 				r := runner.New()
 				if r.IsAlive(existing) {
-					return fmt.Errorf("model %q is already running on port %d (PID %d)", name, existing.Port, existing.PID)
+					p.Success("%s is already running at http://%s:%d (PID %d)", name, existing.Host, existing.Port, existing.PID)
+					return nil
 				}
 			}
 
