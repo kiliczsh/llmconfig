@@ -16,13 +16,14 @@ func BinDir() string {
 	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin")
 }
 
-// FindBinary returns the path to the sd binary, preferring the managed bin dir.
+// FindBinary returns the path to the sd-cli binary, preferring the managed bin dir.
 func FindBinary() (string, error) {
-	// 1. Well-known names in managed bin dir
-	candidates := []string{"sd", "stable-diffusion"}
+	candidates := []string{"sd-cli", "sd-server", "sd"}
 	if runtime.GOOS == "windows" {
-		candidates = []string{"sd.exe", "stable-diffusion.exe"}
+		candidates = []string{"sd-cli.exe", "sd-server.exe", "sd.exe"}
 	}
+
+	// 1. Managed bin dir
 	for _, name := range candidates {
 		p := filepath.Join(BinDir(), name)
 		if _, err := os.Stat(p); err == nil {
@@ -30,27 +31,14 @@ func FindBinary() (string, error) {
 		}
 	}
 
-	// 2. Scan managed bin dir for any exe starting with "sd"
-	if entries, err := os.ReadDir(BinDir()); err == nil {
-		for _, e := range entries {
-			if e.IsDir() {
-				continue
-			}
-			lower := strings.ToLower(e.Name())
-			if strings.HasPrefix(lower, "sd") && (runtime.GOOS == "windows") == strings.HasSuffix(lower, ".exe") {
-				return filepath.Join(BinDir(), e.Name()), nil
-			}
-		}
-	}
-
-	// 3. PATH
+	// 2. PATH
 	for _, name := range candidates {
 		if path, err := exec.LookPath(name); err == nil {
 			return path, nil
 		}
 	}
 
-	return "", fmt.Errorf("sd not found — run: llamaconfig sd --install")
+	return "", fmt.Errorf("sd-cli not found — run: llamaconfig sd --install")
 }
 
 // Version runs sd --version and returns the version string.

@@ -238,15 +238,13 @@ func extractTarGz(tarPath, destDir string) error {
 
 func isUsefulFile(name string) bool {
 	lower := strings.ToLower(name)
-	// Extract all executables and shared libraries
-	if strings.HasSuffix(lower, ".exe") {
-		return true
+	useful := []string{"sd-cli", "sd-cli.exe", "sd-server", "sd-server.exe", "sd", "sd.exe"}
+	for _, u := range useful {
+		if lower == u {
+			return true
+		}
 	}
-	if strings.HasSuffix(lower, ".dll") || strings.HasSuffix(lower, ".so") || strings.HasSuffix(lower, ".dylib") {
-		return true
-	}
-	// Unix binaries with no extension — match anything starting with "sd"
-	return strings.HasPrefix(lower, "sd") && !strings.Contains(lower, ".")
+	return strings.HasSuffix(lower, ".dll") || strings.HasSuffix(lower, ".so") || strings.HasSuffix(lower, ".dylib")
 }
 
 func extractZipFile(f *zip.File, dest string) error {
