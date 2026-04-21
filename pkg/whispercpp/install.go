@@ -163,6 +163,17 @@ func extractZip(zipPath, destDir string) error {
 	return nil
 }
 
+// Extract installs whisper.cpp from a local zip file.
+func Extract(archivePath string) error {
+	if err := os.MkdirAll(BinDir(), 0755); err != nil {
+		return fmt.Errorf("install: create bin dir: %w", err)
+	}
+	if strings.HasSuffix(strings.ToLower(archivePath), ".zip") {
+		return extractZip(archivePath, BinDir())
+	}
+	return fmt.Errorf("unsupported archive format: %s", archivePath)
+}
+
 func isUsefulFile(name string) bool {
 	lower := strings.ToLower(name)
 	useful := []string{"whisper-cli", "whisper-cli.exe", "whisper-server", "whisper-server.exe"}

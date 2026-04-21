@@ -88,6 +88,9 @@ func PickAsset(rel *githubRelease, backend string) (*GithubAsset, error) {
 		for i := range rel.Assets {
 			a := &rel.Assets[i]
 			name := lower(a.Name)
+			if strings.HasPrefix(name, "cudart-") {
+				continue
+			}
 			if strings.Contains(name, pattern) && (strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".tar.gz")) {
 				return a, nil
 			}
@@ -242,6 +245,21 @@ func extractTarGz(tarPath, destDir string) error {
 		}
 	}
 	return nil
+}
+
+// Extract installs llama.cpp from a local archive file (zip or tar.gz).
+func Extract(archivePath string) error {
+	if err := os.MkdirAll(BinDir(), 0755); err != nil {
+		return fmt.Errorf("install: create bin dir: %w", err)
+	}
+	lower := strings.ToLower(archivePath)
+	if strings.HasSuffix(lower, ".zip") {
+		return extractZip(archivePath, BinDir())
+	}
+	if strings.HasSuffix(lower, ".tar.gz") {
+		return extractTarGz(archivePath, BinDir())
+	}
+	return fmt.Errorf("unsupported archive format: %s", archivePath)
 }
 
 func isUsefulFile(name string) bool {

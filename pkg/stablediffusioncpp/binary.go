@@ -13,7 +13,7 @@ import (
 
 // BinDir returns the directory where llamaconfig manages stable-diffusion.cpp binaries.
 func BinDir() string {
-	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin")
+	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin", "sd")
 }
 
 // FindBinary returns the path to the sd-cli binary, preferring the managed bin dir.
@@ -38,7 +38,7 @@ func FindBinary() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("sd-cli not found — run: llamaconfig sd --install")
+	return "", fmt.Errorf("sd-cli not found — run: llamaconfig install sd")
 }
 
 // Version runs sd --version and returns the version string.

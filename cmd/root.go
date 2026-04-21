@@ -121,6 +121,7 @@ func init() {
 		newValidateCmd(),
 		newInspectCmd(),
 		newHardwareCmd(),
+		newInstallCmd(),
 		newLlamaCmd(),
 		newSdCmd(),
 		newWhisperCmd(),

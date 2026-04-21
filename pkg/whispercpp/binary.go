@@ -13,7 +13,7 @@ import (
 
 // BinDir returns the directory where llamaconfig manages whisper.cpp binaries.
 func BinDir() string {
-	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin")
+	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin", "whisper")
 }
 
 // FindBinary returns the path to the whisper-cli binary, preferring the managed bin dir.
@@ -38,20 +38,18 @@ func FindBinary() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("whisper-cli not found — run: llamaconfig whisper --install")
+	return "", fmt.Errorf("whisper-cli not found — run: llamaconfig install whisper")
 }
 
-// Version runs whisper-cli --version and returns the version string.
+// Version runs whisper-cli and tries to extract the version string.
+// whisper-cli does not support --version; we parse whatever output is available.
 func Version(binPath string) (string, error) {
-	out, err := exec.Command(binPath, "--version").CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("whisper-cli --version: %w", err)
-	}
+	out, _ := exec.Command(binPath, "--version").CombinedOutput()
 	for _, line := range strings.Split(string(out), "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "version:") || strings.HasPrefix(line, "whisper") {
 			return line, nil
 		}
 	}
-	return strings.TrimSpace(string(out)), nil
+	return "version unknown", nil
 }

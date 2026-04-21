@@ -236,6 +236,21 @@ func extractTarGz(tarPath, destDir string) error {
 	return nil
 }
 
+// Extract installs stable-diffusion.cpp from a local archive file (zip or tar.gz).
+func Extract(archivePath string) error {
+	if err := os.MkdirAll(BinDir(), 0755); err != nil {
+		return fmt.Errorf("install: create bin dir: %w", err)
+	}
+	lower := strings.ToLower(archivePath)
+	if strings.HasSuffix(lower, ".zip") {
+		return extractZip(archivePath, BinDir())
+	}
+	if strings.HasSuffix(lower, ".tar.gz") {
+		return extractTarGz(archivePath, BinDir())
+	}
+	return fmt.Errorf("unsupported archive format: %s", archivePath)
+}
+
 func isUsefulFile(name string) bool {
 	lower := strings.ToLower(name)
 	useful := []string{"sd-cli", "sd-cli.exe", "sd-server", "sd-server.exe", "sd", "sd.exe"}
