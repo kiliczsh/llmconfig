@@ -184,8 +184,8 @@ type RunConfig struct {
 }
 
 type WhisperSpec struct {
-	Language       string  `yaml:"language"`        // "auto" | "en" | "tr" | ...
-	Task           string  `yaml:"task"`             // "transcribe" | "translate"
+	Language       string  `yaml:"language"` // "auto" | "en" | "tr" | ...
+	Task           string  `yaml:"task"`     // "transcribe" | "translate"
 	BeamSize       int     `yaml:"beam_size"`
 	BestOf         int     `yaml:"best_of"`
 	VAD            bool    `yaml:"vad"`

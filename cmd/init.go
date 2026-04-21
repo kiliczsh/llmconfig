@@ -20,9 +20,9 @@ var builtinTemplates = map[string]string{
 	"phi4":      "bartowski/phi-4-GGUF",
 	"gemma":     "bartowski/google_gemma-4-E2B-it-GGUF",
 	// sd
-	"sd15":          "runwayml/stable-diffusion-v1-5",
-	"flux-schnell":  "city96/FLUX.1-schnell-gguf",
-	"flux-dev":      "city96/FLUX.1-dev-gguf",
+	"sd15":         "runwayml/stable-diffusion-v1-5",
+	"flux-schnell": "city96/FLUX.1-schnell-gguf",
+	"flux-dev":     "city96/FLUX.1-dev-gguf",
 	// whisper
 	"whisper-base":  "ggerganov/whisper.cpp",
 	"whisper-turbo": "ggerganov/whisper.cpp",
@@ -181,7 +181,7 @@ func initLlama(name, flagFrom, flagTemplate, flagOutput, configDir, token string
 	}
 
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "version: 1\nname: %s\n\nbackend: llama\n\nmode: %s\n\nmodel:\n  source: huggingface\n  repo: %s\n  file: %s\n  download:\n    cache_dir: ~/.llamaconfig/cache\n    resume: true\n\nserver:\n  port: %s\n", name, mode, repo, file, port)
+	fmt.Fprintf(&sb, "version: 1\nname: %s\n\nbackend: llama\n\nmode: %s\n\nmodel:\n  source: huggingface\n  repo: %s\n  file: %s\n  download:\n    resume: true\n\nserver:\n  port: %s\n", name, mode, repo, file, port)
 	if systemPrompt != "" {
 		fmt.Fprintf(&sb, "\nchat:\n  system_prompt: |\n")
 		for _, line := range strings.Split(systemPrompt, "\n") {
@@ -299,7 +299,7 @@ func initSD(name, flagFrom, flagTemplate, flagOutput, configDir string, p interf
 			fmt.Fprintf(&sb, "  file: %s\n", file)
 		}
 	}
-	fmt.Fprintf(&sb, "  download:\n    cache_dir: ~/.llamaconfig/cache\n    resume: true\n    connections: 4\n")
+	fmt.Fprintf(&sb, "  download:\n    resume: true\n    connections: 4\n")
 	fmt.Fprintf(&sb, "\nmode: server\n\nserver:\n  host: 127.0.0.1\n  port: %s\n", port)
 	fmt.Fprintf(&sb, "\nsd:\n  width: %s\n  height: %s\n  steps: %s\n  cfg_scale: %s\n  sampling_method: %s\n  seed: -1\n", width, height, steps, cfgScale, samplingMethod)
 
@@ -386,7 +386,7 @@ func initWhisper(name, flagFrom, flagTemplate, flagOutput, configDir string, p i
 	}
 
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "version: 1\nname: %s\n\nbackend: whisper\n\nmodel:\n  source: huggingface\n  repo: ggerganov/whisper.cpp\n  file: %s\n  download:\n    cache_dir: ~/.llamaconfig/cache\n    resume: true\n\nmode: server\n\nserver:\n  host: 127.0.0.1\n  port: %s\n\nwhisper:\n  language: %s\n  task: %s\n  beam_size: 5\n  best_of: 5\n  vad: true\n  vad_threshold: 0.5\n  processors: 1\n", name, file, port, language, task)
+	fmt.Fprintf(&sb, "version: 1\nname: %s\n\nbackend: whisper\n\nmodel:\n  source: huggingface\n  repo: ggerganov/whisper.cpp\n  file: %s\n  download:\n    resume: true\n\nmode: server\n\nserver:\n  host: 127.0.0.1\n  port: %s\n\nwhisper:\n  language: %s\n  task: %s\n  beam_size: 5\n  best_of: 5\n  vad: true\n  vad_threshold: 0.5\n  processors: 1\n", name, file, port, language, task)
 
 	return writeConfig(outPath, sb.String(), name, p)
 }

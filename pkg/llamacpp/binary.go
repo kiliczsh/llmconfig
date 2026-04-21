@@ -13,7 +13,7 @@ import (
 
 // BinDir returns the directory where llamaconfig manages llama.cpp binaries.
 func BinDir() string {
-	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin", "llama")
+	return filepath.Join(dirs.BaseDir(), "bin", "llama")
 }
 
 // FindServer returns the path to llama-server, preferring the managed bin dir.

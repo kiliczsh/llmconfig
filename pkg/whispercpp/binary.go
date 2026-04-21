@@ -13,7 +13,7 @@ import (
 
 // BinDir returns the directory where llamaconfig manages whisper.cpp binaries.
 func BinDir() string {
-	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin", "whisper")
+	return filepath.Join(dirs.BaseDir(), "bin", "whisper")
 }
 
 // FindServer returns the path to the whisper-server binary, preferring the managed bin dir.

@@ -6,27 +6,27 @@ import (
 )
 
 func ConfigDir() string {
-	return filepath.Join(baseDir(), "configs")
+	return filepath.Join(BaseDir(), "configs")
 }
 
 func CacheDir() string {
-	return filepath.Join(baseDir(), "cache")
+	return filepath.Join(BaseDir(), "cache")
 }
 
 func LogDir() string {
-	return filepath.Join(baseDir(), "logs")
+	return filepath.Join(BaseDir(), "logs")
 }
 
 func BenchDir() string {
-	return filepath.Join(baseDir(), "bench")
+	return filepath.Join(BaseDir(), "bench")
 }
 
 func StateFile() string {
-	return filepath.Join(baseDir(), "state.json")
+	return filepath.Join(BaseDir(), "state.json")
 }
 
 func StateLockFile() string {
-	return filepath.Join(baseDir(), "state.json.lock")
+	return filepath.Join(BaseDir(), "state.json.lock")
 }
 
 func EnsureAll() error {
@@ -42,7 +42,10 @@ func EnsureDir(path string) error {
 	return os.MkdirAll(path, 0755)
 }
 
-func baseDir() string {
+// BaseDir returns the llamaconfig root directory (LLAMACONFIG_CONFIG_DIR or
+// the user's home dir joined with ".llamaconfig"). It is platform-independent:
+// os.UserHomeDir resolves to %USERPROFILE% on Windows and $HOME elsewhere.
+func BaseDir() string {
 	if v := os.Getenv("LLAMACONFIG_CONFIG_DIR"); v != "" {
 		return v
 	}

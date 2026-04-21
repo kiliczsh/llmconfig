@@ -13,7 +13,7 @@ import (
 
 // BinDir returns the directory where llamaconfig manages stable-diffusion.cpp binaries.
 func BinDir() string {
-	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin", "sd")
+	return filepath.Join(dirs.BaseDir(), "bin", "sd")
 }
 
 // FindServer returns the path to the sd-server binary, preferring the managed bin dir.
