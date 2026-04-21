@@ -123,6 +123,7 @@ func init() {
 		newHardwareCmd(),
 		newLlamaCmd(),
 		newSdCmd(),
+		newWhisperCmd(),
 		newCacheCmd(),
 		newVersionCmd(),
 		newBenchCmd(),
