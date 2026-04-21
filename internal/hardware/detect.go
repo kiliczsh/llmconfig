@@ -30,11 +30,8 @@ func detectDarwin(r *DetectionResult) {
 	if runtime.GOARCH == "arm64" {
 		r.Class = ClassAppleSilicon
 		r.GPUName = "Apple Silicon"
-		// Unified memory — report system RAM as VRAM approximation
-		out, err := exec.Command("sysctl", "-n", "hw.memsize").Output()
-		if err == nil {
-			var bytes uint64
-			_, _ = strings.NewReader(strings.TrimSpace(string(out))), &bytes
+		if out, err := exec.Command("sysctl", "-n", "hw.memsize").Output(); err == nil {
+			r.RAMBytes = parseUint64(strings.TrimSpace(string(out)))
 		}
 		return
 	}
@@ -51,6 +48,17 @@ func detectDarwin(r *DetectionResult) {
 		r.Class = ClassAMD
 		r.GPUName = extractGPUName(s, "amd")
 	}
+}
+
+func parseUint64(s string) uint64 {
+	var v uint64
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			break
+		}
+		v = v*10 + uint64(c-'0')
+	}
+	return v
 }
 
 func detectLinux(r *DetectionResult) {

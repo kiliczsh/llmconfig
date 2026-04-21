@@ -124,6 +124,8 @@ func init() {
 		newLlamaCmd(),
 		newCacheCmd(),
 		newVersionCmd(),
+		newBenchCmd(),
+		newCompatCmd(),
 	)
 }
 

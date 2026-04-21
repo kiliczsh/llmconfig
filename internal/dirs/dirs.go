@@ -17,6 +17,10 @@ func LogDir() string {
 	return filepath.Join(baseDir(), "logs")
 }
 
+func BenchDir() string {
+	return filepath.Join(baseDir(), "bench")
+}
+
 func StateFile() string {
 	return filepath.Join(baseDir(), "state.json")
 }
@@ -26,7 +30,7 @@ func StateLockFile() string {
 }
 
 func EnsureAll() error {
-	for _, d := range []string{ConfigDir(), CacheDir(), LogDir()} {
+	for _, d := range []string{ConfigDir(), CacheDir(), LogDir(), BenchDir()} {
 		if err := EnsureDir(d); err != nil {
 			return err
 		}

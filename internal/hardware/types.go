@@ -29,6 +29,7 @@ type DetectionResult struct {
 	Class       Class
 	GPUName     string
 	VRAMBytes   uint64
+	RAMBytes    uint64
 	CPUCores    int
 	IsARM       bool
 	CUDAVersion string
