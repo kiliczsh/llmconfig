@@ -8,6 +8,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
 $BinaryName  = "llamaconfig"
 $Repo        = "https://github.com/kiliczsh/llamaconfig.git"
