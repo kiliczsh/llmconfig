@@ -209,6 +209,13 @@ else
   step_ok "Installed to $PREFIX/$BINARY_NAME"
 fi
 
+# lc alias
+if ln -sf "$PREFIX/$BINARY_NAME" "$PREFIX/lc" 2>/dev/null || sudo ln -sf "$PREFIX/$BINARY_NAME" "$PREFIX/lc" 2>/dev/null; then
+  step_ok "Alias: lc → llamaconfig"
+else
+  step_warn "Could not create lc alias in $PREFIX"
+fi
+
 # PATH check
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$PREFIX"; then
   step_warn "$PREFIX is not in your PATH"
@@ -248,6 +255,6 @@ fi
 # --- done ---
 echo ""
 printf "${GREEN}${BOLD}  Installation complete!${RESET}\n\n"
-printf "  Run: ${CYAN}llamaconfig init --template gemma${RESET}\n"
-printf "       ${CYAN}llamaconfig up <model-name>${RESET}\n"
+printf "  Run: ${CYAN}lc init --template gemma${RESET}\n"
+printf "       ${CYAN}lc up <model-name>${RESET}\n"
 echo ""

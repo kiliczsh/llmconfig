@@ -183,6 +183,10 @@ if has_selected 0; then
   else
     step_skip "Binary not found"
   fi
+  if [[ -L "$PREFIX/lc" ]]; then
+    rm -f "$PREFIX/lc" 2>/dev/null || sudo rm -f "$PREFIX/lc"
+    step_ok "Removed lc alias"
+  fi
 fi
 
 # 1: llama.cpp
