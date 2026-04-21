@@ -1,5 +1,7 @@
 package config
 
+func boolPtr(b bool) *bool { return &b }
+
 func ApplyDefaults(cfg *Config) {
 	if cfg.Backend == "" {
 		cfg.Backend = "llama"
@@ -71,17 +73,16 @@ func ApplyDefaults(cfg *Config) {
 	if cfg.Server.WriteTimeout == "" {
 		cfg.Server.WriteTimeout = "600s"
 	}
-	cfg.Server.Endpoints.Health = true
-	cfg.Server.Endpoints.Slots = true
-	cfg.Server.Endpoints.Completions = true
-	cfg.Server.Endpoints.Chat = true
+	if cfg.Server.Endpoints.Slots == nil {
+		cfg.Server.Endpoints.Slots = boolPtr(true)
+	}
 
 	// Download defaults
-	if !cfg.Model.Download.VerifyChecksum {
-		cfg.Model.Download.VerifyChecksum = true
+	if cfg.Model.Download.VerifyChecksum == nil {
+		cfg.Model.Download.VerifyChecksum = boolPtr(true)
 	}
-	if !cfg.Model.Download.Resume {
-		cfg.Model.Download.Resume = true
+	if cfg.Model.Download.Resume == nil {
+		cfg.Model.Download.Resume = boolPtr(true)
 	}
 	if cfg.Model.Download.Connections == 0 {
 		cfg.Model.Download.Connections = 4
@@ -103,8 +104,8 @@ func ApplyDefaults(cfg *Config) {
 	if cfg.Context.CacheTypeV == "" {
 		cfg.Context.CacheTypeV = "f16"
 	}
-	if !cfg.Context.MMap {
-		cfg.Context.MMap = true
+	if cfg.Context.MMap == nil {
+		cfg.Context.MMap = boolPtr(true)
 	}
 
 	// Sampling defaults
@@ -157,8 +158,8 @@ func ApplyDefaults(cfg *Config) {
 	if cfg.Resources.CPUPriority == "" {
 		cfg.Resources.CPUPriority = "normal"
 	}
-	if !cfg.Resources.FallbackToCPU {
-		cfg.Resources.FallbackToCPU = true
+	if cfg.Resources.FallbackToCPU == nil {
+		cfg.Resources.FallbackToCPU = boolPtr(true)
 	}
 	if cfg.Resources.RequestTimeout == "" {
 		cfg.Resources.RequestTimeout = "120s"

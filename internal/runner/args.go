@@ -55,7 +55,7 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 
 	// Endpoints
 	addIf("--metrics", cfg.Server.Endpoints.Metrics)
-	addIf("--no-slots", !cfg.Server.Endpoints.Slots)
+	addIf("--no-slots", !*cfg.Server.Endpoints.Slots)
 	addIf("--embedding", cfg.Server.Endpoints.Embeddings)
 
 	// Hardware / GPU
@@ -96,7 +96,7 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if ctx.CacheTypeV != "" && ctx.CacheTypeV != "f16" {
 		add("--cache-type-v", ctx.CacheTypeV)
 	}
-	addIf("--no-mmap", !ctx.MMap)
+	addIf("--no-mmap", !*ctx.MMap)
 	addIf("--mlock", ctx.MLock)
 	if ctx.FlashAttention {
 		add("--flash-attn", "on")

@@ -44,8 +44,9 @@ type ModelSpec struct {
 }
 
 type DownloadSpec struct {
-	VerifyChecksum bool   `yaml:"verify_checksum"`
-	Resume         bool   `yaml:"resume"`
+	// Pointer so an explicit `false` in YAML is honored; ApplyDefaults fills nil with true.
+	VerifyChecksum *bool  `yaml:"verify_checksum"`
+	Resume         *bool  `yaml:"resume"`
 	Connections    int    `yaml:"connections"`
 	CacheDir       string `yaml:"cache_dir"`
 }
@@ -76,12 +77,13 @@ type ServerSpec struct {
 }
 
 type EndpointSpec struct {
-	Metrics     bool `yaml:"metrics"`
-	Slots       bool `yaml:"slots"`
-	Health      bool `yaml:"health"`
-	Completions bool `yaml:"completions"`
-	Chat        bool `yaml:"chat"`
-	Embeddings  bool `yaml:"embeddings"`
+	Metrics bool `yaml:"metrics"`
+	// Pointer so an explicit `false` in YAML is honored; ApplyDefaults fills nil with true.
+	Slots       *bool `yaml:"slots"`
+	Health      bool  `yaml:"health"`
+	Completions bool  `yaml:"completions"`
+	Chat        bool  `yaml:"chat"`
+	Embeddings  bool  `yaml:"embeddings"`
 }
 
 type HardwareProfiles struct {
@@ -108,16 +110,17 @@ type HardwareProfile struct {
 }
 
 type ContextSpec struct {
-	NCtx           int    `yaml:"n_ctx"`
-	NBatch         int    `yaml:"n_batch"`
-	NUBatch        int    `yaml:"n_ubatch"`
-	NKeep          int    `yaml:"n_keep"`
-	CacheTypeK     string `yaml:"cache_type_k"`
-	CacheTypeV     string `yaml:"cache_type_v"`
-	MMap           bool   `yaml:"mmap"`
-	MLock          bool   `yaml:"mlock"`
-	FlashAttention bool   `yaml:"flash_attention"`
-	NCPUMoE        int    `yaml:"n_cpu_moe"`
+	NCtx       int    `yaml:"n_ctx"`
+	NBatch     int    `yaml:"n_batch"`
+	NUBatch    int    `yaml:"n_ubatch"`
+	NKeep      int    `yaml:"n_keep"`
+	CacheTypeK string `yaml:"cache_type_k"`
+	CacheTypeV string `yaml:"cache_type_v"`
+	// Pointer so an explicit `false` in YAML is honored; ApplyDefaults fills nil with true.
+	MMap           *bool `yaml:"mmap"`
+	MLock          bool  `yaml:"mlock"`
+	FlashAttention bool  `yaml:"flash_attention"`
+	NCPUMoE        int   `yaml:"n_cpu_moe"`
 }
 
 type SamplingSpec struct {
@@ -154,12 +157,13 @@ type RopeSpec struct {
 }
 
 type ResourceSpec struct {
-	VRAMLimit      string `yaml:"vram_limit"`
-	VRAMBuffer     string `yaml:"vram_buffer"`
-	MemoryLimit    string `yaml:"memory_limit"`
-	CPULimit       string `yaml:"cpu_limit"`
-	CPUPriority    string `yaml:"cpu_priority"`
-	FallbackToCPU  bool   `yaml:"fallback_to_cpu"`
+	VRAMLimit   string `yaml:"vram_limit"`
+	VRAMBuffer  string `yaml:"vram_buffer"`
+	MemoryLimit string `yaml:"memory_limit"`
+	CPULimit    string `yaml:"cpu_limit"`
+	CPUPriority string `yaml:"cpu_priority"`
+	// Pointer so an explicit `false` in YAML is honored; ApplyDefaults fills nil with true.
+	FallbackToCPU  *bool  `yaml:"fallback_to_cpu"`
 	RequestTimeout string `yaml:"request_timeout"`
 	MaxConcurrent  int    `yaml:"max_concurrent"`
 }

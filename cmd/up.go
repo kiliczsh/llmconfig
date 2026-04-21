@@ -203,10 +203,10 @@ func downloadModel(ctx context.Context, cfg *config.Config, rc *config.RunConfig
 		URL:            cfg.Model.URL,
 		Token:          token,
 		CacheDir:       cacheDir,
-		Resume:         cfg.Model.Download.Resume,
+		Resume:         *cfg.Model.Download.Resume,
 		Connections:    cfg.Model.Download.Connections,
 		Checksum:       cfg.Model.Checksum,
-		VerifyChecksum: cfg.Model.Download.VerifyChecksum,
+		VerifyChecksum: *cfg.Model.Download.VerifyChecksum,
 	}
 
 	return runDownloadWithProgress(ctx, req, cfg.Model.File)

@@ -74,7 +74,7 @@ func buildInteractiveArgs(rc *config.RunConfig) []string {
 	if cfg.Context.FlashAttention {
 		add("--flash-attn", "on")
 	}
-	addIf("--no-mmap", !cfg.Context.MMap)
+	addIf("--no-mmap", !*cfg.Context.MMap)
 	addIf("--mlock", cfg.Context.MLock)
 
 	// --conversation enables chat mode; Enter submits (no multiline — that requires \ to submit)
