@@ -4,11 +4,17 @@
 
 - [Directory Layout](#directory-layout)
 - [Getting Started](#getting-started)
+- [Backends](#backends)
 - [Commands](#commands)
 - [Config File Reference](#config-file-reference)
 - [Hardware Profiles](#hardware-profiles)
 - [Environment Variables](#environment-variables)
 - [OpenAI-Compatible API](#openai-compatible-api)
+
+> **A note on paths.** This document writes directories as `~/.llamaconfig/...`
+> for brevity. That resolves to `$HOME/.llamaconfig` on macOS and Linux and to
+> `%USERPROFILE%\.llamaconfig` on Windows. Set `LLAMACONFIG_CONFIG_DIR` to
+> override the base directory.
 
 ---
 
@@ -16,29 +22,40 @@
 
 ```
 ~/.llamaconfig/
-├── configs/        # YAML config files (<name>.yaml)
-├── cache/          # Downloaded GGUF model files
-├── logs/           # Per-model log files (<name>.log)
-├── bin/            # llama.cpp binaries (managed by llamaconfig llama --install)
-└── state.json      # Running model state
+├── configs/          # YAML config files (<name>.yaml)
+├── cache/            # Downloaded model files (GGUF, whisper GGML, SD weights)
+├── logs/             # Per-model log files (<name>.log)
+├── bench/            # Saved benchmark results
+├── bin/
+│   ├── llama/        # llama.cpp binaries (managed by `llamaconfig install llama`)
+│   ├── sd/           # stable-diffusion.cpp binaries (`install sd`)
+│   └── whisper/      # whisper.cpp binaries (`install whisper`)
+└── state.json        # Running-model state
 ```
 
 ---
 
 ## Getting Started
 
-### 1. Install llama.cpp
+### 1. Install a backend binary
 
 ```bash
-llamaconfig llama --install
+llamaconfig install llama       # text generation (llama.cpp)
+llamaconfig install sd          # image generation (stable-diffusion.cpp)
+llamaconfig install whisper     # speech recognition (whisper.cpp)
 ```
 
-Auto-detects your hardware (CUDA, Metal, CPU) and downloads the matching llama.cpp release from GitHub. Binaries are placed in `~/.llamaconfig/bin/`.
+`install` auto-detects your hardware (CUDA, Metal, ROCm, CPU) and downloads
+the matching release from GitHub. Binaries are placed under
+`~/.llamaconfig/bin/<backend>/`.
 
 ```bash
-llamaconfig llama --version    # verify
-llamaconfig llama --path       # show binary path
+llamaconfig llama --version    # verify the installed build
+llamaconfig llama --path       # show the binary path
 ```
+
+The same `--version` / `--path` flags work for `llamaconfig sd` and
+`llamaconfig whisper`.
 
 ### 2. Create a Config
 
@@ -50,9 +67,17 @@ llamaconfig init --template llama3    # pre-fill with a known model
 llamaconfig init --from bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
 ```
 
-Built-in templates: `codellama`, `mistral`, `llama3`, `deepseek`, `phi4`, `gemma`
+Built-in templates:
 
-**Option B — Pull and auto-generate:**
+| Backend | Templates |
+|---------|-----------|
+| llama   | `codellama`, `mistral`, `llama3`, `deepseek`, `phi4`, `gemma` |
+| sd      | `sd15`, `flux-schnell`, `flux-dev` |
+| whisper | `whisper-base`, `whisper-turbo` |
+
+The wizard asks which backend to use; pass `--template` to skip the picker.
+
+**Option B — Pull and auto-generate (llama only):**
 
 ```bash
 llamaconfig pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --quant Q4_K_M
@@ -62,7 +87,8 @@ Downloads the model and creates a config in one step.
 
 **Option C — Write manually:**
 
-Create `~/.llamaconfig/configs/<name>.yaml` (see [Config File Reference](#config-file-reference)).
+Create `<configs>/<name>.yaml` under your llamaconfig directory (see
+[Config File Reference](#config-file-reference)).
 
 ### 3. Start a Model
 
@@ -97,6 +123,85 @@ llamaconfig down                # interactive selector if multiple models runnin
 llamaconfig down gemma-4-e2b   # stop by name
 llamaconfig down --all         # stop all running models
 ```
+
+---
+
+## Backends
+
+llamaconfig drives three inference backends. The `backend` field in a config
+picks which one runs:
+
+```yaml
+backend: llama      # default — text generation via llama.cpp
+# backend: sd       # image generation via stable-diffusion.cpp
+# backend: whisper  # speech recognition via whisper.cpp
+```
+
+| Backend | Binary used | Install command | Managed bin dir |
+|---------|-------------|-----------------|-----------------|
+| `llama` (default) | `llama-server` (server) / `llama-cli` (interactive) | `llamaconfig install llama` | `~/.llamaconfig/bin/llama/` |
+| `sd` | `sd-cli` (server build) | `llamaconfig install sd` | `~/.llamaconfig/bin/sd/` |
+| `whisper` | `whisper-server` / `whisper-cli` | `llamaconfig install whisper` | `~/.llamaconfig/bin/whisper/` |
+
+Each backend reads a backend-specific config block in addition to the shared
+fields (`model`, `server`, `hardware_profiles`, etc.).
+
+### `sd` — Stable Diffusion
+
+```yaml
+version: 1
+name: flux-schnell
+backend: sd
+
+model:
+  source: huggingface
+  repo: city96/FLUX.1-schnell-gguf
+  file: flux1-schnell-Q4_K_S.gguf
+
+mode: server
+server:
+  host: 127.0.0.1
+  port: 8090
+
+sd:
+  width: 512
+  height: 512
+  steps: 20
+  cfg_scale: 7.0
+  sampling_method: euler_a   # euler_a | euler | dpm++2m | lcm | ...
+  seed: -1                    # -1 = random
+```
+
+### `whisper` — Speech Recognition
+
+```yaml
+version: 1
+name: whisper-turbo
+backend: whisper
+
+model:
+  source: huggingface
+  repo: ggerganov/whisper.cpp
+  file: ggml-large-v3-turbo.bin
+
+mode: server
+server:
+  host: 127.0.0.1
+  port: 8082
+
+whisper:
+  language: auto        # auto | en | tr | ...
+  task: transcribe      # transcribe | translate
+  beam_size: 5
+  best_of: 5
+  vad: true
+  vad_threshold: 0.5
+  word_timestamps: false
+  processors: 1
+```
+
+See [Config File Reference](#config-file-reference) for the shared fields
+(`model`, `server`, `hardware_profiles`, `context`, ...).
 
 ---
 
@@ -236,10 +341,14 @@ llamaconfig init
 llamaconfig init gemma-4-e2b
 llamaconfig init --template llama3
 llamaconfig init --from bartowski/google_gemma-4-E2B-it-GGUF
+llamaconfig init --from https://huggingface.co/.../model.gguf   # direct URL
 llamaconfig init --output ./gemma-4-e2b.yaml
 ```
 
-The wizard prompts for: name, HuggingFace repo, mode (server/interactive), port, system prompt. Then lists available GGUF files from the repo for selection.
+The wizard first asks which backend to use (`llama`, `sd`, `whisper`), then
+walks through backend-specific prompts. For llama it asks for: name,
+HuggingFace repo, mode (server/interactive), port, and system prompt, then
+lists available GGUF files from the repo for selection.
 
 ---
 
@@ -330,19 +439,81 @@ llamaconfig hardware --json
 
 ---
 
-### `llama`
+### `install <backend>`
 
-Manage the llama.cpp binary.
+Install a backend binary. Auto-detects your hardware and downloads the
+matching release from GitHub.
 
 ```bash
-llamaconfig llama --install             # install latest release
-llamaconfig llama --update              # update to latest
-llamaconfig llama --version             # print version
-llamaconfig llama --path                # print binary path
-llamaconfig llama --install --backend cuda    # force backend
+llamaconfig install llama               # text generation (llama.cpp)
+llamaconfig install sd                  # image generation (stable-diffusion.cpp)
+llamaconfig install whisper             # speech recognition (whisper.cpp)
+
+llamaconfig install llama --backend cuda  # force a specific build
+llamaconfig install llama --force         # reinstall even if already present
 ```
 
-Backends: `cuda`, `metal`, `cpu`
+Each backend is installed into its own directory under
+`~/.llamaconfig/bin/<backend>/`, so they never collide. To update to the
+latest release, run `install` again with `--force`.
+
+Available `--backend` values depend on the backend and platform; common ones
+are `cuda`, `metal`, `rocm`, and `cpu`.
+
+---
+
+### `llama` / `sd` / `whisper`
+
+Show status for an installed backend binary.
+
+```bash
+llamaconfig llama                       # show path + version
+llamaconfig llama --version             # print only the version line
+llamaconfig llama --path                # print the binary path
+
+llamaconfig sd --version
+llamaconfig whisper --path
+```
+
+If the binary is missing, these commands tell you to run
+`llamaconfig install <backend>`.
+
+---
+
+### `bench <name>`
+
+Benchmark inference throughput for a model.
+
+```bash
+llamaconfig bench gemma-4-e2b
+llamaconfig bench gemma-4-e2b --runs 3
+llamaconfig bench gemma-4-e2b --tokens 256
+```
+
+Results are written to `~/.llamaconfig/bench/` for later comparison.
+
+---
+
+### `compat`
+
+Show which configs fit on the detected hardware and estimate inference speed.
+
+```bash
+llamaconfig compat
+```
+
+Analyses every config against detected RAM, VRAM, and bandwidth, so you can
+see at a glance which models will actually run well on this machine.
+
+---
+
+### `version`
+
+Print the llamaconfig CLI version.
+
+```bash
+llamaconfig version
+```
 
 ---
 
@@ -360,6 +531,10 @@ llamaconfig cache path             # print cache directory
 ---
 
 ## Config File Reference
+
+The example below shows the shared fields used by every backend (`model`,
+`server`, `hardware_profiles`, `context`, `sampling`, ...) plus llama-only
+fields. For `sd` and `whisper` specifics, see [Backends](#backends).
 
 Full example with all supported fields:
 
@@ -380,9 +555,9 @@ model:
   checksum: sha256:abc123...             # optional, verified on download
 
   download:
-    resume: true
-    connections: 4          # parallel download connections
-    verify_checksum: false
+    resume: true            # default: true — resume interrupted downloads
+    connections: 4          # parallel download connections (default: 4)
+    verify_checksum: true   # default: true — set to false to skip checksum verification
     cache_dir: ""           # defaults to ~/.llamaconfig/cache
 
   # Speculative decoding (optional)
@@ -408,12 +583,10 @@ server:
   cors_origins: []
 
   endpoints:
-    metrics: false
-    slots: false
-    health: true
-    completions: true
-    chat: true
-    embeddings: false
+    metrics: false          # default: false — enables --metrics in llama-server
+    slots: true             # default: true — set to false to pass --no-slots
+    embeddings: false       # default: false — enables --embedding in llama-server
+    # health, completions, chat — reserved for future use; currently ignored
 
 # ── Hardware Profiles ──────────────────────────────────────────────────────
 # The matching profile is selected automatically at runtime.
@@ -460,12 +633,12 @@ context:
 # ── Sampling ───────────────────────────────────────────────────────────────
 
 sampling:
-  temperature: 0.7
-  top_k: 40
-  top_p: 0.95
-  min_p: 0.05
-  repeat_penalty: 1.1
-  repeat_last_n: 64
+  temperature: 0.8        # default: 0.8
+  top_k: 40               # default: 40
+  top_p: 0.95             # default: 0.95
+  min_p: 0.05             # default: 0.05
+  repeat_penalty: 1.0     # default: 1.0
+  repeat_last_n: 64       # default: 64
 
 # ── Chat ───────────────────────────────────────────────────────────────────
 
@@ -522,10 +695,11 @@ llamaconfig inspect gemma-4-e2b --profile nvidia
 
 | Variable | Description |
 |----------|-------------|
-| `LLAMACONFIG_CONFIG_DIR` | Override config directory (default: `~/.llamaconfig`) |
-| `HF_TOKEN` | HuggingFace token for private repos |
+| `LLAMACONFIG_CONFIG_DIR` | Override the base directory (default: `~/.llamaconfig`) |
+| `HUGGINGFACE_TOKEN` | HuggingFace token for private repos (checked first) |
+| `HF_TOKEN` | HuggingFace token, used when `HUGGINGFACE_TOKEN` is unset |
 | `EDITOR` | Editor for `llamaconfig config edit` |
-| `VISUAL` | Fallback editor if `$EDITOR` is not set |
+| `VISUAL` | Fallback editor when `$EDITOR` is not set |
 
 ---
 

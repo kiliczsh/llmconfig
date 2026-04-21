@@ -1,8 +1,8 @@
 # llamaconfig
 
-Manage local LLM inference with llama.cpp.
+Manage local inference with llama.cpp, stable-diffusion.cpp, and whisper.cpp.
 
-Define your model once in a YAML config file. llamaconfig handles downloading, starting, stopping, and monitoring — across any hardware.
+Define your model once in a YAML config file. llamaconfig handles downloading, starting, stopping, and monitoring — across any hardware and across all three backends.
 
 ```
 llamaconfig up gemma-4-e2b
@@ -26,8 +26,8 @@ go build -o llamaconfig .
 ## Quick Start
 
 ```bash
-# 1. Install llama.cpp binary
-llamaconfig llama --install
+# 1. Install the llama.cpp binary
+llamaconfig install llama
 
 # 2. Create a config (interactive wizard)
 llamaconfig init --template gemma
@@ -44,6 +44,11 @@ curl http://127.0.0.1:8080/v1/chat/completions \
 llamaconfig down
 ```
 
+For image generation (stable-diffusion.cpp) or speech recognition
+(whisper.cpp), swap the install step for `install sd` or `install whisper`
+and choose a matching template in `init`. See [DOCS.md](DOCS.md#backends)
+for details.
+
 ## Commands
 
 Commands marked with `*` show an interactive selector when no name is given and multiple models exist.
@@ -54,23 +59,34 @@ Commands marked with `*` show an interactive selector when no name is given and 
 | `down [name]` `*` | Stop a running model |
 | `ps` | List running models |
 | `logs [name]` `*` | Show model logs |
-| `stats` | Resource usage |
+| `stats [name]` `*` | Resource usage (supports `--watch`) |
 | `status [name]` `*` | Detailed model info |
 | `restart [name]` `*` | Stop and start |
-| `pull <repo>` | Download from HuggingFace |
-| `init` | Create config interactively |
-| `models` | List all models |
-| `inspect [name]` `*` | Show llama.cpp command |
-| `validate [name]` `*` | Validate config |
+| `pull <repo>` | Download from HuggingFace and create a config |
+| `init [name]` | Create config interactively |
+| `add <name>` | Add a config non-interactively via flags |
+| `rm <name>` | Remove a config (and optionally its cache) |
+| `models` | List all configured models |
+| `inspect [name]` `*` | Show the backend command that would be executed |
+| `validate [name]` `*` | Validate a config |
+| `bench <name>` | Benchmark inference throughput |
+| `compat` | Show which configs fit on detected hardware |
 | `hardware` | Show detected hardware |
 | `config list` | List all configs |
-| `config edit <name>` | Edit config in $EDITOR |
-| `cache ls` | List cached files |
-| `llama --install` | Install llama.cpp binary |
+| `config show <name>` | Print a config with defaults applied |
+| `config edit <name>` | Edit a config in `$EDITOR` |
+| `config path <name>` | Print the resolved config file path |
+| `cache ls` \| `cache rm` \| `cache clean` | Manage the downloaded-model cache |
+| `install llama` \| `install sd` \| `install whisper` | Install a backend binary |
+| `llama` \| `sd` \| `whisper` | Show backend status (supports `--version`, `--path`) |
+| `version` | Show the llamaconfig CLI version |
 
 ## Config File
 
-Configs live in `~/.llamaconfig/configs/<name>.yaml`.
+Configs live in the llamaconfig directory under your home folder
+(`$HOME/.llamaconfig/configs/<name>.yaml` on macOS/Linux,
+`%USERPROFILE%\.llamaconfig\configs\<name>.yaml` on Windows). Set
+`LLAMACONFIG_CONFIG_DIR` to override.
 
 ```yaml
 version: 1
@@ -111,7 +127,7 @@ context:
   mmap: true
 
 sampling:
-  temperature: 0.7
+  temperature: 0.8
   top_p: 0.95
   top_k: 40
 ```
@@ -121,7 +137,9 @@ Hardware profile is selected automatically at runtime. See [DOCS.md](DOCS.md) fo
 ## Requirements
 
 - Go 1.21+
-- llama.cpp binary (`llamaconfig llama --install` handles this)
+- A backend binary — `llamaconfig install llama` (or `install sd` /
+  `install whisper`) downloads and installs the right build for your
+  hardware.
 
 ## License
 

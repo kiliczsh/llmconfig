@@ -1,7 +1,12 @@
 # llamaconfig — Full Reference Config
 # Every supported field is listed with its default value and a description.
-# Copy this file to ~/.llamaconfig/configs/<name>.yaml and remove what you don't need.
+# Copy this file into your llamaconfig configs directory as <name>.yaml and
+# remove what you don't need. Paths are shown as ~/.llamaconfig/... for
+# brevity; on Windows that resolves to %USERPROFILE%\.llamaconfig\...
+# Set LLAMACONFIG_CONFIG_DIR to override the base directory.
+#
 # Minimal required fields: version, name, model.source, model.repo + model.file (or model.path / model.url)
+# Backend-specific fields (whisper:, sd:) only apply when backend is set accordingly.
 
 # ── Identity ──────────────────────────────────────────────────────────────────
 
@@ -9,6 +14,13 @@ version: 1                        # config schema version, always 1
 name: my-model                    # unique name used in all CLI commands
 description: ""                   # optional human-readable description
 tags: []                          # optional labels, e.g. [instruct, 7b, gguf]
+
+# ── Backend ───────────────────────────────────────────────────────────────────
+# Which inference engine to run for this model.
+#   llama   → text generation (llama.cpp) — default
+#   sd      → image generation (stable-diffusion.cpp)
+#   whisper → speech recognition (whisper.cpp)
+backend: llama
 
 meta:
   author: ""                      # optional author name
@@ -48,7 +60,7 @@ model:
   download:
     resume: true                  # resume interrupted downloads (default: true)
     connections: 4                # parallel download connections (default: 4)
-    verify_checksum: false        # verify checksum after download (default: false)
+    verify_checksum: true         # verify checksum after download (default: true; set to false to skip)
     cache_dir: ""                 # override cache directory (default: ~/.llamaconfig/cache)
 
   # --- Speculative decoding (optional) ---
@@ -78,12 +90,14 @@ server:
   write_timeout: 600s             # HTTP write timeout (default: 600s)
 
   endpoints:
-    health: true                  # GET /health (default: true)
-    completions: true             # POST /v1/completions (default: true)
-    chat: true                    # POST /v1/chat/completions (default: true)
-    embeddings: false             # POST /v1/embeddings (default: false)
-    metrics: false                # GET /metrics (Prometheus, default: false)
-    slots: true                   # GET /slots (default: true)
+    metrics: false                # pass --metrics to llama-server (default: false)
+    slots: true                   # when false, pass --no-slots (default: true)
+    embeddings: false             # pass --embedding to llama-server (default: false)
+    # The following flags are reserved for future use; they are parsed but not
+    # yet wired through to the server:
+    # health: true
+    # completions: true
+    # chat: true
 
 # ── Hardware Profiles ─────────────────────────────────────────────────────────
 # llamaconfig auto-selects the matching profile at runtime based on detected hardware.
@@ -208,3 +222,27 @@ logging:
   level: info                     # log level: debug | info | warn | error (default: info)
   file: ""                        # log file path (default: ~/.llamaconfig/logs/<name>.log)
   colors: auto                    # color output: auto | always | never (default: auto)
+
+# ── Backend: whisper ──────────────────────────────────────────────────────────
+# Only applies when backend: whisper. Remove this block for other backends.
+
+# whisper:
+#   language: auto                 # auto | en | tr | de | ... (default: auto)
+#   task: transcribe               # transcribe | translate (default: transcribe)
+#   beam_size: 5                   # beam search width (default: 5)
+#   best_of: 5                     # candidates considered (default: 5)
+#   vad: true                      # voice activity detection (default: false)
+#   vad_threshold: 0.5             # VAD activation threshold (default: 0.5)
+#   word_timestamps: false         # emit per-word timestamps (default: false)
+#   processors: 1                  # parallel decode threads (default: 1)
+
+# ── Backend: sd ───────────────────────────────────────────────────────────────
+# Only applies when backend: sd. Remove this block for other backends.
+
+# sd:
+#   width: 512                     # output width in pixels (default: 512)
+#   height: 512                    # output height in pixels (default: 512)
+#   steps: 20                      # diffusion steps (default: 20)
+#   cfg_scale: 7.0                 # classifier-free guidance scale (default: 7.0)
+#   sampling_method: euler_a       # euler_a | euler | dpm++2m | lcm | ... (default: euler_a)
+#   seed: -1                       # -1 = random (default: -1)
