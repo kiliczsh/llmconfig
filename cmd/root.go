@@ -122,6 +122,7 @@ func init() {
 		newInspectCmd(),
 		newHardwareCmd(),
 		newLlamaCmd(),
+		newSdCmd(),
 		newCacheCmd(),
 		newVersionCmd(),
 		newBenchCmd(),
