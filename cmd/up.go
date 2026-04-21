@@ -21,12 +21,19 @@ func newUpCmd() *cobra.Command {
 	var flagDetach bool
 
 	cmd := &cobra.Command{
-		Use:   "up <name>",
+		Use:   "up [name]",
 		Short: "Start a model from its config file",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
 			appCtx := appCtxFrom(cmd.Context())
+			var nameArg string
+			if len(args) > 0 {
+				nameArg = args[0]
+			}
+			name, err := pickConfig(nameArg, appCtx.ConfigDir)
+			if err != nil {
+				return err
+			}
 			p := appCtx.Printer
 
 			// Load and validate config
