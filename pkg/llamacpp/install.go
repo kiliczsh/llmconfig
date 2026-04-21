@@ -1,7 +1,9 @@
 package llamacpp
 
 import (
+	"archive/tar"
 	"archive/zip"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -114,7 +116,7 @@ func Install(asset *GithubAsset, onProgress func(downloaded, total int64)) error
 	}
 
 	// Download to temp file
-	tmpFile, err := os.CreateTemp("", "llama-*.zip")
+	tmpFile, err := os.CreateTemp("", "llama-*")
 	if err != nil {
 		return fmt.Errorf("install: temp file: %w", err)
 	}
@@ -154,6 +156,9 @@ func Install(asset *GithubAsset, onProgress func(downloaded, total int64)) error
 	if strings.HasSuffix(asset.Name, ".zip") {
 		return extractZip(tmpFile.Name(), BinDir())
 	}
+	if strings.HasSuffix(asset.Name, ".tar.gz") {
+		return extractTarGz(tmpFile.Name(), BinDir())
+	}
 	return fmt.Errorf("install: unsupported archive format: %s", asset.Name)
 }
 
@@ -184,6 +189,61 @@ func extractZip(zipPath, destDir string) error {
 	return nil
 }
 
+func extractTarGz(tarPath, destDir string) error {
+	f, err := os.Open(tarPath)
+	if err != nil {
+		return fmt.Errorf("extract: open tar.gz: %w", err)
+	}
+	defer f.Close()
+
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		return fmt.Errorf("extract: gzip reader: %w", err)
+	}
+	defer gz.Close()
+
+	tr := tar.NewReader(gz)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("extract: read tar: %w", err)
+		}
+		name := filepath.Base(hdr.Name)
+		destPath := filepath.Join(destDir, name)
+
+		switch hdr.Typeflag {
+		case tar.TypeSymlink:
+			if !isUsefulFile(name) {
+				continue
+			}
+			_ = os.Remove(destPath)
+			if err := os.Symlink(filepath.Base(hdr.Linkname), destPath); err != nil {
+				return fmt.Errorf("extract: symlink %s: %w", name, err)
+			}
+		case tar.TypeReg:
+			if !isUsefulFile(name) {
+				continue
+			}
+			out, err := os.Create(destPath)
+			if err != nil {
+				return fmt.Errorf("extract: create %s: %w", name, err)
+			}
+			if _, err := io.Copy(out, tr); err != nil {
+				out.Close()
+				return fmt.Errorf("extract: write %s: %w", name, err)
+			}
+			out.Close()
+			if runtime.GOOS != "windows" {
+				_ = os.Chmod(destPath, 0755)
+			}
+		}
+	}
+	return nil
+}
+
 func isUsefulFile(name string) bool {
 	lower := strings.ToLower(name)
 	useful := []string{"llama-server", "llama-cli", "llama-server.exe", "llama-cli.exe"}
@@ -193,7 +253,7 @@ func isUsefulFile(name string) bool {
 		}
 	}
 	// Include DLLs and .so files for backends
-	return strings.HasSuffix(lower, ".dll") || strings.HasSuffix(lower, ".so")
+	return strings.HasSuffix(lower, ".dll") || strings.HasSuffix(lower, ".so") || strings.HasSuffix(lower, ".dylib")
 }
 
 func extractZipFile(f *zip.File, dest string) error {

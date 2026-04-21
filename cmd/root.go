@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/kiliczsh/llamaconfig/internal/dirs"
 	"github.com/kiliczsh/llamaconfig/internal/output"
 	"github.com/kiliczsh/llamaconfig/internal/state"
+	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
 	"github.com/spf13/cobra"
 )
 
@@ -128,11 +128,8 @@ func init() {
 }
 
 func findLlamaBinary() string {
-	candidates := []string{"llama-server", "llama-server.exe"}
-	for _, name := range candidates {
-		if path, err := exec.LookPath(name); err == nil {
-			return path
-		}
+	if path, err := llamacpp.FindServer(); err == nil {
+		return path
 	}
 	return "llama-server"
 }
