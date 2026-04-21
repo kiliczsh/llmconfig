@@ -6,6 +6,7 @@ type Config struct {
 	Description      string           `yaml:"description"`
 	Tags             []string         `yaml:"tags"`
 	Meta             Meta             `yaml:"meta"`
+	Backend          string           `yaml:"backend"` // "llama" | "sd" | "whisper" (default: "llama")
 	Model            ModelSpec        `yaml:"model"`
 	Mode             string           `yaml:"mode"`
 	Server           ServerSpec       `yaml:"server"`
@@ -16,6 +17,8 @@ type Config struct {
 	Rope             RopeSpec         `yaml:"rope"`
 	Resources        ResourceSpec     `yaml:"resources"`
 	Logging          LoggingSpec      `yaml:"logging"`
+	Whisper          WhisperSpec      `yaml:"whisper,omitempty"`
+	SD               SDSpec           `yaml:"sd,omitempty"`
 
 	// internal: resolved file path
 	FilePath string `yaml:"-"`
@@ -177,4 +180,25 @@ type RunConfig struct {
 	ProfileName    string
 	LogFile        string
 	BinaryPath     string
+	Backend        string // "llama" | "sd" | "whisper"
+}
+
+type WhisperSpec struct {
+	Language       string  `yaml:"language"`        // "auto" | "en" | "tr" | ...
+	Task           string  `yaml:"task"`             // "transcribe" | "translate"
+	BeamSize       int     `yaml:"beam_size"`
+	BestOf         int     `yaml:"best_of"`
+	VAD            bool    `yaml:"vad"`
+	VADThreshold   float64 `yaml:"vad_threshold"`
+	WordTimestamps bool    `yaml:"word_timestamps"`
+	Processors     int     `yaml:"processors"`
+}
+
+type SDSpec struct {
+	Width          int     `yaml:"width"`
+	Height         int     `yaml:"height"`
+	Steps          int     `yaml:"steps"`
+	CFGScale       float64 `yaml:"cfg_scale"`
+	SamplingMethod string  `yaml:"sampling_method"` // "euler_a" | "euler" | "dpm++2m" | ...
+	Seed           int64   `yaml:"seed"`
 }

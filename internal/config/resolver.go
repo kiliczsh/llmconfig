@@ -33,6 +33,7 @@ func Resolve(cfg *Config, hw *hardware.DetectionResult, binaryPath string) (*Run
 		ProfileName: profileName,
 		LogFile:     logFile,
 		BinaryPath:  binaryPath,
+		Backend:     cfg.Backend,
 	}
 
 	if cfg.Model.Draft != nil {

@@ -65,7 +65,7 @@ func newBenchCmd() *cobra.Command {
 				}
 			}
 
-			cliBin := runner.DeriveCLIBinary(appCtx.LlamaBin)
+			cliBin := runner.DeriveCLIBinary(appCtx.LlamaBin, "llama")
 			baseArgs := buildBenchArgs(rc, flagTokens)
 
 			p.Info("benchmarking %s (%d runs)...", name, flagRuns)

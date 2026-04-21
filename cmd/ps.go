@@ -77,11 +77,16 @@ func newPsCmd() *cobra.Command {
 }
 
 func renderPsTable(p *output.Printer, models []*state.ModelState) error {
-	headers := []string{"NAME", "STATUS", "PORT", "PROFILE", "UPTIME", "PID"}
+	headers := []string{"NAME", "BACKEND", "STATUS", "PORT", "PROFILE", "UPTIME", "PID"}
 	rows := make([][]string, len(models))
 	for i, ms := range models {
+		backend := ms.Backend
+		if backend == "" {
+			backend = "llama"
+		}
 		rows[i] = []string{
 			ms.Name,
+			backend,
 			output.StatusColor(ms.Status),
 			fmt.Sprintf("%d", ms.Port),
 			ms.ProfileName,

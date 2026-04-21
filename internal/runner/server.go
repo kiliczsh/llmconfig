@@ -34,7 +34,7 @@ func (r *serverRunner) Start(ctx context.Context, rc *config.RunConfig) (*state.
 
 	if err := cmd.Start(); err != nil {
 		logFile.Close()
-		return nil, fmt.Errorf("runner: start llama-server: %w", err)
+		return nil, fmt.Errorf("runner: start %s: %w", filepath.Base(rc.BinaryPath), err)
 	}
 
 	pid := cmd.Process.Pid
@@ -53,6 +53,7 @@ func (r *serverRunner) Start(ctx context.Context, rc *config.RunConfig) (*state.
 		ProfileName: rc.ProfileName,
 		Status:      "running",
 		BinaryPath:  rc.BinaryPath,
+		Backend:     rc.Backend,
 	}
 
 	return ms, nil

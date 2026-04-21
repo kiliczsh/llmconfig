@@ -21,8 +21,7 @@ func NewInteractive() Runner {
 func (r *interactiveRunner) Start(ctx context.Context, rc *config.RunConfig) (*state.ModelState, error) {
 	args := buildInteractiveArgs(rc)
 
-	// Derive llama-cli binary path from llama-server path
-	binaryPath := deriveCLIBinary(rc.BinaryPath)
+	binaryPath := deriveCLIBinary(rc.BinaryPath, rc.Backend)
 
 	cmd := exec.CommandContext(ctx, binaryPath, args...)
 	cmd.Stdin = os.Stdin
@@ -136,26 +135,39 @@ func joinArgs(parts []string) string {
 }
 
 // DeriveCLIBinary is the exported version for use in cmd/.
-func DeriveCLIBinary(serverBin string) string {
-	return deriveCLIBinary(serverBin)
+func DeriveCLIBinary(serverBin, backend string) string {
+	return deriveCLIBinary(serverBin, backend)
 }
 
-// deriveCLIBinary replaces "llama-server" with "llama-cli" in the binary path.
-func deriveCLIBinary(serverBin string) string {
-	if serverBin == "" || serverBin == "llama-server" {
-		if path, err := exec.LookPath("llama-cli"); err == nil {
+// deriveCLIBinary replaces the server binary name with the CLI binary name.
+func deriveCLIBinary(serverBin, backend string) string {
+	var serverName, cliName string
+	switch backend {
+	case "whisper":
+		serverName = "whisper-server"
+		cliName = "whisper-cli"
+	case "sd":
+		serverName = "sd-server"
+		cliName = "sd-cli"
+	default:
+		serverName = "llama-server"
+		cliName = "llama-cli"
+	}
+
+	if serverBin == "" || serverBin == serverName {
+		if path, err := exec.LookPath(cliName); err == nil {
 			return path
 		}
-		return "llama-cli"
+		return cliName
 	}
 	// Replace last segment
 	for i := len(serverBin) - 1; i >= 0; i-- {
 		if serverBin[i] == '/' || serverBin[i] == '\\' {
 			dir := serverBin[:i+1]
 			name := serverBin[i+1:]
-			if name == "llama-server" || name == "llama-server.exe" {
-				cli := dir + "llama-cli"
-				if name == "llama-server.exe" {
+			if name == serverName || name == serverName+".exe" {
+				cli := dir + cliName
+				if name == serverName+".exe" {
 					cli += ".exe"
 				}
 				return cli
@@ -163,8 +175,8 @@ func deriveCLIBinary(serverBin string) string {
 			break
 		}
 	}
-	if path, err := exec.LookPath("llama-cli"); err == nil {
+	if path, err := exec.LookPath(cliName); err == nil {
 		return path
 	}
-	return "llama-cli"
+	return cliName
 }

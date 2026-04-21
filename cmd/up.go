@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/kiliczsh/llamaconfig/internal/config"
 	"github.com/kiliczsh/llamaconfig/internal/dirs"
 	"github.com/kiliczsh/llamaconfig/internal/downloader"
 	"github.com/kiliczsh/llamaconfig/internal/hardware"
 	"github.com/kiliczsh/llamaconfig/internal/runner"
+	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
+	"github.com/kiliczsh/llamaconfig/pkg/stablediffusioncpp"
+	"github.com/kiliczsh/llamaconfig/pkg/whispercpp"
 	"github.com/spf13/cobra"
 )
 
@@ -72,7 +76,11 @@ func newUpCmd() *cobra.Command {
 				hw = hardware.Detect()
 			}
 
-			binaryPath := appCtx.LlamaBin
+			// Select binary based on backend
+			binaryPath, err := resolveBackendBinary(cfg.Backend)
+			if err != nil {
+				return err
+			}
 
 			// Resolve config → RunConfig
 			rc, err := config.Resolve(cfg, hw, binaryPath)
@@ -83,7 +91,7 @@ func newUpCmd() *cobra.Command {
 			// Dry run: print command and exit (no binary or model needed)
 			if flagDryRun {
 				if cfg.Mode == "interactive" {
-					cliBin := runner.DeriveCLIBinary(binaryPath)
+					cliBin := runner.DeriveCLIBinary(binaryPath, cfg.Backend)
 					fmt.Println(runner.FormatInteractiveArgs(cliBin, rc))
 				} else {
 					fmt.Println(runner.FormatArgs(binaryPath, rc))
@@ -91,9 +99,10 @@ func newUpCmd() *cobra.Command {
 				return nil
 			}
 
-			// Check llama binary exists before trying to start
+			// Check binary exists before trying to start
 			if _, err := os.Stat(binaryPath); err != nil {
-				return fmt.Errorf("llama-server binary not found at %q — run: llamaconfig llama --install", binaryPath)
+				return fmt.Errorf("%s not found at %q — run: llamaconfig install %s",
+					filepath.Base(binaryPath), binaryPath, cfg.Backend)
 			}
 
 			// Download model if needed
@@ -147,6 +156,17 @@ func newUpCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&flagNoDownload, "no-download", false, "fail if model is not cached")
 	cmd.Flags().BoolVarP(&flagDetach, "detach", "d", true, "run in background (default true)")
 	return cmd
+}
+
+func resolveBackendBinary(backend string) (string, error) {
+	switch backend {
+	case "sd":
+		return stablediffusioncpp.FindBinary()
+	case "whisper":
+		return whispercpp.FindBinary()
+	default:
+		return llamacpp.FindServer()
+	}
 }
 
 func profileOverride(name string) *hardware.DetectionResult {

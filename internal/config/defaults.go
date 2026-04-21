@@ -1,8 +1,55 @@
 package config
 
 func ApplyDefaults(cfg *Config) {
+	if cfg.Backend == "" {
+		cfg.Backend = "llama"
+	}
+
 	if cfg.Mode == "" {
 		cfg.Mode = "server"
+	}
+
+	// Backend-specific defaults
+	if cfg.Backend == "whisper" {
+		if cfg.Whisper.Language == "" {
+			cfg.Whisper.Language = "auto"
+		}
+		if cfg.Whisper.Task == "" {
+			cfg.Whisper.Task = "transcribe"
+		}
+		if cfg.Whisper.BeamSize == 0 {
+			cfg.Whisper.BeamSize = 5
+		}
+		if cfg.Whisper.BestOf == 0 {
+			cfg.Whisper.BestOf = 5
+		}
+		if cfg.Whisper.VADThreshold == 0 {
+			cfg.Whisper.VADThreshold = 0.5
+		}
+		if cfg.Whisper.Processors == 0 {
+			cfg.Whisper.Processors = 1
+		}
+	}
+
+	if cfg.Backend == "sd" {
+		if cfg.SD.Width == 0 {
+			cfg.SD.Width = 512
+		}
+		if cfg.SD.Height == 0 {
+			cfg.SD.Height = 512
+		}
+		if cfg.SD.Steps == 0 {
+			cfg.SD.Steps = 20
+		}
+		if cfg.SD.CFGScale == 0 {
+			cfg.SD.CFGScale = 7.0
+		}
+		if cfg.SD.SamplingMethod == "" {
+			cfg.SD.SamplingMethod = "euler_a"
+		}
+		if cfg.SD.Seed == 0 {
+			cfg.SD.Seed = -1
+		}
 	}
 
 	// Server defaults

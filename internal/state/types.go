@@ -13,6 +13,7 @@ type ModelState struct {
 	ProfileName string    `json:"profile_name"`
 	Status      string    `json:"status"` // "running" | "stopped" | "error"
 	BinaryPath  string    `json:"binary_path"`
+	Backend     string    `json:"backend"` // "llama" | "sd" | "whisper"
 }
 
 type StateFile struct {

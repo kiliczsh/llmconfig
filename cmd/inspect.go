@@ -49,7 +49,7 @@ func newInspectCmd() *cobra.Command {
 			}
 
 			if cfg.Mode == "interactive" {
-				cliBin := runner.DeriveCLIBinary(appCtx.LlamaBin)
+				cliBin := runner.DeriveCLIBinary(appCtx.LlamaBin, cfg.Backend)
 				fmt.Println(runner.FormatInteractiveArgs(cliBin, rc))
 			} else {
 				fmt.Println(runner.FormatArgs(appCtx.LlamaBin, rc))

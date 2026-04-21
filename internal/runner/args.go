@@ -8,9 +8,20 @@ import (
 	"github.com/kiliczsh/llamaconfig/internal/config"
 )
 
-// BuildArgs converts a RunConfig into the argv slice for llama-server.
+// BuildArgs converts a RunConfig into the argv slice for the appropriate backend binary.
 // This is a pure function — both --dry-run and inspect use it.
 func BuildArgs(rc *config.RunConfig) []string {
+	switch rc.Backend {
+	case "whisper":
+		return buildWhisperArgs(rc)
+	case "sd":
+		return buildSDArgs(rc)
+	default:
+		return buildLlamaArgs(rc)
+	}
+}
+
+func buildLlamaArgs(rc *config.RunConfig) []string {
 	cfg := rc.Config
 	p := rc.Profile
 	var args []string

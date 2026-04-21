@@ -40,8 +40,23 @@ func Validate(cfg *Config) error {
 		errs = append(errs, fmt.Sprintf("model.source %q is invalid (huggingface | local | url)", cfg.Model.Source))
 	}
 
-	if cfg.Mode != "" && cfg.Mode != "server" && cfg.Mode != "interactive" {
-		errs = append(errs, fmt.Sprintf("mode %q is invalid (server | interactive)", cfg.Mode))
+	switch cfg.Backend {
+	case "", "llama", "sd", "whisper":
+		// valid
+	default:
+		errs = append(errs, fmt.Sprintf("backend %q is invalid (llama | sd | whisper)", cfg.Backend))
+	}
+
+	validModes := map[string]bool{"": true, "server": true, "interactive": true}
+	if cfg.Backend == "whisper" {
+		validModes["stream"] = true
+	}
+	if !validModes[cfg.Mode] {
+		if cfg.Backend == "whisper" {
+			errs = append(errs, fmt.Sprintf("mode %q is invalid for whisper backend (server | interactive | stream)", cfg.Mode))
+		} else {
+			errs = append(errs, fmt.Sprintf("mode %q is invalid (server | interactive)", cfg.Mode))
+		}
 	}
 
 	if cfg.Server.Port < 0 || cfg.Server.Port > 65535 {
