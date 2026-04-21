@@ -37,12 +37,14 @@ function step {
 # --- banner ---
 Write-Host ""
 Write-Host @"
-  ██╗      ██╗      █████╗ ███╗   ███╗ █████╗  ██████╗ ██████╗ ███╗  ██╗███████╗██╗ ██████╗
-  ██║      ██║     ██╔══██╗████╗ ████║██╔══██╗██╔════╝██╔═══██╗████╗ ██║██╔════╝██║██╔════╝
-  ██║      ██║     ███████║██╔████╔██║███████║██║     ██║   ██║██╔██╗██║█████╗  ██║██║  ███╗
-  ██║      ██║     ██╔══██║██║╚██╔╝██║██╔══██║██║     ██║   ██║██║╚████║██╔══╝  ██║██║   ██║
-  ███████╗ ███████╗██║  ██║██║ ╚═╝ ██║██║  ██║╚██████╗╚██████╔╝██║ ╚███║██║     ██║╚██████╔╝
-  ╚══════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚══╝╚═╝     ╚═╝ ╚═════╝
+  _     _                                       __ _
+ | |   | |                                     / _(_)
+ | |   | | __ _ _ __ ___   __ _  ___ ___  _ _ | |_ _  __ _
+ | |   | |/ _' | '_ ' _ \ / _' |/ __/ _ \| '_ \|  _| |/ _' |
+ | |___| | (_| | | | | | | (_| | (_| (_) | | | | | | | (_| |
+ |_____|_|\__,_|_| |_| |_|\__,_|\___\___/|_| |_|_| |_|\__, |
+                                                         __/ |
+                                                        |___/
 "@ -ForegroundColor Cyan
 Write-Host "  Manage local LLM inference with llama.cpp`n"
 
@@ -134,7 +136,7 @@ ok "Installed to $dest"
 # lc.cmd alias (Windows has no ln -s for exes without admin; .cmd wrapper works everywhere)
 $lcCmd = "$Prefix\lc.cmd"
 Set-Content -Path $lcCmd -Value "@echo off`r`n`"$dest`" %*" -Encoding ASCII
-ok "Alias: lc → llamaconfig  ($lcCmd)"
+ok "Alias: lc -> llamaconfig  ($lcCmd)"
 
 # PATH
 $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
