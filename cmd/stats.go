@@ -166,7 +166,7 @@ func (m statsWatchModel) View() string {
 		Render("stats  (q to quit)")
 
 	if m.err != nil {
-		return header + "\n" + output.ErrorMsg(m.err.Error())
+		return header + "\n" + output.ErrorMsg("%s", m.err.Error())
 	}
 
 	if len(m.rows) == 0 {
