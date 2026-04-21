@@ -245,8 +245,8 @@ step_ok "Hardware profile: ${HW:-detected}"
 # --- [6] Install llama.cpp ---
 if [[ "$NO_LLAMA" == false ]]; then
   step "Installing llama.cpp"
-  LLAMA_BIN="$HOME/.llamaconfig/bin/llama-server"
-  if [[ -f "$LLAMA_BIN" && "$UPDATE" == false ]]; then
+  LLAMA_BIN="$("$PREFIX/$BINARY_NAME" llama --path 2>/dev/null || true)"
+  if [[ -n "$LLAMA_BIN" && -f "$LLAMA_BIN" && "$UPDATE" == false ]]; then
     LLAMA_VERSION="$("$PREFIX/$BINARY_NAME" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
     step_ok "llama.cpp already installed: ${LLAMA_VERSION} (use --update to reinstall)"
   else

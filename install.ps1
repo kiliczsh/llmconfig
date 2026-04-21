@@ -160,8 +160,8 @@ ok "Hardware profile: $(if ($hw) { $hw } else { 'detected' })"
 # ============================================================
 if (-not $NoLlama) {
     step 6 $TotalSteps "Installing llama.cpp"
-    $llamaServer = "$env:USERPROFILE\.llamaconfig\bin\llama-server.exe"
-    if ((Test-Path $llamaServer) -and -not $Update) {
+    $llamaPath = & $dest llama --path 2>$null
+    if ($llamaPath -and (Test-Path $llamaPath) -and -not $Update) {
         $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
         ok "llama.cpp already installed: $(if ($llamaVer) { $llamaVer } else { 'unknown version' }) (use -Update to reinstall)"
     } else {
