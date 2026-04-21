@@ -93,11 +93,13 @@ New-Item -ItemType Directory -Force -Path (Split-Path $SrcDir) | Out-Null
 
 if (Test-Path "$SrcDir\.git") {
     info "Updating repository..."
-    git -C $SrcDir pull --ff-only 2>&1 | Out-Null
+    git -C $SrcDir pull --ff-only --quiet
+    if ($LASTEXITCODE -ne 0) { die "git pull failed" }
     ok "Repository updated"
 } else {
     info "Cloning repository..."
-    git clone --depth=1 $Repo $SrcDir 2>&1 | Out-Null
+    git clone --depth=1 --quiet $Repo $SrcDir
+    if ($LASTEXITCODE -ne 0) { die "git clone failed" }
     ok "Repository cloned to $SrcDir"
 }
 
@@ -109,7 +111,7 @@ step 3 $TotalSteps "Building llamaconfig"
 info "Compiling..."
 Push-Location $SrcDir
 try {
-    go build -o "$BinaryName.exe" . 2>&1 | Out-Null
+    go build -o "$BinaryName.exe" .
     if ($LASTEXITCODE -ne 0) { die "Build failed" }
 } finally {
     Pop-Location
@@ -159,7 +161,7 @@ ok "Hardware profile: $(if ($hw) { $hw } else { 'detected' })"
 if (-not $NoLlama) {
     step 6 $TotalSteps "Installing llama.cpp"
     info "Downloading llama.cpp binary..."
-    & $dest llama --install 2>&1 | Where-Object { $_ -match "^(->|./)" }
+    & $dest llama --install
     $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
     ok "llama.cpp: $(if ($llamaVer) { $llamaVer } else { 'installed' })"
 }
