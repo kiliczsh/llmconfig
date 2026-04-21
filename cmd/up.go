@@ -139,7 +139,7 @@ func newUpCmd() *cobra.Command {
 			}
 
 			p.Info("waiting for %s to become ready...", name)
-			if err := runner.WaitHealthy(cmd.Context(), cfg.Server.Host, cfg.Server.Port); err != nil {
+			if err := runner.WaitHealthy(cmd.Context(), cfg.Server.Host, cfg.Server.Port, cfg.Backend); err != nil {
 				ms.Status = "error"
 				_ = appCtx.StateStore.Put(ms)
 				return fmt.Errorf("%s failed to start: %w", name, err)
@@ -161,9 +161,9 @@ func newUpCmd() *cobra.Command {
 func resolveBackendBinary(backend string) (string, error) {
 	switch backend {
 	case "sd":
-		return stablediffusioncpp.FindBinary()
+		return stablediffusioncpp.FindServer()
 	case "whisper":
-		return whispercpp.FindBinary()
+		return whispercpp.FindServer()
 	default:
 		return llamacpp.FindServer()
 	}
@@ -192,7 +192,7 @@ func downloadModel(ctx context.Context, cfg *config.Config, rc *config.RunConfig
 	p.Info("model not cached — downloading %s...", cfg.Model.File)
 
 	token := resolveToken("")
-	cacheDir := cfg.Model.Download.CacheDir
+	cacheDir := dirs.ExpandHome(cfg.Model.Download.CacheDir)
 	if cacheDir == "" {
 		cacheDir = dirs.CacheDir()
 	}

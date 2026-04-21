@@ -16,6 +16,27 @@ func BinDir() string {
 	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin", "whisper")
 }
 
+// FindServer returns the path to the whisper-server binary, preferring the managed bin dir.
+func FindServer() (string, error) {
+	candidates := []string{"whisper-server", "whisper-cli"}
+	if runtime.GOOS == "windows" {
+		candidates = []string{"whisper-server.exe", "whisper-cli.exe"}
+	}
+
+	for _, name := range candidates {
+		p := filepath.Join(BinDir(), name)
+		if _, err := os.Stat(p); err == nil {
+			return p, nil
+		}
+	}
+	for _, name := range candidates {
+		if path, err := exec.LookPath(name); err == nil {
+			return path, nil
+		}
+	}
+	return "", fmt.Errorf("whisper-server not found — run: llamaconfig install whisper")
+}
+
 // FindBinary returns the path to the whisper-cli binary, preferring the managed bin dir.
 func FindBinary() (string, error) {
 	candidates := []string{"whisper-cli", "whisper-server"}

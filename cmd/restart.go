@@ -87,7 +87,7 @@ func newRestartCmd() *cobra.Command {
 
 				_ = appCtx.StateStore.Put(newMS)
 
-				if err := runner.WaitHealthy(cmd.Context(), cfg.Server.Host, cfg.Server.Port); err != nil {
+				if err := runner.WaitHealthy(cmd.Context(), cfg.Server.Host, cfg.Server.Port, cfg.Backend); err != nil {
 					p.Error("%s health check failed: %v", name, err)
 					continue
 				}

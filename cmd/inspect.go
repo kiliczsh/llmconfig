@@ -43,16 +43,21 @@ func newInspectCmd() *cobra.Command {
 				hw = hardware.Detect()
 			}
 
-			rc, err := config.Resolve(cfg, hw, appCtx.LlamaBin)
+			binaryPath, err := resolveBackendBinary(cfg.Backend)
+			if err != nil {
+				return err
+			}
+
+			rc, err := config.Resolve(cfg, hw, binaryPath)
 			if err != nil {
 				return err
 			}
 
 			if cfg.Mode == "interactive" {
-				cliBin := runner.DeriveCLIBinary(appCtx.LlamaBin, cfg.Backend)
+				cliBin := runner.DeriveCLIBinary(binaryPath, cfg.Backend)
 				fmt.Println(runner.FormatInteractiveArgs(cliBin, rc))
 			} else {
-				fmt.Println(runner.FormatArgs(appCtx.LlamaBin, rc))
+				fmt.Println(runner.FormatArgs(binaryPath, rc))
 			}
 			return nil
 		},

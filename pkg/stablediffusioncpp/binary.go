@@ -16,6 +16,27 @@ func BinDir() string {
 	return filepath.Join(dirs.ExpandHome("~/.llamaconfig"), "bin", "sd")
 }
 
+// FindServer returns the path to the sd-server binary, preferring the managed bin dir.
+func FindServer() (string, error) {
+	candidates := []string{"sd-server", "sd-cli", "sd"}
+	if runtime.GOOS == "windows" {
+		candidates = []string{"sd-server.exe", "sd-cli.exe", "sd.exe"}
+	}
+
+	for _, name := range candidates {
+		p := filepath.Join(BinDir(), name)
+		if _, err := os.Stat(p); err == nil {
+			return p, nil
+		}
+	}
+	for _, name := range candidates {
+		if path, err := exec.LookPath(name); err == nil {
+			return path, nil
+		}
+	}
+	return "", fmt.Errorf("sd-server not found — run: llamaconfig install sd")
+}
+
 // FindBinary returns the path to the sd-cli binary, preferring the managed bin dir.
 func FindBinary() (string, error) {
 	candidates := []string{"sd-cli", "sd-server", "sd"}

@@ -15,12 +15,12 @@ func buildSDArgs(rc *config.RunConfig) []string {
 	args = append(args, "--model", rc.ModelPath)
 
 	if cfg.Mode == "server" || cfg.Mode == "" {
-		args = append(args, "--host", cfg.Server.Host)
-		args = append(args, "--port", strconv.Itoa(cfg.Server.Port))
+		args = append(args, "--listen-ip", cfg.Server.Host)
+		args = append(args, "--listen-port", strconv.Itoa(cfg.Server.Port))
 	}
 
 	if p.Threads > 0 {
-		args = append(args, "--threads", strconv.Itoa(p.Threads))
+		args = append(args, "-t", strconv.Itoa(p.Threads))
 	}
 	if cfg.SD.Width > 0 {
 		args = append(args, "-W", strconv.Itoa(cfg.SD.Width))
