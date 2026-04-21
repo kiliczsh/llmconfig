@@ -160,10 +160,16 @@ ok "Hardware profile: $(if ($hw) { $hw } else { 'detected' })"
 # ============================================================
 if (-not $NoLlama) {
     step 6 $TotalSteps "Installing llama.cpp"
-    info "Downloading llama.cpp binary..."
-    & $dest llama --install
-    $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
-    ok "llama.cpp: $(if ($llamaVer) { $llamaVer } else { 'installed' })"
+    $llamaServer = "$env:USERPROFILE\.llamaconfig\bin\llama-server.exe"
+    if ((Test-Path $llamaServer) -and -not $Update) {
+        $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
+        ok "llama.cpp already installed: $(if ($llamaVer) { $llamaVer } else { 'unknown version' }) (use -Update to reinstall)"
+    } else {
+        info "Downloading llama.cpp binary..."
+        & $dest llama --install
+        $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
+        ok "llama.cpp: $(if ($llamaVer) { $llamaVer } else { 'installed' })"
+    }
 }
 
 # ============================================================

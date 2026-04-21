@@ -245,11 +245,17 @@ step_ok "Hardware profile: ${HW:-detected}"
 # --- [6] Install llama.cpp ---
 if [[ "$NO_LLAMA" == false ]]; then
   step "Installing llama.cpp"
-  spinner_start "Downloading llama.cpp binary..."
-  "$PREFIX/$BINARY_NAME" llama --install < /dev/null 2>&1 | grep -E '^(->|./)' || true
-  spinner_stop
-  LLAMA_VERSION="$("$PREFIX/$BINARY_NAME" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
-  step_ok "llama.cpp: $LLAMA_VERSION"
+  LLAMA_BIN="$HOME/.llamaconfig/bin/llama-server"
+  if [[ -f "$LLAMA_BIN" && "$UPDATE" == false ]]; then
+    LLAMA_VERSION="$("$PREFIX/$BINARY_NAME" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
+    step_ok "llama.cpp already installed: ${LLAMA_VERSION} (use --update to reinstall)"
+  else
+    spinner_start "Downloading llama.cpp binary..."
+    "$PREFIX/$BINARY_NAME" llama --install < /dev/null 2>&1 | grep -E '^(->|./)' || true
+    spinner_stop
+    LLAMA_VERSION="$("$PREFIX/$BINARY_NAME" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
+    step_ok "llama.cpp: $LLAMA_VERSION"
+  fi
 fi
 
 # --- done ---
