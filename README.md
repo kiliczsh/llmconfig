@@ -72,6 +72,8 @@ Commands marked with `*` show an interactive selector when no name is given and 
 | `bench <name>` | Benchmark inference throughput |
 | `compat` | Show which configs fit on detected hardware |
 | `hardware` | Show detected hardware |
+| `archive [name...]` `*` | Bundle config + cached model into a `.llamapkg` file (interactive selector with no args) |
+| `import <file.llamapkg>` | Extract a `.llamapkg` bundle back into configs + cache |
 | `config list` | List all configs |
 | `config show <name>` | Print a config with defaults applied |
 | `config edit <name>` | Edit a config in `$EDITOR` |

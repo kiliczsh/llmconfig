@@ -125,6 +125,8 @@ func init() {
 		newVersionCmd(),
 		newBenchCmd(),
 		newCompatCmd(),
+		newArchiveCmd(),
+		newImportCmd(),
 	)
 }
 
