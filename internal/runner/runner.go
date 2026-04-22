@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"time"
 
 	"github.com/kiliczsh/llamaconfig/internal/config"
 	"github.com/kiliczsh/llamaconfig/internal/state"
@@ -10,7 +11,7 @@ import (
 // Runner manages the llama-server process lifecycle.
 type Runner interface {
 	Start(ctx context.Context, rc *config.RunConfig) (*state.ModelState, error)
-	Stop(ctx context.Context, ms *state.ModelState, timeoutSec int) error
+	Stop(ctx context.Context, ms *state.ModelState, timeout time.Duration) error
 	IsAlive(ms *state.ModelState) bool
 }
 

@@ -59,14 +59,14 @@ func (r *serverRunner) Start(ctx context.Context, rc *config.RunConfig) (*state.
 	return ms, nil
 }
 
-func (r *serverRunner) Stop(ctx context.Context, ms *state.ModelState, timeoutSec int) error {
+func (r *serverRunner) Stop(ctx context.Context, ms *state.ModelState, timeout time.Duration) error {
 	proc, err := os.FindProcess(ms.PID)
 	if err != nil {
 		return nil // already gone
 	}
 
 	if runtime.GOOS == "windows" {
-		return stopWindows(ms.PID, timeoutSec)
+		return stopWindows(ms.PID, timeout)
 	}
 
 	// SIGTERM
@@ -76,7 +76,7 @@ func (r *serverRunner) Stop(ctx context.Context, ms *state.ModelState, timeoutSe
 	}
 
 	// Wait up to timeout, then SIGKILL
-	deadline := time.After(time.Duration(timeoutSec) * time.Second)
+	deadline := time.After(timeout)
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()
 

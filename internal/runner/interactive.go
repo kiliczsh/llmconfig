@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"time"
 
 	"github.com/kiliczsh/llamaconfig/internal/config"
 	"github.com/kiliczsh/llamaconfig/internal/state"
@@ -41,7 +42,7 @@ func (r *interactiveRunner) Start(ctx context.Context, rc *config.RunConfig) (*s
 	return nil, nil
 }
 
-func (r *interactiveRunner) Stop(_ context.Context, _ *state.ModelState, _ int) error {
+func (r *interactiveRunner) Stop(_ context.Context, _ *state.ModelState, _ time.Duration) error {
 	return nil // interactive process blocks; ctrl-c handled by OS
 }
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"time"
 
 	"github.com/kiliczsh/llamaconfig/internal/config"
 	"github.com/kiliczsh/llamaconfig/internal/hardware"
@@ -11,6 +12,7 @@ import (
 
 func newRestartCmd() *cobra.Command {
 	var flagAll bool
+	var flagTimeout time.Duration
 
 	cmd := &cobra.Command{
 		Use:   "restart [name]",
@@ -55,7 +57,7 @@ func newRestartCmd() *cobra.Command {
 				// Stop
 				if ms.Status == "running" {
 					p.Info("stopping %s...", name)
-					if err := r.Stop(cmd.Context(), ms, 10); err != nil {
+					if err := r.Stop(cmd.Context(), ms, flagTimeout); err != nil {
 						p.Error("stop %q: %v", name, err)
 						continue
 					}
@@ -103,5 +105,6 @@ func newRestartCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&flagAll, "all", "a", false, "restart all running models")
+	cmd.Flags().DurationVar(&flagTimeout, "timeout", 10*time.Second, "how long to wait before force kill (e.g. 30s, 1m)")
 	return cmd
 }

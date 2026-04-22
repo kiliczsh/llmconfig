@@ -30,12 +30,12 @@ func isProcessAlive(proc *os.Process) bool {
 	return code == 259 // STILL_ACTIVE
 }
 
-func stopWindows(pid int, timeoutSec int) error {
+func stopWindows(pid int, timeout time.Duration) error {
 	cmd := exec.Command("taskkill", "/PID", fmt.Sprintf("%d", pid))
 	if err := cmd.Run(); err != nil {
 		// Try force kill
 		_ = exec.Command("taskkill", "/PID", fmt.Sprintf("%d", pid), "/F").Run()
 	}
-	time.Sleep(time.Duration(timeoutSec) * time.Second)
+	time.Sleep(timeout)
 	return nil
 }

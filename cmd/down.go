@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/kiliczsh/llamaconfig/internal/runner"
 	"github.com/spf13/cobra"
 )
 
 func newDownCmd() *cobra.Command {
 	var flagAll bool
-	var flagTimeout int
+	var flagTimeout time.Duration
 
 	cmd := &cobra.Command{
 		Use:   "down [name]",
@@ -76,6 +78,6 @@ func newDownCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&flagAll, "all", "a", false, "stop all running models")
-	cmd.Flags().IntVar(&flagTimeout, "timeout", 10, "seconds to wait before force kill")
+	cmd.Flags().DurationVar(&flagTimeout, "timeout", 10*time.Second, "how long to wait before force kill (e.g. 30s, 1m)")
 	return cmd
 }
