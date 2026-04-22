@@ -98,6 +98,6 @@ func newRestartCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&flagAll, "all", false, "restart all running models")
+	cmd.Flags().BoolVarP(&flagAll, "all", "a", false, "restart all running models")
 	return cmd
 }

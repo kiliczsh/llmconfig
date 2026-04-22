@@ -75,7 +75,7 @@ func newDownCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&flagAll, "all", false, "stop all running models")
+	cmd.Flags().BoolVarP(&flagAll, "all", "a", false, "stop all running models")
 	cmd.Flags().IntVar(&flagTimeout, "timeout", 10, "seconds to wait before force kill")
 	return cmd
 }

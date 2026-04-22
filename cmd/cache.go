@@ -175,7 +175,7 @@ func newCacheCleanCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&flagAll, "all", false, "remove all cached files")
+	cmd.Flags().BoolVarP(&flagAll, "all", "a", false, "remove all cached files")
 	return cmd
 }
 
