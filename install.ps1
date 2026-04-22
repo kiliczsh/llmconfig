@@ -4,6 +4,7 @@ param(
     [string]$Prefix = "$env:LOCALAPPDATA\llamaconfig\bin",
     [string]$Version = "",
     [switch]$NoLlama,
+    [switch]$NoBackends,
     [switch]$Update,
     [switch]$Help
 )
@@ -18,12 +19,12 @@ $MinDiskMB  = 200
 
 if ($Help) {
     @"
-Usage: install.ps1 [-Prefix PATH] [-Version vX.Y.Z] [-NoLlama] [-Update]
+Usage: install.ps1 [-Prefix PATH] [-Version vX.Y.Z] [-NoBackends] [-Update]
 
-  -Prefix PATH    Install directory (default: %LOCALAPPDATA%\llamaconfig\bin)
-  -Version TAG    Install a specific release tag (default: latest)
-  -NoLlama        Skip llama.cpp download
-  -Update         Force reinstall even if already present
+  -Prefix PATH     Install directory (default: %LOCALAPPDATA%\llamaconfig\bin)
+  -Version TAG     Install a specific release tag (default: latest)
+  -NoBackends      Skip backend downloads (llama.cpp, sd.cpp, whisper.cpp)
+  -Update          Force reinstall even if already present
 
 The script downloads a prebuilt binary from GitHub Releases; no Go or
 git toolchain is required on the target machine.
@@ -71,8 +72,9 @@ if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "$BinaryName.exe")) -
 
 # Remote: pre-flight, resolve, download, install (+ optional llama)
 # Local:  pre-flight, use-bundled, install (+ optional llama)
+if ($NoLlama) { $NoBackends = $true }
 $TotalSteps = if ($LocalMode) { 3 } else { 4 }
-if (-not $NoLlama) { $TotalSteps++ }
+if (-not $NoBackends) { $TotalSteps++ }
 
 # ============================================================
 # [1] Pre-flight
@@ -250,19 +252,45 @@ try {
     ok $installedVersion
 
     # ============================================================
-    # Install llama.cpp
+    # Install backends (llama.cpp, stable-diffusion.cpp, whisper.cpp)
     # ============================================================
-    if (-not $NoLlama) {
-        step $TotalSteps $TotalSteps "Installing llama.cpp"
+    if (-not $NoBackends) {
+        step $TotalSteps $TotalSteps "Installing backends"
+
+        # llama.cpp
         $llamaPath = & $dest llama --path 2>$null
         if ($llamaPath -and (Test-Path $llamaPath) -and -not $Update) {
             $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
-            ok "llama.cpp already installed: $(if ($llamaVer) { $llamaVer } else { 'unknown version' }) (use -Update to reinstall)"
+            ok "llama.cpp already installed: $(if ($llamaVer) { $llamaVer } else { 'unknown version' })"
         } else {
-            info "Downloading llama.cpp binary..."
+            info "Downloading llama.cpp..."
             & $dest install llama
             $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
             ok "llama.cpp: $(if ($llamaVer) { $llamaVer } else { 'installed' })"
+        }
+
+        # stable-diffusion.cpp
+        $sdPath = & $dest sd --path 2>$null
+        if ($sdPath -and (Test-Path $sdPath) -and -not $Update) {
+            $sdVer = (& $dest sd --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            ok "stable-diffusion.cpp already installed: $(if ($sdVer) { $sdVer } else { 'unknown version' })"
+        } else {
+            info "Downloading stable-diffusion.cpp..."
+            & $dest install sd
+            $sdVer = (& $dest sd --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            ok "stable-diffusion.cpp: $(if ($sdVer) { $sdVer } else { 'installed' })"
+        }
+
+        # whisper.cpp
+        $whisperPath = & $dest whisper --path 2>$null
+        if ($whisperPath -and (Test-Path $whisperPath) -and -not $Update) {
+            $whisperVer = (& $dest whisper --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            ok "whisper.cpp already installed: $(if ($whisperVer) { $whisperVer } else { 'unknown version' })"
+        } else {
+            info "Downloading whisper.cpp..."
+            & $dest install whisper
+            $whisperVer = (& $dest whisper --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            ok "whisper.cpp: $(if ($whisperVer) { $whisperVer } else { 'installed' })"
         }
     }
 } finally {

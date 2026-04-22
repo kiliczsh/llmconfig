@@ -9,23 +9,24 @@ MIN_DISK_MB=200
 
 # --- flags ---
 PREFIX="$DEFAULT_PREFIX"
-NO_LLAMA=false
+NO_BACKENDS=false
 UPDATE=false
 VERSION=""
 
 for arg in "$@"; do
   case "$arg" in
-    --prefix=*)  PREFIX="${arg#*=}" ;;
-    --version=*) VERSION="${arg#*=}" ;;
-    --no-llama)  NO_LLAMA=true ;;
-    --update)    UPDATE=true ;;
+    --prefix=*)    PREFIX="${arg#*=}" ;;
+    --version=*)   VERSION="${arg#*=}" ;;
+    --no-llama)    NO_BACKENDS=true ;;
+    --no-backends) NO_BACKENDS=true ;;
+    --update)      UPDATE=true ;;
     --help)
       cat <<USAGE
-Usage: install.sh [--prefix=PATH] [--version=vX.Y.Z] [--no-llama] [--update]
+Usage: install.sh [--prefix=PATH] [--version=vX.Y.Z] [--no-backends] [--update]
 
   --prefix=PATH    Install directory (default: /usr/local/bin)
   --version=TAG    Install a specific release tag (default: latest)
-  --no-llama       Skip llama.cpp download
+  --no-backends    Skip backend downloads (llama.cpp, sd.cpp, whisper.cpp)
   --update         Force reinstall even if already present
 
 The script downloads a prebuilt binary from GitHub Releases; no Go or
@@ -124,7 +125,7 @@ if [[ "$LOCAL_MODE" == true ]]; then
 else
   TOTAL_STEPS=4
 fi
-if [[ "$NO_LLAMA" == false ]]; then
+if [[ "$NO_BACKENDS" == false ]]; then
   TOTAL_STEPS=$(( TOTAL_STEPS + 1 ))
 fi
 
@@ -170,11 +171,11 @@ fi
 
 # In local mode we still want the network for llama.cpp install later,
 # but don't fail here if offline — `--no-llama` is a valid path.
-if [[ "$LOCAL_MODE" == false || "$NO_LLAMA" == false ]]; then
+if [[ "$LOCAL_MODE" == false || "$NO_BACKENDS" == false ]]; then
   if ! curl -sf --max-time 5 https://github.com > /dev/null 2>&1; then
     if [[ "$LOCAL_MODE" == true ]]; then
-      step_warn "No internet — --no-llama will be forced after install"
-      NO_LLAMA=true
+      step_warn "No internet — --no-backends will be forced after install"
+      NO_BACKENDS=true
       TOTAL_STEPS=$(( TOTAL_STEPS - 1 ))
     else
       die "No internet connection"
@@ -200,7 +201,7 @@ if [[ "$LOCAL_MODE" == true ]]; then
     INSTALLED=$("$BINARY_NAME" version 2>/dev/null | awk '{print $2}' || true)
     if [[ -n "$INSTALLED" && "$INSTALLED" == "$VERSION_NO_V" ]]; then
       step_ok "$BINARY_NAME $INSTALLED is already installed (use --update to reinstall)"
-      [[ "$NO_LLAMA" == true ]] && exit 0
+      [[ "$NO_BACKENDS" == true ]] && exit 0
     fi
   fi
 else
@@ -221,7 +222,7 @@ else
     INSTALLED=$("$BINARY_NAME" version 2>/dev/null | awk '{print $2}' || true)
     if [[ -n "$INSTALLED" && "$INSTALLED" == "$VERSION_NO_V" ]]; then
       step_ok "$BINARY_NAME $INSTALLED is already installed (use --update to reinstall)"
-      [[ "$NO_LLAMA" == true ]] && exit 0
+      [[ "$NO_BACKENDS" == true ]] && exit 0
     fi
   fi
 
@@ -335,19 +336,47 @@ fi
 INSTALLED_VERSION=$("$DEST" version 2>/dev/null || echo 'unknown')
 step_ok "$INSTALLED_VERSION"
 
-# --- [5] Install llama.cpp ---
-if [[ "$NO_LLAMA" == false ]]; then
-  step "Installing llama.cpp"
+# --- [5] Install backends (llama.cpp, stable-diffusion.cpp, whisper.cpp) ---
+if [[ "$NO_BACKENDS" == false ]]; then
+  step "Installing backends"
+
+  # llama.cpp
   LLAMA_BIN="$("$DEST" llama --path 2>/dev/null || true)"
   if [[ -n "$LLAMA_BIN" && -f "$LLAMA_BIN" && "$UPDATE" == false ]]; then
     LLAMA_VERSION="$("$DEST" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
-    step_ok "llama.cpp already installed: ${LLAMA_VERSION} (use --update to reinstall)"
+    step_ok "llama.cpp already installed: ${LLAMA_VERSION}"
   else
-    spinner_start "Downloading llama.cpp binary..."
+    spinner_start "Downloading llama.cpp..."
     "$DEST" install llama < /dev/null 2>&1 || true
     spinner_stop
     LLAMA_VERSION="$("$DEST" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
     step_ok "llama.cpp: $LLAMA_VERSION"
+  fi
+
+  # stable-diffusion.cpp
+  SD_BIN="$("$DEST" sd --path 2>/dev/null || true)"
+  if [[ -n "$SD_BIN" && -f "$SD_BIN" && "$UPDATE" == false ]]; then
+    SD_VERSION="$("$DEST" sd --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
+    step_ok "stable-diffusion.cpp already installed: ${SD_VERSION}"
+  else
+    spinner_start "Downloading stable-diffusion.cpp..."
+    "$DEST" install sd < /dev/null 2>&1 || true
+    spinner_stop
+    SD_VERSION="$("$DEST" sd --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
+    step_ok "stable-diffusion.cpp: $SD_VERSION"
+  fi
+
+  # whisper.cpp
+  WHISPER_BIN="$("$DEST" whisper --path 2>/dev/null || true)"
+  if [[ -n "$WHISPER_BIN" && -f "$WHISPER_BIN" && "$UPDATE" == false ]]; then
+    WHISPER_VERSION="$("$DEST" whisper --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
+    step_ok "whisper.cpp already installed: ${WHISPER_VERSION}"
+  else
+    spinner_start "Downloading whisper.cpp..."
+    "$DEST" install whisper < /dev/null 2>&1 || true
+    spinner_stop
+    WHISPER_VERSION="$("$DEST" whisper --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
+    step_ok "whisper.cpp: $WHISPER_VERSION"
   fi
 fi
 
