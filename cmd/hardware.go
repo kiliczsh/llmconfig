@@ -15,8 +15,6 @@ func newHardwareCmd() *cobra.Command {
 		Use:   "hardware",
 		Short: "Detect and display system hardware info",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appCtx := appCtxFrom(cmd.Context())
-
 			hw := hardware.Detect()
 
 			bold := lipgloss.NewStyle().Bold(true)
@@ -63,10 +61,6 @@ func newHardwareCmd() *cobra.Command {
 			styled := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(color)).Render(profileName)
 			label("Selected profile", styled)
 			label("GPU layers default", fmt.Sprintf("%d (auto)", defaultGPULayers(hw)))
-
-			if appCtx.JSONOutput {
-				return appCtx.Printer.PrintJSON(hw)
-			}
 			return nil
 		},
 	}

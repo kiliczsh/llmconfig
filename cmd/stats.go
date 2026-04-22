@@ -16,7 +16,6 @@ import (
 func newStatsCmd() *cobra.Command {
 	var flagWatch bool
 	var flagInterval string
-	var flagFormat string
 
 	cmd := &cobra.Command{
 		Use:   "stats [name]",
@@ -36,17 +35,16 @@ func newStatsCmd() *cobra.Command {
 				return runStatsWatch(appCtx, interval)
 			}
 
-			return printStatsOnce(appCtx, flagFormat)
+			return printStatsOnce(appCtx)
 		},
 	}
 
 	cmd.Flags().BoolVarP(&flagWatch, "watch", "w", false, "live updating display")
 	cmd.Flags().StringVar(&flagInterval, "interval", "2s", "watch refresh interval")
-	cmd.Flags().StringVar(&flagFormat, "format", "table", "output format: table | json")
 	return cmd
 }
 
-func printStatsOnce(appCtx *AppContext, format string) error {
+func printStatsOnce(appCtx *AppContext) error {
 	p := appCtx.Printer
 	rows, err := gatherStats(appCtx)
 	if err != nil {
@@ -55,9 +53,6 @@ func printStatsOnce(appCtx *AppContext, format string) error {
 	if len(rows) == 0 {
 		p.Info("no running models")
 		return nil
-	}
-	if format == "json" {
-		return p.PrintJSON(rows)
 	}
 	headers := []string{"NAME", "PID", "PORT", "UPTIME", "CPU%", "MEM (MB)"}
 	tableRows := statsToRows(rows)

@@ -28,7 +28,6 @@ func newStatusCmd() *cobra.Command {
 				return err
 			}
 			appCtx := appCtxFrom(cmd.Context())
-			p := appCtx.Printer
 
 			ms, err := appCtx.StateStore.Get(name)
 			_ = sf
@@ -43,10 +42,6 @@ func newStatusCmd() *cobra.Command {
 			if ms.Status == "running" && !r.IsAlive(ms) {
 				ms.Status = "stopped"
 				_ = appCtx.StateStore.Put(ms)
-			}
-
-			if appCtx.JSONOutput {
-				return p.PrintJSON(ms)
 			}
 
 			rows := [][]string{

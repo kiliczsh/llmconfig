@@ -251,7 +251,6 @@ List running models.
 ```bash
 llamaconfig ps
 llamaconfig ps --all            # include stopped models
-llamaconfig ps --format json
 ```
 
 Output columns: `NAME`, `STATUS`, `PORT`, `PROFILE`, `UPTIME`, `PID`
@@ -286,7 +285,6 @@ llamaconfig stats
 llamaconfig stats gemma-4-e2b
 llamaconfig stats --watch
 llamaconfig stats --watch --interval 5s
-llamaconfig stats --format json
 ```
 
 ---
@@ -298,7 +296,6 @@ Detailed info for a single model. Without a name, shows an interactive selector.
 ```bash
 llamaconfig status                       # interactive selector
 llamaconfig status gemma-4-e2b
-llamaconfig status gemma-4-e2b --json
 ```
 
 Shows: PID, port, profile, uptime, config path, log file path, status.
@@ -359,7 +356,6 @@ List all known models (running, stopped, cached).
 llamaconfig models
 llamaconfig models --running
 llamaconfig models --cached
-llamaconfig models --format json
 ```
 
 ---
@@ -433,7 +429,6 @@ Show detected hardware and the profile that would be selected.
 
 ```bash
 llamaconfig hardware
-llamaconfig hardware --json
 ```
 
 ---

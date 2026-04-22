@@ -14,18 +14,17 @@ import (
 )
 
 type modelEntry struct {
-	Name       string `json:"name" yaml:"name"`
-	Source     string `json:"source" yaml:"source"`
-	File       string `json:"file" yaml:"file"`
-	CachedSize string `json:"cached_size" yaml:"cached_size"`
-	Status     string `json:"status" yaml:"status"`
-	Port       string `json:"port" yaml:"port"`
+	Name       string
+	Source     string
+	File       string
+	CachedSize string
+	Status     string
+	Port       string
 }
 
 func newModelsCmd() *cobra.Command {
 	var flagRunning bool
 	var flagCached bool
-	var flagFormat string
 
 	cmd := &cobra.Command{
 		Use:   "models",
@@ -61,20 +60,12 @@ func newModelsCmd() *cobra.Command {
 				return nil
 			}
 
-			switch flagFormat {
-			case "json":
-				return p.PrintJSON(shown)
-			case "yaml":
-				return p.PrintYAML(shown)
-			default:
-				return renderModelsTable(p, shown)
-			}
+			return renderModelsTable(p, shown)
 		},
 	}
 
 	cmd.Flags().BoolVar(&flagRunning, "running", false, "show only running models")
 	cmd.Flags().BoolVar(&flagCached, "cached", false, "show only downloaded models")
-	cmd.Flags().StringVar(&flagFormat, "format", "table", "output format: table | json | yaml")
 	return cmd
 }
 

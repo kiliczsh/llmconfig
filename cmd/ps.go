@@ -12,7 +12,6 @@ import (
 
 func newPsCmd() *cobra.Command {
 	var flagAll bool
-	var flagFormat string
 
 	cmd := &cobra.Command{
 		Use:   "ps",
@@ -60,19 +59,11 @@ func newPsCmd() *cobra.Command {
 				return nil
 			}
 
-			switch flagFormat {
-			case "json":
-				return p.PrintJSON(shown)
-			case "yaml":
-				return p.PrintYAML(shown)
-			default:
-				return renderPsTable(p, shown)
-			}
+			return renderPsTable(p, shown)
 		},
 	}
 
 	cmd.Flags().BoolVarP(&flagAll, "all", "a", false, "include stopped models")
-	cmd.Flags().StringVar(&flagFormat, "format", "table", "output format: table | json | yaml")
 	return cmd
 }
 

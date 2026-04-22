@@ -19,7 +19,6 @@ type AppContext struct {
 	LlamaBin   string
 	Verbose    bool
 	NoColor    bool
-	JSONOutput bool
 	Printer    *output.Printer
 	StateStore *state.Store
 }
@@ -36,7 +35,6 @@ var (
 	flagLlamaBin  string
 	flagNoColor   bool
 	flagVerbose   bool
-	flagJSON      bool
 )
 
 var rootCmd = &cobra.Command{
@@ -59,7 +57,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagLlamaBin, "llama-bin", "", "override llama.cpp binary path")
 	rootCmd.PersistentFlags().BoolVar(&flagNoColor, "no-color", false, "disable colored output")
 	rootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().BoolVar(&flagJSON, "json", false, "JSON output (where supported)")
 
 	cobra.OnInitialize(func() {
 		if flagConfigDir != "" {
@@ -94,8 +91,7 @@ func init() {
 			LlamaBin:   llamaBin,
 			Verbose:    flagVerbose,
 			NoColor:    flagNoColor,
-			JSONOutput: flagJSON,
-			Printer:    output.New(flagNoColor, flagJSON),
+			Printer:    output.New(flagNoColor),
 			StateStore: store,
 		}
 

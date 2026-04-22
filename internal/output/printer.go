@@ -1,25 +1,21 @@
 package output
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
-
-	"gopkg.in/yaml.v3"
 )
 
 // Printer is the output abstraction for all commands.
 type Printer struct {
 	NoColor bool
-	JSON    bool
 }
 
-func New(noColor, jsonOutput bool) *Printer {
+func New(noColor bool) *Printer {
 	// Respect the de facto NO_COLOR standard (https://no-color.org).
 	if _, ok := os.LookupEnv("NO_COLOR"); ok {
 		noColor = true
 	}
-	return &Printer{NoColor: noColor, JSON: jsonOutput}
+	return &Printer{NoColor: noColor}
 }
 
 func (p *Printer) Table(headers []string, rows [][]string) {
@@ -28,24 +24,6 @@ func (p *Printer) Table(headers []string, rows [][]string) {
 		return
 	}
 	fmt.Print(RenderTable(headers, rows))
-}
-
-func (p *Printer) PrintJSON(v any) error {
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(data))
-	return nil
-}
-
-func (p *Printer) PrintYAML(v any) error {
-	data, err := yaml.Marshal(v)
-	if err != nil {
-		return err
-	}
-	fmt.Print(string(data))
-	return nil
 }
 
 func (p *Printer) Success(format string, args ...any) {
