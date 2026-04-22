@@ -34,7 +34,7 @@ func newModelsCmd() *cobra.Command {
 			p := appCtx.Printer
 			r := runner.New()
 
-			sf, err := appCtx.StateStore.Load()
+			sf, err := reconcileLiveness(appCtx.StateStore, r, p)
 			if err != nil {
 				return err
 			}

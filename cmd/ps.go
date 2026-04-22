@@ -21,7 +21,9 @@ func newPsCmd() *cobra.Command {
 			p := appCtx.Printer
 			r := runner.New()
 
-			sf, err := appCtx.StateStore.Load()
+			// Reconcile liveness: flip any dead "running" entries to "stopped"
+			// and persist, so subsequent reads see fresh state.
+			sf, err := reconcileLiveness(appCtx.StateStore, r, p)
 			if err != nil {
 				return err
 			}
@@ -32,14 +34,6 @@ func newPsCmd() *cobra.Command {
 				names = append(names, name)
 			}
 			sort.Strings(names)
-
-			// Update liveness
-			for _, name := range names {
-				ms := sf.Models[name]
-				if ms.Status == "running" && !r.IsAlive(ms) {
-					ms.Status = "stopped"
-				}
-			}
 
 			// Filter
 			var shown []*state.ModelState
