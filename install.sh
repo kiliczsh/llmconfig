@@ -283,12 +283,12 @@ install_binary() {
     chmod_cmd="sudo chmod"
   fi
   $cp_cmd "$SRC_DIR/$BINARY_NAME" "$DEST" && $chmod_cmd +x "$DEST"
-  # Prefer the bundled lc binary from the archive; fall back to a symlink
+  # Prefer the bundled llmc binary from the archive; fall back to a symlink
   # for older releases that don't include it.
-  if [[ -f "$SRC_DIR/lc" ]]; then
-    $cp_cmd "$SRC_DIR/lc" "$PREFIX/lc" && $chmod_cmd +x "$PREFIX/lc"
+  if [[ -f "$SRC_DIR/llmc" ]]; then
+    $cp_cmd "$SRC_DIR/llmc" "$PREFIX/llmc" && $chmod_cmd +x "$PREFIX/llmc"
   else
-    $ln_cmd -sf "$DEST" "$PREFIX/lc" 2>/dev/null || true
+    $ln_cmd -sf "$DEST" "$PREFIX/llmc" 2>/dev/null || true
   fi
 }
 
@@ -321,6 +321,16 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$PREFIX"; then
   fi
 fi
 
+# macOS Gatekeeper: clear quarantine flag so the binary runs without prompts
+if [[ "$OS" == "darwin" ]]; then
+  for _bin in "$DEST" "$PREFIX/llmc"; do
+    if [[ -f "$_bin" ]]; then
+      xattr -d com.apple.quarantine "$_bin" 2>/dev/null || \
+        sudo xattr -d com.apple.quarantine "$_bin" 2>/dev/null || true
+    fi
+  done
+fi
+
 # Smoke test
 INSTALLED_VERSION=$("$DEST" version 2>/dev/null || echo 'unknown')
 step_ok "$INSTALLED_VERSION"
@@ -343,6 +353,6 @@ fi
 
 echo ""
 printf "${GREEN}${BOLD}  Installation complete!${RESET}\n\n"
-printf "  Run: ${CYAN}lc init --template gemma${RESET}\n"
-printf "       ${CYAN}lc up <model-name>${RESET}\n"
+printf "  Run: ${CYAN}llmc init --template gemma${RESET}\n"
+printf "       ${CYAN}llmc up <model-name>${RESET}\n"
 echo ""

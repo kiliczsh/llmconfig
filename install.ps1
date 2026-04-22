@@ -222,17 +222,17 @@ try {
     Copy-Item (Join-Path $srcDir "$BinaryName.exe") $dest -Force
     ok "Installed to $dest"
 
-    # Prefer the bundled lc.exe from the archive; fall back to a .cmd
+    # Prefer the bundled llmc.exe from the archive; fall back to a .cmd
     # wrapper for older releases that don't include it.
-    $extractedLc = Join-Path $srcDir "lc.exe"
-    if (Test-Path $extractedLc) {
-        $lcDest = Join-Path $Prefix "lc.exe"
-        Copy-Item $extractedLc $lcDest -Force
-        ok "Installed lc to $lcDest"
+    $extractedLlmc = Join-Path $srcDir "llmc.exe"
+    if (Test-Path $extractedLlmc) {
+        $llmcDest = Join-Path $Prefix "llmc.exe"
+        Copy-Item $extractedLlmc $llmcDest -Force
+        ok "Installed llmc to $llmcDest"
     } else {
-        $lcCmd = Join-Path $Prefix "lc.cmd"
-        Set-Content -Path $lcCmd -Value "@echo off`r`n`"$dest`" %*" -Encoding ASCII
-        ok "Alias: lc -> llamaconfig  ($lcCmd)"
+        $llmcCmd = Join-Path $Prefix "llmc.cmd"
+        Set-Content -Path $llmcCmd -Value "@echo off`r`n`"$dest`" %*" -Encoding ASCII
+        ok "Alias: llmc -> llamaconfig  ($llmcCmd)"
     }
 
     # PATH
@@ -277,6 +277,6 @@ try {
 Write-Host ""
 Write-Host "  Installation complete!" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Run: " -NoNewline; Write-Host "lc init --template gemma" -ForegroundColor Cyan
-Write-Host "       " -NoNewline; Write-Host "lc up <model-name>" -ForegroundColor Cyan
+Write-Host "  Run: " -NoNewline; Write-Host "llmc init --template gemma" -ForegroundColor Cyan
+Write-Host "       " -NoNewline; Write-Host "llmc up <model-name>" -ForegroundColor Cyan
 Write-Host ""

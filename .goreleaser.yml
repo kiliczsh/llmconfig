@@ -27,11 +27,11 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.CommitDate}}
     main: .
-  # Same source, published under the `lc` short name so release archives
+  # Same source, published under the `llmc` short name so release archives
   # ship a ready-to-use alias. Cobra reads os.Args[0] for the command name
   # so the binary behaves identically when invoked as either name.
-  - id: lc
-    binary: lc
+  - id: llmc
+    binary: llmc
     env:
       - CGO_ENABLED=0
     goos:
@@ -54,7 +54,7 @@ builds:
 archives:
   - ids:
       - llamaconfig
-      - lc
+      - llmc
     formats:
       - tar.gz
     format_overrides:

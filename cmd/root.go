@@ -51,8 +51,8 @@ downloading, starting, stopping, and monitoring.`,
 }
 
 func Execute() error {
-	// Match Use to how the user invoked us, so `lc --help` shows
-	// "Usage: lc [command]" instead of the hardcoded project name.
+	// Match Use to how the user invoked us, so `llmc --help` shows
+	// "Usage: llmc [command]" instead of the hardcoded project name.
 	if len(os.Args) > 0 {
 		invoked := strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
 		if invoked != "" {

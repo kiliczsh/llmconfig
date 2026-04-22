@@ -82,8 +82,8 @@ Write-Host @"
 Write-Host ""
 
 $binaryPath = Join-Path $Prefix "$BinaryName.exe"
-$lcExe      = Join-Path $Prefix "lc.exe"
-$lcCmd      = Join-Path $Prefix "lc.cmd"
+$llmcExe    = Join-Path $Prefix "llmc.exe"
+$llmcCmd    = Join-Path $Prefix "llmc.cmd"
 
 # Stop running models before we yank the binary
 if (Test-Path $binaryPath) {
@@ -95,7 +95,7 @@ if (Test-Path $binaryPath) {
     if (Ask -Label "llamaconfig binary" -Path $binaryPath) {
         Remove-Item $binaryPath -Force
         ok "Removed $binaryPath"
-        foreach ($p in @($lcExe, $lcCmd)) {
+        foreach ($p in @($llmcExe, $llmcCmd)) {
             if (Test-Path $p) { Remove-Item $p -Force; ok "Removed $p" }
         }
 
