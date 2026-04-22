@@ -22,7 +22,6 @@ func newUpCmd() *cobra.Command {
 	var flagProfile string
 	var flagDryRun bool
 	var flagNoDownload bool
-	var flagDetach bool
 
 	cmd := &cobra.Command{
 		Use:   "up [name]",
@@ -154,7 +153,6 @@ func newUpCmd() *cobra.Command {
 	cmd.Flags().StringVar(&flagProfile, "profile", "", "force hardware profile (apple_silicon | nvidia | amd | cpu)")
 	cmd.Flags().BoolVar(&flagDryRun, "dry-run", false, "print llama.cpp command without running")
 	cmd.Flags().BoolVar(&flagNoDownload, "no-download", false, "fail if model is not cached")
-	cmd.Flags().BoolVarP(&flagDetach, "detach", "d", true, "run in background (default true)")
 	return cmd
 }
 

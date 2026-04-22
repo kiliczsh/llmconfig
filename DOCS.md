@@ -228,7 +228,6 @@ Flags:
 | `--profile` | auto | Force profile: `nvidia` \| `apple_silicon` \| `amd` \| `cpu` |
 | `--dry-run` | false | Print llama.cpp command without starting |
 | `--no-download` | false | Fail instead of downloading |
-| `-d, --detach` | true | Run in background |
 
 ---
 
