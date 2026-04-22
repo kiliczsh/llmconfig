@@ -260,7 +260,7 @@ try {
             ok "llama.cpp already installed: $(if ($llamaVer) { $llamaVer } else { 'unknown version' }) (use -Update to reinstall)"
         } else {
             info "Downloading llama.cpp binary..."
-            & $dest llama --install
+            & $dest install llama
             $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
             ok "llama.cpp: $(if ($llamaVer) { $llamaVer } else { 'installed' })"
         }

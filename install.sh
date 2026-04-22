@@ -344,7 +344,7 @@ if [[ "$NO_LLAMA" == false ]]; then
     step_ok "llama.cpp already installed: ${LLAMA_VERSION} (use --update to reinstall)"
   else
     spinner_start "Downloading llama.cpp binary..."
-    "$DEST" llama --install < /dev/null 2>&1 | grep -E '^(->|./)' || true
+    "$DEST" install llama < /dev/null 2>&1 || true
     spinner_stop
     LLAMA_VERSION="$("$DEST" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
     step_ok "llama.cpp: $LLAMA_VERSION"
