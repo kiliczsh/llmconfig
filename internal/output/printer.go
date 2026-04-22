@@ -15,6 +15,10 @@ type Printer struct {
 }
 
 func New(noColor, jsonOutput bool) *Printer {
+	// Respect the de facto NO_COLOR standard (https://no-color.org).
+	if _, ok := os.LookupEnv("NO_COLOR"); ok {
+		noColor = true
+	}
 	return &Printer{NoColor: noColor, JSON: jsonOutput}
 }
 
