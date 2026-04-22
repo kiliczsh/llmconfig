@@ -125,7 +125,7 @@ try {
         $srcDir = $PSScriptRoot
         $bundledBin = Join-Path $srcDir "$BinaryName.exe"
         try {
-            $versionNoV = (& $bundledBin version 2>$null) -replace "llamaconfig ","" -replace " .*",""
+            $versionNoV = [string](& $bundledBin version) -replace "llamaconfig ","" -replace " .*",""
         } catch {
             $versionNoV = "bundled"
         }
@@ -134,10 +134,14 @@ try {
         if (-not $Update) {
             $existing = Get-Command $BinaryName -ErrorAction SilentlyContinue
             if ($existing) {
-                $installed = (& $existing.Source version 2>$null) -replace "llamaconfig ","" -replace " .*",""
+                try {
+                    $installed = [string](& $existing.Source version) -replace "llamaconfig ","" -replace " .*",""
+                } catch {
+                    $installed = ""
+                }
                 if ($installed -eq $versionNoV) {
                     ok "$BinaryName $installed is already installed (use -Update to reinstall)"
-                    if ($NoLlama) { exit 0 }
+                    if ($NoBackends) { exit 0 }
                 }
             }
         }
@@ -162,10 +166,14 @@ try {
         if (-not $Update) {
             $existing = Get-Command $BinaryName -ErrorAction SilentlyContinue
             if ($existing) {
-                $installed = (& $existing.Source version 2>$null) -replace "llamaconfig ","" -replace " .*",""
+                try {
+                    $installed = [string](& $existing.Source version) -replace "llamaconfig ","" -replace " .*",""
+                } catch {
+                    $installed = ""
+                }
                 if ($installed -eq $versionNoV) {
                     ok "$BinaryName $installed is already installed (use -Update to reinstall)"
-                    if ($NoLlama) { exit 0 }
+                    if ($NoBackends) { exit 0 }
                 }
             }
         }
@@ -217,7 +225,7 @@ try {
     # ============================================================
     # Install binary
     # ============================================================
-    step (if ($LocalMode) { 3 } else { 4 }) $TotalSteps "Installing binary"
+    step $(if ($LocalMode) { 3 } else { 4 }) $TotalSteps "Installing binary"
 
     New-Item -ItemType Directory -Force -Path $Prefix | Out-Null
     $dest = Join-Path $Prefix "$BinaryName.exe"
@@ -248,7 +256,7 @@ try {
     }
 
     # Smoke test
-    $installedVersion = & $dest version 2>$null
+    try { $installedVersion = & $dest version } catch { $installedVersion = "installed" }
     ok $installedVersion
 
     # ============================================================
@@ -258,38 +266,38 @@ try {
         step $TotalSteps $TotalSteps "Installing backends"
 
         # llama.cpp
-        $llamaPath = & $dest llama --path 2>$null
+        try { $llamaPath = & $dest llama --path } catch { $llamaPath = $null }
         if ($llamaPath -and (Test-Path $llamaPath) -and -not $Update) {
-            $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            try { $llamaVer = (& $dest llama --version | Select-String "version:") -replace ".*version: ","" } catch { $llamaVer = $null }
             ok "llama.cpp already installed: $(if ($llamaVer) { $llamaVer } else { 'unknown version' })"
         } else {
             info "Downloading llama.cpp..."
             & $dest install llama
-            $llamaVer = (& $dest llama --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            try { $llamaVer = (& $dest llama --version | Select-String "version:") -replace ".*version: ","" } catch { $llamaVer = $null }
             ok "llama.cpp: $(if ($llamaVer) { $llamaVer } else { 'installed' })"
         }
 
         # stable-diffusion.cpp
-        $sdPath = & $dest sd --path 2>$null
+        try { $sdPath = & $dest sd --path } catch { $sdPath = $null }
         if ($sdPath -and (Test-Path $sdPath) -and -not $Update) {
-            $sdVer = (& $dest sd --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            try { $sdVer = (& $dest sd --version | Select-String "version:") -replace ".*version: ","" } catch { $sdVer = $null }
             ok "stable-diffusion.cpp already installed: $(if ($sdVer) { $sdVer } else { 'unknown version' })"
         } else {
             info "Downloading stable-diffusion.cpp..."
             & $dest install sd
-            $sdVer = (& $dest sd --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            try { $sdVer = (& $dest sd --version | Select-String "version:") -replace ".*version: ","" } catch { $sdVer = $null }
             ok "stable-diffusion.cpp: $(if ($sdVer) { $sdVer } else { 'installed' })"
         }
 
         # whisper.cpp
-        $whisperPath = & $dest whisper --path 2>$null
+        try { $whisperPath = & $dest whisper --path } catch { $whisperPath = $null }
         if ($whisperPath -and (Test-Path $whisperPath) -and -not $Update) {
-            $whisperVer = (& $dest whisper --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            try { $whisperVer = (& $dest whisper --version | Select-String "version:") -replace ".*version: ","" } catch { $whisperVer = $null }
             ok "whisper.cpp already installed: $(if ($whisperVer) { $whisperVer } else { 'unknown version' })"
         } else {
             info "Downloading whisper.cpp..."
             & $dest install whisper
-            $whisperVer = (& $dest whisper --version 2>$null | Select-String "version:") -replace ".*version: ",""
+            try { $whisperVer = (& $dest whisper --version | Select-String "version:") -replace ".*version: ","" } catch { $whisperVer = $null }
             ok "whisper.cpp: $(if ($whisperVer) { $whisperVer } else { 'installed' })"
         }
     }
