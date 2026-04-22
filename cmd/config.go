@@ -135,7 +135,6 @@ func newConfigEditCmd() *cobra.Command {
 				editor = os.Getenv("VISUAL")
 			}
 			if editor == "" {
-				// Fallback by platform
 				if _, err := exec.LookPath("code"); err == nil {
 					editor = "code --wait"
 				} else if _, err := exec.LookPath("notepad"); err == nil {
@@ -145,10 +144,12 @@ func newConfigEditCmd() *cobra.Command {
 				}
 			}
 
-			c := exec.Command("sh", "-c", editor+" "+configPath)
-			if os.Getenv("EDITOR") != "" {
-				c = exec.Command(editor, configPath)
+			parts := strings.Fields(editor)
+			if len(parts) == 0 {
+				return fmt.Errorf("no editor configured (set $EDITOR)")
 			}
+			editorArgs := append(parts[1:], configPath)
+			c := exec.Command(parts[0], editorArgs...)
 			c.Stdin = os.Stdin
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
