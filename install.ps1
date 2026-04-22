@@ -310,6 +310,6 @@ try {
 Write-Host ""
 Write-Host "  Installation complete!" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Run: " -NoNewline; Write-Host "llmc init --template gemma" -ForegroundColor Cyan
-Write-Host "       " -NoNewline; Write-Host "llmc up <model-name>" -ForegroundColor Cyan
+Write-Host "  Run: " -NoNewline; Write-Host "llmc.exe init --template gemma" -ForegroundColor Cyan
+Write-Host "       " -NoNewline; Write-Host "llmc.exe up <model-name>" -ForegroundColor Cyan
 Write-Host ""
