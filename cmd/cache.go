@@ -39,8 +39,9 @@ func newCachePathCmd() *cobra.Command {
 
 func newCacheLsCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "ls",
-		Short: "List all cached GGUF files with sizes",
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List all cached GGUF files with sizes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer

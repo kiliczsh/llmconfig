@@ -516,7 +516,7 @@ llamaconfig version
 Manage the model file cache (`~/.llamaconfig/cache/`).
 
 ```bash
-llamaconfig cache ls               # list cached files with sizes
+llamaconfig cache list             # list cached files with sizes (alias: ls)
 llamaconfig cache clean            # remove files not referenced by any config
 llamaconfig cache clean --all      # remove all cached files
 llamaconfig cache path             # print cache directory
