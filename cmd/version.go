@@ -1,8 +1,12 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"runtime/debug"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -33,7 +37,9 @@ func SetBuildInfo(v, c, d string) {
 func SetVersion(v string) { SetBuildInfo(v, "", "") }
 
 func newVersionCmd() *cobra.Command {
-	return &cobra.Command{
+	var flagCheck bool
+
+	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print llamaconfig version",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -62,7 +68,50 @@ func newVersionCmd() *cobra.Command {
 				fmt.Printf(")")
 			}
 			fmt.Println()
+
+			if flagCheck {
+				latest, err := fetchLatestVersion()
+				if err != nil {
+					fmt.Printf("  could not check for updates: %v\n", err)
+					return nil
+				}
+				current := strings.TrimPrefix(version, "v")
+				latestClean := strings.TrimPrefix(latest, "v")
+				if current == "dev" || current == latestClean {
+					fmt.Printf("  you are up to date (%s)\n", latest)
+				} else {
+					fmt.Printf("  new version available: %s\n", latest)
+					fmt.Printf("  update: irm https://raw.githubusercontent.com/kiliczsh/llamaconfig/main/install.ps1 | iex\n")
+					fmt.Printf("     or:  curl -fsSL https://raw.githubusercontent.com/kiliczsh/llamaconfig/main/install.sh | bash\n")
+				}
+			}
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&flagCheck, "check", false, "check for a newer release")
+	return cmd
+}
+
+func fetchLatestVersion() (string, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("https://api.github.com/repos/kiliczsh/llamaconfig/releases/latest")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		TagName string `json:"tag_name"`
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("GitHub API returned %d", resp.StatusCode)
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+	if result.TagName == "" {
+		return "", fmt.Errorf("no releases found")
+	}
+	return result.TagName, nil
 }
