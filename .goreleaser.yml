@@ -69,6 +69,8 @@ archives:
       # .ps1 on Windows, .sh on Linux/macOS.
       - src: "install.{{ if eq .Os \"windows\" }}ps1{{ else }}sh{{ end }}"
       - src: "uninstall.{{ if eq .Os \"windows\" }}ps1{{ else }}sh{{ end }}"
+      - src: "templates/*.yaml"
+        dst: "templates"
 
 checksum:
   name_template: "checksums.txt"

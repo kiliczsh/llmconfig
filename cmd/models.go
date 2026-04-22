@@ -15,6 +15,8 @@ import (
 
 type modelEntry struct {
 	Name       string
+	Backend    string
+	Mode       string
 	Source     string
 	File       string
 	CachedSize string
@@ -39,7 +41,7 @@ func newModelsCmd() *cobra.Command {
 				return err
 			}
 
-			entries, err := buildModelEntries(appCtx.ConfigDir, appCtx.CacheDir, sf, r)
+			entries, err := buildModelEntries(appCtx.ConfigDir, appCtx.CacheDir, sf, r, appCtx.StateStore)
 			if err != nil {
 				return err
 			}
@@ -69,7 +71,7 @@ func newModelsCmd() *cobra.Command {
 	return cmd
 }
 
-func buildModelEntries(configDir, cacheDir string, sf *state.StateFile, r runner.Runner) ([]modelEntry, error) {
+func buildModelEntries(configDir, cacheDir string, sf *state.StateFile, r runner.Runner, ss *state.Store) ([]modelEntry, error) {
 	pattern := filepath.Join(configDir, "*.yaml")
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
@@ -86,11 +88,13 @@ func buildModelEntries(configDir, cacheDir string, sf *state.StateFile, r runner
 		config.ApplyDefaults(cfg)
 
 		e := modelEntry{
-			Name:   cfg.Name,
-			Source: cfg.Model.Source,
-			File:   cfg.Model.File,
-			Status: "stopped",
-			Port:   "-",
+			Name:    cfg.Name,
+			Backend: cfg.Backend,
+			Mode:    cfg.Mode,
+			Source:  cfg.Model.Source,
+			File:    cfg.Model.File,
+			Status:  "stopped",
+			Port:    "-",
 		}
 		if cfg.Model.Source == "local" {
 			e.File = filepath.Base(cfg.Model.Path)
@@ -108,7 +112,11 @@ func buildModelEntries(configDir, cacheDir string, sf *state.StateFile, r runner
 		}
 
 		// Overlay running state
-		if ms, ok := sf.Models[cfg.Name]; ok {
+		if cfg.Mode == "interactive" {
+			if ss.IsInteractiveRunning(cfg.Name) {
+				e.Status = "running"
+			}
+		} else if ms, ok := sf.Models[cfg.Name]; ok {
 			if ms.Status == "running" && r.IsAlive(ms) {
 				e.Status = "running"
 				e.Port = output.Bold(formatPort(ms.Port))
@@ -121,13 +129,14 @@ func buildModelEntries(configDir, cacheDir string, sf *state.StateFile, r runner
 }
 
 func renderModelsTable(p *output.Printer, models []modelEntry) error {
-	headers := []string{"NAME", "SOURCE", "FILE", "CACHED", "STATUS", "PORT"}
+	headers := []string{"NAME", "BACKEND", "MODE", "SOURCE", "CACHED", "STATUS", "PORT"}
 	rows := make([][]string, len(models))
 	for i, e := range models {
 		rows[i] = []string{
 			e.Name,
+			e.Backend,
+			e.Mode,
 			e.Source,
-			truncate(e.File, 40),
 			e.CachedSize,
 			output.StatusColor(e.Status),
 			e.Port,

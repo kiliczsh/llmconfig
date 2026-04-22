@@ -336,6 +336,20 @@ fi
 INSTALLED_VERSION=$("$DEST" version 2>/dev/null || echo 'unknown')
 step_ok "$INSTALLED_VERSION"
 
+# Copy bundled templates to configs dir (skip existing)
+TEMPLATES_DIR="$(dirname "$0")/templates"
+if [[ -d "$TEMPLATES_DIR" ]]; then
+    CONFIGS_DIR="$HOME/.llamaconfig/configs"
+    mkdir -p "$CONFIGS_DIR"
+    for f in "$TEMPLATES_DIR"/*.yaml; do
+        dest="$CONFIGS_DIR/$(basename "$f")"
+        if [[ ! -f "$dest" ]]; then
+            cp "$f" "$dest"
+            step_ok "Template: $(basename "$f")"
+        fi
+    done
+fi
+
 # --- [5] Install backends (llama.cpp, stable-diffusion.cpp, whisper.cpp) ---
 if [[ "$NO_BACKENDS" == false ]]; then
   step "Installing backends"

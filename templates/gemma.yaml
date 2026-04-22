@@ -1,0 +1,22 @@
+version: 1
+name: gemma
+backend: llama
+mode: interactive
+model:
+  source: huggingface
+  repo: bartowski/gemma-3-1b-it-GGUF
+  file: gemma-3-1b-it-Q4_K_M.gguf                 # 0.8GB
+  # file: gemma-3-4b-it-Q4_K_M.gguf               # 2.5GB — better quality
+  # repo: bartowski/gemma-3-12b-it-GGUF
+  # file: gemma-3-12b-it-Q4_K_M.gguf              # 7.6GB — optimum for 16GB VRAM
+  download:
+    resume: true
+hardware_profiles:
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  cpu:
+    n_gpu_layers: 0

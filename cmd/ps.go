@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 
+	"github.com/kiliczsh/llamaconfig/internal/config"
 	"github.com/kiliczsh/llamaconfig/internal/output"
 	"github.com/kiliczsh/llamaconfig/internal/runner"
 	"github.com/kiliczsh/llamaconfig/internal/state"
@@ -35,12 +37,38 @@ func newPsCmd() *cobra.Command {
 			}
 			sort.Strings(names)
 
-			// Filter
+			// Filter server-mode models from state
 			var shown []*state.ModelState
 			for _, name := range names {
 				ms := sf.Models[name]
 				if flagAll || ms.Status == "running" {
 					shown = append(shown, ms)
+				}
+			}
+
+			// Add interactive-mode models from lock files
+			if matches, err := filepath.Glob(filepath.Join(appCtx.ConfigDir, "*.yaml")); err == nil {
+				for _, path := range matches {
+					cfg, err := config.LoadFile(path)
+					if err != nil || cfg.Mode != "interactive" {
+						continue
+					}
+					if _, already := sf.Models[cfg.Name]; already {
+						continue
+					}
+					if appCtx.StateStore.IsInteractiveRunning(cfg.Name) {
+						shown = append(shown, &state.ModelState{
+							Name:    cfg.Name,
+							Backend: cfg.Backend,
+							Status:  "running",
+						})
+					} else if flagAll {
+						shown = append(shown, &state.ModelState{
+							Name:    cfg.Name,
+							Backend: cfg.Backend,
+							Status:  "stopped",
+						})
+					}
 				}
 			}
 

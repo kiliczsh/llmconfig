@@ -1,0 +1,28 @@
+version: 1
+name: whisper
+backend: whisper
+mode: server
+model:
+  source: huggingface
+  repo: ggerganov/whisper.cpp
+  file: ggml-base.bin        # 142 MB
+  # file: ggml-medium.bin    # 1.5 GB — better accuracy
+  # file: ggml-large-v3-turbo.bin  # 1.6 GB — optimum
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8082
+whisper:
+  language: auto
+  task: transcribe
+  vad: true
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0

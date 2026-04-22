@@ -259,6 +259,20 @@ try {
     try { $installedVersion = & $dest version } catch { $installedVersion = "installed" }
     ok $installedVersion
 
+    # Copy bundled templates to configs dir (skip existing)
+    $templatesDir = Join-Path $srcDir "templates"
+    if (Test-Path $templatesDir) {
+        $configsDir = Join-Path $env:USERPROFILE ".llamaconfig\configs"
+        New-Item -ItemType Directory -Force -Path $configsDir | Out-Null
+        Get-ChildItem $templatesDir -Filter "*.yaml" | ForEach-Object {
+            $dest2 = Join-Path $configsDir $_.Name
+            if (-not (Test-Path $dest2)) {
+                Copy-Item $_.FullName $dest2
+                ok "Template: $($_.Name)"
+            }
+        }
+    }
+
     # ============================================================
     # Install backends (llama.cpp, stable-diffusion.cpp, whisper.cpp)
     # ============================================================

@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/kiliczsh/llamaconfig/internal/dirs"
+	"github.com/kiliczsh/llamaconfig/internal/process"
 )
 
 type Store struct {
@@ -124,6 +127,21 @@ func (s *Store) Remove(name string) error {
 // EnsureDir makes sure the state file directory exists.
 func (s *Store) EnsureDir() error {
 	return os.MkdirAll(filepath.Dir(s.statePath), 0755)
+}
+
+// IsInteractiveRunning returns true when a model lock file exists and its
+// holder PID is still alive — meaning an interactive session is in progress.
+func (s *Store) IsInteractiveRunning(name string) bool {
+	lockPath := dirs.ModelLockFile(name)
+	raw, err := os.ReadFile(lockPath)
+	if err != nil {
+		return false
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(raw)))
+	if err != nil || pid <= 0 {
+		return false
+	}
+	return process.PidAlive(pid)
 }
 
 // LockModel acquires the per-model lock so concurrent `up X` invocations

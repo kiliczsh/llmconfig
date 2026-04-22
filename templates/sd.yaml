@@ -1,0 +1,31 @@
+version: 1
+name: sd
+backend: sd
+mode: server
+model:
+  source: url
+  url: https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors
+  file: v1-5-pruned-emaonly.safetensors
+  # url: https://huggingface.co/city96/FLUX.1-schnell-gguf/resolve/main/flux1-schnell-Q4_0.gguf
+  # file: flux1-schnell-Q4_0.gguf  # higher quality, ~8GB
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8091
+sd:
+  width: 512
+  height: 512
+  steps: 20
+  cfg_scale: 7.0
+  sampling_method: euler_a
+  seed: -1
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0

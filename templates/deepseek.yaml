@@ -1,0 +1,21 @@
+version: 1
+name: deepseek
+backend: llama
+mode: interactive
+model:
+  source: huggingface
+  repo: bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF
+  file: DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf  # 1.0GB
+  # repo: bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF
+  # file: DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf  # 4.7GB — optimum for 16GB VRAM
+  download:
+    resume: true
+hardware_profiles:
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  cpu:
+    n_gpu_layers: 0

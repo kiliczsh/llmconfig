@@ -1,0 +1,19 @@
+version: 1
+name: smollm
+backend: llama
+mode: interactive
+model:
+  source: huggingface
+  repo: bartowski/SmolLM2-1.7B-Instruct-GGUF
+  file: SmolLM2-1.7B-Instruct-Q4_K_M.gguf
+  download:
+    resume: true
+hardware_profiles:
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  cpu:
+    n_gpu_layers: 0

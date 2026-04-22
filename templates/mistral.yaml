@@ -1,0 +1,20 @@
+version: 1
+name: mistral
+backend: llama
+mode: interactive
+model:
+  source: huggingface
+  repo: bartowski/Mistral-7B-Instruct-v0.3-GGUF
+  file: Mistral-7B-Instruct-v0.3-Q2_K.gguf       # 2.4GB
+  # file: Mistral-7B-Instruct-v0.3-Q4_K_M.gguf   # 4.4GB — optimum for 16GB VRAM
+  download:
+    resume: true
+hardware_profiles:
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  cpu:
+    n_gpu_layers: 0
