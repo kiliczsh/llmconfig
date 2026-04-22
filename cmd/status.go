@@ -14,8 +14,10 @@ func newStatusCmd() *cobra.Command {
 		Short: "Show detailed status of a model",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appCtxPre := appCtxFrom(cmd.Context())
-			sf, err := appCtxPre.StateStore.Load()
+			appCtx := appCtxFrom(cmd.Context())
+			p := appCtx.Printer
+
+			sf, err := appCtx.StateStore.Load()
 			if err != nil {
 				return err
 			}
@@ -27,21 +29,17 @@ func newStatusCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			appCtx := appCtxFrom(cmd.Context())
-
-			ms, err := appCtx.StateStore.Get(name)
-			_ = sf
-			if err != nil {
-				return err
-			}
-			if ms == nil {
+			ms, ok := sf.Models[name]
+			if !ok || ms == nil {
 				return fmt.Errorf("model %q not found in state", name)
 			}
 
 			r := runner.New()
 			if ms.Status == "running" && !r.IsAlive(ms) {
 				ms.Status = "stopped"
-				_ = appCtx.StateStore.Put(ms)
+				if putErr := appCtx.StateStore.Put(ms); putErr != nil {
+					p.Warn("could not persist stopped state for %q: %v", name, putErr)
+				}
 			}
 
 			rows := [][]string{
