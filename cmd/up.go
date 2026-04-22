@@ -140,7 +140,9 @@ func newUpCmd() *cobra.Command {
 			p.Info("waiting for %s to become ready...", name)
 			if err := runner.WaitHealthy(cmd.Context(), cfg.Server.Host, cfg.Server.Port, cfg.Backend); err != nil {
 				ms.Status = "error"
-				_ = appCtx.StateStore.Put(ms)
+				if putErr := appCtx.StateStore.Put(ms); putErr != nil {
+					p.Warn("could not save error state: %v", putErr)
+				}
 				return fmt.Errorf("%s failed to start: %w", name, err)
 			}
 

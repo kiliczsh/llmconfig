@@ -90,7 +90,9 @@ func newRmCmd() *cobra.Command {
 			}
 
 			// Remove from state
-			_ = appCtx.StateStore.Remove(name)
+			if err := appCtx.StateStore.Remove(name); err != nil {
+				p.Warn("could not remove %q from state: %v", name, err)
+			}
 
 			return nil
 		},

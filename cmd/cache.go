@@ -153,12 +153,14 @@ func newCacheCleanCmd() *cobra.Command {
 			fmt.Printf("\n  Will free %s\n\n", humanize.Bytes(uint64(totalSize)))
 
 			var confirm bool
-			huh.NewForm(huh.NewGroup(
+			form := huh.NewForm(huh.NewGroup(
 				huh.NewConfirm().
 					Title(fmt.Sprintf("Remove %d file(s)?", len(toRemove))).
 					Value(&confirm),
-			)).Run()
-
+			))
+			if err := form.Run(); err != nil {
+				return err
+			}
 			if !confirm {
 				p.Info("cancelled")
 				return nil

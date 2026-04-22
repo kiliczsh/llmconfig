@@ -60,7 +60,9 @@ func newRestartCmd() *cobra.Command {
 						continue
 					}
 					ms.Status = "stopped"
-					_ = appCtx.StateStore.Put(ms)
+					if err := appCtx.StateStore.Put(ms); err != nil {
+						p.Warn("could not persist stopped state for %q: %v", name, err)
+					}
 				}
 
 				// Reload config and start
@@ -85,7 +87,9 @@ func newRestartCmd() *cobra.Command {
 					continue
 				}
 
-				_ = appCtx.StateStore.Put(newMS)
+				if err := appCtx.StateStore.Put(newMS); err != nil {
+					p.Warn("could not save state for %q: %v", name, err)
+				}
 
 				if err := runner.WaitHealthy(cmd.Context(), cfg.Server.Host, cfg.Server.Port, cfg.Backend); err != nil {
 					p.Error("%s health check failed: %v", name, err)
