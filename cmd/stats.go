@@ -10,7 +10,6 @@ import (
 	"github.com/kiliczsh/llamaconfig/internal/output"
 	"github.com/kiliczsh/llamaconfig/internal/process"
 	"github.com/kiliczsh/llamaconfig/internal/runner"
-	"github.com/kiliczsh/llamaconfig/internal/state"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +48,10 @@ func newStatsCmd() *cobra.Command {
 
 func printStatsOnce(appCtx *AppContext, format string) error {
 	p := appCtx.Printer
-	rows, _ := gatherStats(appCtx)
+	rows, err := gatherStats(appCtx)
+	if err != nil {
+		return err
+	}
 	if len(rows) == 0 {
 		p.Info("no running models")
 		return nil
@@ -178,11 +180,9 @@ func (m statsWatchModel) View() string {
 }
 
 func runStatsWatch(appCtx *AppContext, interval time.Duration) error {
-	rows, _ := gatherStats(appCtx)
-	m := statsWatchModel{appCtx: appCtx, rows: rows, interval: interval}
+	rows, gErr := gatherStats(appCtx)
+	m := statsWatchModel{appCtx: appCtx, rows: rows, err: gErr, interval: interval}
 	_, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
 	return err
 }
 
-// keep state import used
-var _ *state.ModelState
