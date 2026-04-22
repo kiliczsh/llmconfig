@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+	"time"
 )
 
 func setSysProcAttr(cmd *exec.Cmd) {
@@ -17,6 +18,6 @@ func isProcessAlive(proc *os.Process) bool {
 	return err == nil
 }
 
-func stopWindows(_ int, _ int) error {
+func stopWindows(_ int, _ time.Duration) error {
 	return nil // not used on unix
 }
