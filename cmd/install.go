@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -10,6 +11,7 @@ import (
 	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
 	"github.com/kiliczsh/llamaconfig/pkg/stablediffusioncpp"
 	"github.com/kiliczsh/llamaconfig/pkg/whispercpp"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 )
 
@@ -239,6 +241,15 @@ func (m binProgressModel) View() string {
 }
 
 func runBinInstallWithProgress(label string, size int64, fn func(func(int64, int64)) error, onSuccess func()) error {
+	if !isatty.IsTerminal(os.Stdin.Fd()) {
+		fmt.Printf("  downloading %s...\n", label)
+		if err := fn(func(downloaded, total int64) {}); err != nil {
+			return err
+		}
+		onSuccess()
+		return nil
+	}
+
 	prog := tea.NewProgram(binProgressModel{label: label, total: size})
 	go func() {
 		err := fn(func(downloaded, total int64) {

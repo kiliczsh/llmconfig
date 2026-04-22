@@ -8,12 +8,19 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/kiliczsh/llamaconfig/internal/httpx"
 )
+
+func clearQuarantine(path string) {
+	if runtime.GOOS == "darwin" {
+		_ = exec.Command("xattr", "-d", "com.apple.quarantine", path).Run()
+	}
+}
 
 const githubReleasesURL = "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest"
 
@@ -188,6 +195,7 @@ func extractZip(zipPath, destDir string) error {
 		// Make executable on Unix
 		if runtime.GOOS != "windows" {
 			_ = os.Chmod(destPath, 0755)
+			clearQuarantine(destPath)
 		}
 	}
 	return nil
@@ -242,6 +250,7 @@ func extractTarGz(tarPath, destDir string) error {
 			out.Close()
 			if runtime.GOOS != "windows" {
 				_ = os.Chmod(destPath, 0755)
+				clearQuarantine(destPath)
 			}
 		}
 	}

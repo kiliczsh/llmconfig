@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os/exec"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,6 +13,12 @@ import (
 
 	"github.com/kiliczsh/llamaconfig/internal/httpx"
 )
+
+func clearQuarantine(path string) {
+	if runtime.GOOS == "darwin" {
+		_ = exec.Command("xattr", "-d", "com.apple.quarantine", path).Run()
+	}
+}
 
 const githubReleasesURL = "https://api.github.com/repos/ggml-org/whisper.cpp/releases/latest"
 
@@ -159,6 +166,7 @@ func extractZip(zipPath, destDir string) error {
 		}
 		if runtime.GOOS != "windows" {
 			_ = os.Chmod(destPath, 0755)
+			clearQuarantine(destPath)
 		}
 	}
 	return nil
