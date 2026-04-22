@@ -208,7 +208,10 @@ func buildCreateEntries(names []string, configDir, cacheDir string, p interface{
 				modelPath = filepath.Join(cacheDir, cfg.Model.File)
 			}
 		}
-		if modelPath != "" {
+		switch {
+		case modelPath == "":
+			p.Warn("%s: config has no model file reference — archiving config only", name)
+		default:
 			if info, err := os.Stat(modelPath); err == nil {
 				entry.ModelPath = modelPath
 				total += info.Size()
