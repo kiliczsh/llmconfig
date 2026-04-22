@@ -16,7 +16,7 @@ server:
 whisper:
   language: auto
   task: transcribe
-  vad: true
+  vad: false
 hardware_profiles:
   nvidia:
     n_gpu_layers: 99
