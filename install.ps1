@@ -280,25 +280,22 @@ try {
         # stable-diffusion.cpp
         try { $sdPath = & $dest sd --path } catch { $sdPath = $null }
         if ($sdPath -and (Test-Path $sdPath) -and -not $Update) {
-            try { $sdVer = (& $dest sd --version | Select-String "version:") -replace ".*version: ","" } catch { $sdVer = $null }
-            ok "stable-diffusion.cpp already installed: $(if ($sdVer) { $sdVer } else { 'unknown version' })"
+            try { $sdVer = [string](& $dest sd --version) -replace ".*commit ","commit " -replace "\s.*","" } catch { $sdVer = $null }
+            ok "stable-diffusion.cpp already installed: $(if ($sdVer) { $sdVer } else { 'installed' })"
         } else {
             info "Downloading stable-diffusion.cpp..."
             & $dest install sd
-            try { $sdVer = (& $dest sd --version | Select-String "version:") -replace ".*version: ","" } catch { $sdVer = $null }
-            ok "stable-diffusion.cpp: $(if ($sdVer) { $sdVer } else { 'installed' })"
+            ok "stable-diffusion.cpp: installed"
         }
 
         # whisper.cpp
         try { $whisperPath = & $dest whisper --path } catch { $whisperPath = $null }
         if ($whisperPath -and (Test-Path $whisperPath) -and -not $Update) {
-            try { $whisperVer = (& $dest whisper --version | Select-String "version:") -replace ".*version: ","" } catch { $whisperVer = $null }
-            ok "whisper.cpp already installed: $(if ($whisperVer) { $whisperVer } else { 'unknown version' })"
+            ok "whisper.cpp already installed"
         } else {
             info "Downloading whisper.cpp..."
             & $dest install whisper
-            try { $whisperVer = (& $dest whisper --version | Select-String "version:") -replace ".*version: ","" } catch { $whisperVer = $null }
-            ok "whisper.cpp: $(if ($whisperVer) { $whisperVer } else { 'installed' })"
+            ok "whisper.cpp: installed"
         }
     }
 } finally {
