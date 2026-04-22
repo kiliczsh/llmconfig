@@ -84,6 +84,8 @@ Write-Host ""
 $binaryPath = Join-Path $Prefix "$BinaryName.exe"
 $llmcExe    = Join-Path $Prefix "llmc.exe"
 $llmcCmd    = Join-Path $Prefix "llmc.cmd"
+$lcExe      = Join-Path $Prefix "lc.exe"   # legacy alias (pre-v0.3.0)
+$lcCmd      = Join-Path $Prefix "lc.cmd"   # legacy alias (pre-v0.3.0)
 
 # Stop running models before we yank the binary
 if (Test-Path $binaryPath) {
@@ -95,8 +97,14 @@ if (Test-Path $binaryPath) {
     if (Ask -Label "llamaconfig binary" -Path $binaryPath) {
         Remove-Item $binaryPath -Force
         ok "Removed $binaryPath"
-        foreach ($p in @($llmcExe, $llmcCmd)) {
+        foreach ($p in @($llmcExe, $llmcCmd, $lcExe, $lcCmd)) {
             if (Test-Path $p) { Remove-Item $p -Force; ok "Removed $p" }
+        }
+
+        # Remove prefix dir if empty
+        if ((Test-Path $Prefix) -and @(Get-ChildItem $Prefix -Force -ErrorAction SilentlyContinue).Count -eq 0) {
+            Remove-Item $Prefix -Force
+            ok "Removed empty $Prefix"
         }
 
         # Clean PATH
