@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/kiliczsh/llamaconfig/internal/httpx"
 )
 
 type httpDownloader struct{}
@@ -40,7 +42,7 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 	}
 	addAuthHeader(headReq, req.Token)
 
-	headResp, err := http.DefaultClient.Do(headReq)
+	headResp, err := httpx.Download.Do(headReq)
 	if err != nil {
 		return "", fmt.Errorf("downloader: HEAD %s: %w", rawURL, err)
 	}
@@ -80,7 +82,7 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 		openFlag = os.O_CREATE | os.O_WRONLY | os.O_TRUNC
 	}
 
-	resp, err := http.DefaultClient.Do(getReq)
+	resp, err := httpx.Download.Do(getReq)
 	if err != nil {
 		return "", fmt.Errorf("downloader: GET %s: %w", rawURL, err)
 	}

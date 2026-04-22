@@ -7,11 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/kiliczsh/llamaconfig/internal/httpx"
 )
 
 const githubReleasesURL = "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest"
@@ -29,7 +30,7 @@ type GithubAsset struct {
 
 // LatestRelease fetches the latest llama.cpp release metadata from GitHub.
 func LatestRelease() (*githubRelease, error) {
-	resp, err := http.Get(githubReleasesURL)
+	resp, err := httpx.API.Get(githubReleasesURL)
 	if err != nil {
 		return nil, fmt.Errorf("install: fetch release info: %w", err)
 	}
@@ -126,7 +127,7 @@ func Install(asset *GithubAsset, onProgress func(downloaded, total int64)) error
 	defer os.Remove(tmpFile.Name())
 	defer tmpFile.Close()
 
-	resp, err := http.Get(asset.BrowserDownloadURL)
+	resp, err := httpx.Download.Get(asset.BrowserDownloadURL)
 	if err != nil {
 		return fmt.Errorf("install: download: %w", err)
 	}

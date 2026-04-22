@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/kiliczsh/llamaconfig/internal/httpx"
 )
 
 const hfBaseURL = "https://huggingface.co"
@@ -29,7 +31,7 @@ func ListRepoFiles(repo, token string) ([]hfFileMeta, error) {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpx.API.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("huggingface: list %s: %w", repo, err)
 	}
