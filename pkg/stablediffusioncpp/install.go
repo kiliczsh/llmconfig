@@ -73,9 +73,10 @@ func PickAsset(rel *githubRelease, backend string) (*GithubAsset, error) {
 		}
 	case "darwin":
 		if goarch == "arm64" {
-			patterns = []string{"macos-arm64", "osx-arm64"}
+			// Space-separated = AND: asset must contain all substrings
+			patterns = []string{"macos-arm64", "osx-arm64", "darwin arm64"}
 		} else {
-			patterns = []string{"macos-x64", "osx-x64", "macos-x86_64"}
+			patterns = []string{"macos-x64", "osx-x64", "macos-x86_64", "darwin x86_64", "darwin x64"}
 		}
 	case "linux":
 		switch backend {
@@ -90,11 +91,20 @@ func PickAsset(rel *githubRelease, backend string) (*GithubAsset, error) {
 
 	lower := func(s string) string { return strings.ToLower(s) }
 
+	matchesPattern := func(name, pattern string) bool {
+		for _, part := range strings.Fields(pattern) {
+			if !strings.Contains(name, part) {
+				return false
+			}
+		}
+		return true
+	}
+
 	for _, pattern := range patterns {
 		for i := range rel.Assets {
 			a := &rel.Assets[i]
 			name := lower(a.Name)
-			if strings.Contains(name, pattern) && (strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".tar.gz")) {
+			if matchesPattern(name, pattern) && (strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".tar.gz")) {
 				return a, nil
 			}
 		}

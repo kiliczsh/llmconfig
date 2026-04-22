@@ -283,7 +283,7 @@ install_binary() {
     ln_cmd="sudo ln"
     chmod_cmd="sudo chmod"
   fi
-  $cp_cmd "$SRC_DIR/$BINARY_NAME" "$DEST" && $chmod_cmd +x "$DEST"
+  $cp_cmd "$SRC_DIR/$BINARY_NAME" "$DEST" && $chmod_cmd +x "$DEST" || return 1
   # Prefer the bundled llmc binary from the archive; fall back to a symlink
   # for older releases that don't include it.
   if [[ -f "$SRC_DIR/llmc" ]]; then
@@ -340,44 +340,78 @@ step_ok "$INSTALLED_VERSION"
 if [[ "$NO_BACKENDS" == false ]]; then
   step "Installing backends"
 
+  # Resolve the binary to use for backend installs: prefer the installed $DEST,
+  # fall back to the source binary in local mode (dev builds may not install cleanly).
+  LC_BIN=""
+  if [[ -x "$DEST" ]]; then
+    LC_BIN="$DEST"
+  elif [[ "$LOCAL_MODE" == true && -x "$SRC_DIR/$BINARY_NAME" ]]; then
+    LC_BIN="$SRC_DIR/$BINARY_NAME"
+  else
+    step_warn "llamaconfig binary not runnable at $DEST — skipping backend installs"
+  fi
+
+  if [[ -n "$LC_BIN" ]]; then
+
   # llama.cpp
-  LLAMA_BIN="$("$DEST" llama --path 2>/dev/null || true)"
+  LLAMA_BIN="$("$LC_BIN" llama --path 2>/dev/null || true)"
   if [[ -n "$LLAMA_BIN" && -f "$LLAMA_BIN" && "$UPDATE" == false ]]; then
-    LLAMA_VERSION="$("$DEST" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
+    LLAMA_VERSION="$("$LC_BIN" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
     step_ok "llama.cpp already installed: ${LLAMA_VERSION}"
   else
     spinner_start "Downloading llama.cpp..."
-    "$DEST" install llama < /dev/null 2>&1 || true
+    "$LC_BIN" install llama < /dev/null 2>&1 || true
     spinner_stop
-    LLAMA_VERSION="$("$DEST" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
+    LLAMA_VERSION="$("$LC_BIN" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
     step_ok "llama.cpp: $LLAMA_VERSION"
   fi
 
   # stable-diffusion.cpp
-  SD_BIN="$("$DEST" sd --path 2>/dev/null || true)"
+  SD_BIN="$("$LC_BIN" sd --path 2>/dev/null || true)"
   if [[ -n "$SD_BIN" && -f "$SD_BIN" && "$UPDATE" == false ]]; then
-    SD_VERSION="$("$DEST" sd --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
+    SD_VERSION="$("$LC_BIN" sd --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
     step_ok "stable-diffusion.cpp already installed: ${SD_VERSION}"
   else
     spinner_start "Downloading stable-diffusion.cpp..."
-    "$DEST" install sd < /dev/null 2>&1 || true
+    "$LC_BIN" install sd < /dev/null 2>&1 || true
     spinner_stop
-    SD_VERSION="$("$DEST" sd --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
+    SD_VERSION="$("$LC_BIN" sd --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
     step_ok "stable-diffusion.cpp: $SD_VERSION"
   fi
 
-  # whisper.cpp
-  WHISPER_BIN="$("$DEST" whisper --path 2>/dev/null || true)"
-  if [[ -n "$WHISPER_BIN" && -f "$WHISPER_BIN" && "$UPDATE" == false ]]; then
-    WHISPER_VERSION="$("$DEST" whisper --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
-    step_ok "whisper.cpp already installed: ${WHISPER_VERSION}"
+  # whisper.cpp (pre-built binaries only available on Windows)
+  if [[ "$OS" != "linux" && "$OS" != "darwin" ]]; then
+    WHISPER_BIN="$("$LC_BIN" whisper --path 2>/dev/null || true)"
+    if [[ -n "$WHISPER_BIN" && -f "$WHISPER_BIN" && "$UPDATE" == false ]]; then
+      WHISPER_VERSION="$("$LC_BIN" whisper --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
+      step_ok "whisper.cpp already installed: ${WHISPER_VERSION}"
+    else
+      spinner_start "Downloading whisper.cpp..."
+      "$LC_BIN" install whisper < /dev/null 2>&1 || true
+      spinner_stop
+      WHISPER_VERSION="$("$LC_BIN" whisper --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
+      step_ok "whisper.cpp: $WHISPER_VERSION"
+    fi
   else
-    spinner_start "Downloading whisper.cpp..."
-    "$DEST" install whisper < /dev/null 2>&1 || true
-    spinner_stop
-    WHISPER_VERSION="$("$DEST" whisper --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
-    step_ok "whisper.cpp: $WHISPER_VERSION"
+    if [[ "$OS" == "darwin" ]]; then
+      if command -v whisper-server &>/dev/null || command -v whisper-cli &>/dev/null; then
+        step_ok "whisper.cpp already installed: $(command -v whisper-server whisper-cli 2>/dev/null | head -1)"
+      elif command -v brew &>/dev/null; then
+        step_warn "whisper.cpp: no pre-built binaries for macOS — installing via Homebrew..."
+        if brew install whisper-cpp &>/dev/null; then
+          step_ok "whisper.cpp installed via Homebrew"
+        else
+          step_warn "whisper.cpp: brew install failed — try manually: brew install whisper-cpp"
+        fi
+      else
+        step_warn "whisper.cpp: no pre-built binaries for macOS — install via: brew install whisper-cpp"
+      fi
+    else
+      step_warn "whisper.cpp: no pre-built binaries for $OS — build from source: https://github.com/ggml-org/whisper.cpp"
+    fi
   fi
+
+  fi # end LC_BIN check
 fi
 
 echo ""
