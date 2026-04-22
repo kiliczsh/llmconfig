@@ -2,23 +2,35 @@
 set -euo pipefail
 
 # --- config ---
-REPO="https://github.com/kiliczsh/llamaconfig.git"
+REPO_SLUG="kiliczsh/llamaconfig"
 BINARY_NAME="llamaconfig"
 DEFAULT_PREFIX="/usr/local/bin"
-MIN_DISK_MB=600
+MIN_DISK_MB=200
 
 # --- flags ---
 PREFIX="$DEFAULT_PREFIX"
 NO_LLAMA=false
 UPDATE=false
+VERSION=""
 
 for arg in "$@"; do
   case "$arg" in
-    --prefix=*) PREFIX="${arg#*=}" ;;
-    --no-llama) NO_LLAMA=true ;;
-    --update)   UPDATE=true ;;
+    --prefix=*)  PREFIX="${arg#*=}" ;;
+    --version=*) VERSION="${arg#*=}" ;;
+    --no-llama)  NO_LLAMA=true ;;
+    --update)    UPDATE=true ;;
     --help)
-      echo "Usage: install.sh [--prefix=PATH] [--no-llama] [--update]"
+      cat <<USAGE
+Usage: install.sh [--prefix=PATH] [--version=vX.Y.Z] [--no-llama] [--update]
+
+  --prefix=PATH    Install directory (default: /usr/local/bin)
+  --version=TAG    Install a specific release tag (default: latest)
+  --no-llama       Skip llama.cpp download
+  --update         Force reinstall even if already present
+
+The script downloads a prebuilt binary from GitHub Releases; no Go or
+git toolchain is required on the target machine.
+USAGE
       exit 0
       ;;
   esac
@@ -88,25 +100,13 @@ EOF
   printf "  %s\n\n" "Manage local LLM inference with llama.cpp"
 }
 
-# --- step counter ---
 STEP=0
-TOTAL_STEPS=5
-[[ "$NO_LLAMA" == false ]] && TOTAL_STEPS=6
+TOTAL_STEPS=4
+[[ "$NO_LLAMA" == false ]] && TOTAL_STEPS=5
 
 step() {
   ((STEP++))
   printf "\n${BOLD}[%d/%d] %s${RESET}\n" "$STEP" "$TOTAL_STEPS" "$1"
-}
-
-# --- pre-flight animation ---
-preflight_animate() {
-  local checks=("OS" "Disk" "Internet" "Git" "Go")
-  printf "\n  ${BOLD}Pre-flight checks${RESET}\n"
-  for c in "${checks[@]}"; do
-    printf "  ${CYAN}...${RESET} %-10s" "$c"
-    sleep 0.12
-    printf "\r  ${GREEN}✓${RESET}   %-10s\n" "$c"
-  done
 }
 
 # ============================================================
@@ -117,110 +117,135 @@ banner
 # --- [1] Pre-flight ---
 step "Pre-flight checks"
 
-# OS
-OS="$(uname -s)"
-ARCH="$(uname -m)"
-case "$OS" in
-  Darwin|Linux) step_ok "OS: $OS/$ARCH" ;;
-  *) die "Unsupported OS: $OS" ;;
+OS_RAW="$(uname -s)"
+ARCH_RAW="$(uname -m)"
+case "$OS_RAW" in
+  Darwin) OS="darwin" ;;
+  Linux)  OS="linux"  ;;
+  *)      die "Unsupported OS: $OS_RAW" ;;
 esac
+case "$ARCH_RAW" in
+  x86_64|amd64)  ARCH="amd64" ;;
+  aarch64|arm64) ARCH="arm64" ;;
+  *)             die "Unsupported arch: $ARCH_RAW" ;;
+esac
+step_ok "OS: $OS/$ARCH"
 
-# Disk
 available_mb=$(df -m "$HOME" | awk 'NR==2{print $4}')
 if (( available_mb < MIN_DISK_MB )); then
   die "Not enough disk space (need ${MIN_DISK_MB}MB, have ${available_mb}MB)"
 fi
 step_ok "Disk: ${available_mb}MB available"
 
-# Internet
 if ! curl -sf --max-time 5 https://github.com > /dev/null 2>&1; then
   die "No internet connection"
 fi
 step_ok "Internet: reachable"
 
-# Git
-if ! command -v git &>/dev/null; then
-  die "git not found — install git first"
+if ! command -v curl &>/dev/null; then
+  die "curl not found — install curl first"
 fi
-step_ok "Git: $(git --version | awk '{print $3}')"
-
-# Go
-if ! command -v go &>/dev/null; then
-  # try common brew paths
-  for p in /opt/homebrew/bin/go /usr/local/go/bin/go; do
-    [[ -x "$p" ]] && export PATH="$(dirname $p):$PATH" && break
-  done
+if ! command -v tar &>/dev/null; then
+  die "tar not found — install tar first"
 fi
 
-if ! command -v go &>/dev/null; then
-  step_warn "Go not found — installing via brew..."
-  if ! command -v brew &>/dev/null; then
-    die "Homebrew not found. Install Go manually: https://go.dev/doc/install"
+# --- [2] Resolve release ---
+step "Resolving release"
+
+if [[ -z "$VERSION" ]]; then
+  spinner_start "Fetching latest release tag..."
+  VERSION=$(curl -sSL "https://api.github.com/repos/${REPO_SLUG}/releases/latest" \
+    | sed -n 's/.*"tag_name": *"\(v[^"]*\)".*/\1/p' | head -1)
+  spinner_stop
+  [[ -z "$VERSION" ]] && die "Could not determine latest release (API rate-limited? Try --version=vX.Y.Z)"
+fi
+VERSION_NO_V="${VERSION#v}"
+step_ok "Version: $VERSION"
+
+# Skip reinstall if same version already present
+if [[ "$UPDATE" == false ]] && command -v "$BINARY_NAME" &>/dev/null; then
+  INSTALLED=$("$BINARY_NAME" version 2>/dev/null | awk '{print $2}' || true)
+  if [[ -n "$INSTALLED" && "$INSTALLED" == "$VERSION_NO_V" ]]; then
+    step_ok "$BINARY_NAME $INSTALLED is already installed (use --update to reinstall)"
+    [[ "$NO_LLAMA" == true ]] && exit 0
   fi
-  brew install go
-fi
-step_ok "Go: $(go version | awk '{print $3}')"
-
-# --- [2] Clone / Update ---
-step "Repository"
-
-INSTALL_DIR="$HOME/.llamaconfig/src"
-mkdir -p "$(dirname "$INSTALL_DIR")"
-
-if [[ -d "$INSTALL_DIR/.git" ]]; then
-  spinner_start "Updating repository..."
-  git -C "$INSTALL_DIR" pull --ff-only > /dev/null 2>&1
-  spinner_stop
-  step_ok "Repository updated"
-else
-  spinner_start "Cloning repository..."
-  git clone --depth=1 "$REPO" "$INSTALL_DIR" > /dev/null 2>&1
-  spinner_stop
-  step_ok "Repository cloned to $INSTALL_DIR"
 fi
 
-# --- [3] Build ---
-step "Building llamaconfig"
+ARCHIVE="llamaconfig-${VERSION_NO_V}-${OS}-${ARCH}.tar.gz"
+ARCHIVE_URL="https://github.com/${REPO_SLUG}/releases/download/${VERSION}/${ARCHIVE}"
+CHECKSUM_URL="https://github.com/${REPO_SLUG}/releases/download/${VERSION}/checksums.txt"
 
-spinner_start "Compiling..."
-(cd "$INSTALL_DIR" && go build -o llamaconfig . > /dev/null 2>&1)
+# --- [3] Download & verify ---
+step "Downloading binary"
+
+TMP="$(mktemp -d)"
+trap 'spinner_stop; rm -rf "$TMP"' EXIT
+
+spinner_start "Downloading $ARCHIVE..."
+if ! curl -sSLf "$ARCHIVE_URL" -o "$TMP/$ARCHIVE"; then
+  spinner_stop
+  die "Download failed: $ARCHIVE_URL"
+fi
 spinner_stop
-step_ok "Build successful"
+step_ok "Downloaded $(du -h "$TMP/$ARCHIVE" | cut -f1)"
 
-# --- [4] Install binary ---
+# Verify checksum — non-fatal if checksums.txt missing (older releases)
+if curl -sSLf "$CHECKSUM_URL" -o "$TMP/checksums.txt" 2>/dev/null; then
+  EXPECTED=$(grep "  $ARCHIVE\$" "$TMP/checksums.txt" | awk '{print $1}')
+  if [[ -n "$EXPECTED" ]]; then
+    if command -v sha256sum &>/dev/null; then
+      ACTUAL=$(sha256sum "$TMP/$ARCHIVE" | awk '{print $1}')
+    elif command -v shasum &>/dev/null; then
+      ACTUAL=$(shasum -a 256 "$TMP/$ARCHIVE" | awk '{print $1}')
+    fi
+    if [[ -n "${ACTUAL:-}" && "$ACTUAL" != "$EXPECTED" ]]; then
+      die "Checksum mismatch (expected $EXPECTED, got $ACTUAL)"
+    fi
+    step_ok "Checksum verified"
+  fi
+else
+  step_warn "No checksum file — skipping verification"
+fi
+
+# --- [4] Install ---
 step "Installing binary"
 
-mkdir -p "$PREFIX" 2>/dev/null || true
-
-if ! cp "$INSTALL_DIR/llamaconfig" "$PREFIX/$BINARY_NAME" 2>/dev/null; then
-  # fallback: try sudo, then ~/.local/bin
-  if command -v sudo &>/dev/null && sudo cp "$INSTALL_DIR/llamaconfig" "$PREFIX/$BINARY_NAME" 2>/dev/null; then
-    sudo chmod +x "$PREFIX/$BINARY_NAME"
-    step_ok "Installed to $PREFIX/$BINARY_NAME (via sudo)"
-  else
-    PREFIX="$HOME/.local/bin"
-    mkdir -p "$PREFIX"
-    cp "$INSTALL_DIR/llamaconfig" "$PREFIX/$BINARY_NAME"
-    chmod +x "$PREFIX/$BINARY_NAME"
-    step_warn "No permission for /usr/local/bin — installed to $PREFIX/$BINARY_NAME"
-  fi
-else
-  chmod +x "$PREFIX/$BINARY_NAME"
-  step_ok "Installed to $PREFIX/$BINARY_NAME"
+tar -xzf "$TMP/$ARCHIVE" -C "$TMP"
+if [[ ! -f "$TMP/$BINARY_NAME" ]]; then
+  die "Archive did not contain $BINARY_NAME"
 fi
 
-# lc alias
-if ln -sf "$PREFIX/$BINARY_NAME" "$PREFIX/lc" 2>/dev/null || sudo ln -sf "$PREFIX/$BINARY_NAME" "$PREFIX/lc" 2>/dev/null; then
-  step_ok "Alias: lc → llamaconfig"
+mkdir -p "$PREFIX" 2>/dev/null || true
+DEST="$PREFIX/$BINARY_NAME"
+
+install_binary() {
+  local use_sudo="$1"
+  if [[ "$use_sudo" == "sudo" ]]; then
+    sudo cp "$TMP/$BINARY_NAME" "$DEST" && sudo chmod +x "$DEST"
+    sudo ln -sf "$DEST" "$PREFIX/lc" 2>/dev/null || true
+  else
+    cp "$TMP/$BINARY_NAME" "$DEST" && chmod +x "$DEST"
+    ln -sf "$DEST" "$PREFIX/lc" 2>/dev/null || true
+  fi
+}
+
+if install_binary "" 2>/dev/null; then
+  step_ok "Installed to $DEST"
+elif command -v sudo &>/dev/null && install_binary "sudo" 2>/dev/null; then
+  step_ok "Installed to $DEST (via sudo)"
 else
-  step_warn "Could not create lc alias in $PREFIX"
+  PREFIX="$HOME/.local/bin"
+  DEST="$PREFIX/$BINARY_NAME"
+  mkdir -p "$PREFIX"
+  install_binary "" || die "Failed to install to $PREFIX"
+  step_warn "No permission for $DEFAULT_PREFIX — installed to $DEST"
 fi
 
 # PATH check
 if ! echo "$PATH" | tr ':' '\n' | grep -qx "$PREFIX"; then
   step_warn "$PREFIX is not in your PATH"
   SHELL_RC=""
-  case "$SHELL" in
+  case "${SHELL:-}" in
     */zsh)  SHELL_RC="$HOME/.zshrc" ;;
     */bash) SHELL_RC="$HOME/.bashrc" ;;
   esac
@@ -233,32 +258,26 @@ if ! echo "$PATH" | tr ':' '\n' | grep -qx "$PREFIX"; then
   fi
 fi
 
-# --- [5] Smoke test ---
-step "Smoke test"
+# Smoke test
+INSTALLED_VERSION=$("$DEST" version 2>/dev/null || echo 'unknown')
+step_ok "$INSTALLED_VERSION"
 
-VERSION="$("$PREFIX/$BINARY_NAME" version 2>/dev/null || echo 'unknown')"
-step_ok "llamaconfig $VERSION"
-
-HW="$("$PREFIX/$BINARY_NAME" hardware 2>/dev/null | grep 'Selected profile' | awk -F': ' '{print $2}' | xargs)"
-step_ok "Hardware profile: ${HW:-detected}"
-
-# --- [6] Install llama.cpp ---
+# --- [5] Install llama.cpp ---
 if [[ "$NO_LLAMA" == false ]]; then
   step "Installing llama.cpp"
-  LLAMA_BIN="$("$PREFIX/$BINARY_NAME" llama --path 2>/dev/null || true)"
+  LLAMA_BIN="$("$DEST" llama --path 2>/dev/null || true)"
   if [[ -n "$LLAMA_BIN" && -f "$LLAMA_BIN" && "$UPDATE" == false ]]; then
-    LLAMA_VERSION="$("$PREFIX/$BINARY_NAME" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
+    LLAMA_VERSION="$("$DEST" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'unknown')"
     step_ok "llama.cpp already installed: ${LLAMA_VERSION} (use --update to reinstall)"
   else
     spinner_start "Downloading llama.cpp binary..."
-    "$PREFIX/$BINARY_NAME" llama --install < /dev/null 2>&1 | grep -E '^(->|./)' || true
+    "$DEST" llama --install < /dev/null 2>&1 | grep -E '^(->|./)' || true
     spinner_stop
-    LLAMA_VERSION="$("$PREFIX/$BINARY_NAME" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
+    LLAMA_VERSION="$("$DEST" llama --version 2>/dev/null | grep 'version:' | head -1 || echo 'installed')"
     step_ok "llama.cpp: $LLAMA_VERSION"
   fi
 fi
 
-# --- done ---
 echo ""
 printf "${GREEN}${BOLD}  Installation complete!${RESET}\n\n"
 printf "  Run: ${CYAN}lc init --template gemma${RESET}\n"
