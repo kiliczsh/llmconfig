@@ -280,8 +280,8 @@ try {
         # stable-diffusion.cpp
         try { $sdPath = & $dest sd --path } catch { $sdPath = $null }
         if ($sdPath -and (Test-Path $sdPath) -and -not $Update) {
-            try { $sdVer = [string](& $dest sd --version) -replace ".*commit ","commit " -replace "\s.*","" } catch { $sdVer = $null }
-            ok "stable-diffusion.cpp already installed: $(if ($sdVer) { $sdVer } else { 'installed' })"
+            try { $sdVer = [string](& $dest sd --version) -replace ".*commit ","" -replace "\s.*","" } catch { $sdVer = $null }
+            ok "stable-diffusion.cpp already installed: $(if ($sdVer) { "commit $sdVer" } else { 'installed' })"
         } else {
             info "Downloading stable-diffusion.cpp..."
             & $dest install sd
