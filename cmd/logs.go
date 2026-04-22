@@ -8,14 +8,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kiliczsh/llamaconfig/internal/process"
-	"github.com/kiliczsh/llamaconfig/internal/runner"
 	"github.com/spf13/cobra"
 )
 
 func newLogsCmd() *cobra.Command {
 	var flagFollow bool
 	var flagLines int
-	var flagSince string
 
 	cmd := &cobra.Command{
 		Use:   "logs [name]",
@@ -35,14 +33,8 @@ func newLogsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p := appCtx.Printer
-			_ = sf
-
-			ms, err := appCtx.StateStore.Get(name)
-			if err != nil {
-				return err
-			}
-			if ms == nil {
+			ms, ok := sf.Models[name]
+			if !ok || ms == nil {
 				return fmt.Errorf("model %q not found — has it been started before?", name)
 			}
 
@@ -51,11 +43,8 @@ func newLogsCmd() *cobra.Command {
 				return fmt.Errorf("log file not found: %s", logFile)
 			}
 
-			_ = flagSince // TODO: filter by time
-
 			if flagFollow {
-				r := runner.New()
-				return runLogsFollow(logFile, ms.Name, flagLines, r.IsAlive(ms))
+				return runLogsFollow(logFile, ms.Name, flagLines)
 			}
 
 			lines, err := process.TailLines(logFile, flagLines)
@@ -63,6 +52,7 @@ func newLogsCmd() *cobra.Command {
 				return err
 			}
 
+			p := appCtx.Printer
 			for _, line := range lines {
 				p.Info("%s", line)
 			}
@@ -72,7 +62,6 @@ func newLogsCmd() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&flagFollow, "follow", "f", false, "stream logs in real time")
 	cmd.Flags().IntVarP(&flagLines, "lines", "n", 50, "number of lines to show")
-	cmd.Flags().StringVar(&flagSince, "since", "", "show logs since duration (e.g. 1h, 30m)")
 	return cmd
 }
 
@@ -153,7 +142,7 @@ func (m logsModel) View() string {
 	return header + "\n" + body
 }
 
-func runLogsFollow(logFile, name string, n int, _ bool) error {
+func runLogsFollow(logFile, name string, n int) error {
 	initial, err := process.TailLines(logFile, n)
 	if err != nil {
 		return err
@@ -161,9 +150,4 @@ func runLogsFollow(logFile, name string, n int, _ bool) error {
 	m := newLogsModel(logFile, name, initial)
 	_, err = tea.NewProgram(m, tea.WithAltScreen()).Run()
 	return err
-}
-
-// signature mismatch fix — match what's called above
-func init() {
-	_ = fmt.Sprintf
 }
