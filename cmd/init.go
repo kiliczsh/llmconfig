@@ -11,21 +11,42 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var builtinTemplates = map[string]string{
-	// llama
-	"codellama": "TheBloke/CodeLlama-13B-Instruct-GGUF",
-	"mistral":   "TheBloke/Mistral-7B-Instruct-v0.2-GGUF",
-	"llama3":    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
-	"deepseek":  "bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF",
-	"phi4":      "bartowski/phi-4-GGUF",
-	"gemma":     "bartowski/google_gemma-4-E2B-it-GGUF",
+type templateDef struct {
+	backend string
+	repo    string
+	file    string // when set, skips the file picker form
+	mode    string // when set, skips the mode form
+	port    string // when set, skips the port form
+}
+
+// full() reports whether the template has enough info to skip all interactive forms.
+func (t templateDef) full() bool {
+	return t.repo != "" && t.file != "" && t.mode != ""
+}
+
+var builtinTemplates = map[string]templateDef{
+	// llama — interactive prompts for file/mode unless overridden
+	"codellama": {backend: "llama", repo: "TheBloke/CodeLlama-13B-Instruct-GGUF"},
+	"mistral":   {backend: "llama", repo: "TheBloke/Mistral-7B-Instruct-v0.2-GGUF"},
+	"llama3":    {backend: "llama", repo: "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"},
+	"deepseek":  {backend: "llama", repo: "bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF"},
+	"phi4":      {backend: "llama", repo: "bartowski/phi-4-GGUF"},
+	"gemma":     {backend: "llama", repo: "bartowski/google_gemma-4-E2B-it-GGUF"},
+	// fully-specified templates — zero prompts
+	"gemma4": {
+		backend: "llama",
+		repo:    "bartowski/google_gemma-4-E2B-it-GGUF",
+		file:    "google_gemma-4-E2B-it-Q4_K_M.gguf",
+		mode:    "interactive",
+		port:    "8080",
+	},
 	// sd
-	"sd15":         "runwayml/stable-diffusion-v1-5",
-	"flux-schnell": "city96/FLUX.1-schnell-gguf",
-	"flux-dev":     "city96/FLUX.1-dev-gguf",
+	"sd15":         {backend: "sd", repo: "runwayml/stable-diffusion-v1-5"},
+	"flux-schnell": {backend: "sd", repo: "city96/FLUX.1-schnell-gguf"},
+	"flux-dev":     {backend: "sd", repo: "city96/FLUX.1-dev-gguf"},
 	// whisper
-	"whisper-base":  "ggerganov/whisper.cpp",
-	"whisper-turbo": "ggerganov/whisper.cpp",
+	"whisper-base":  {backend: "whisper", file: "ggml-base.bin"},
+	"whisper-turbo": {backend: "whisper", file: "ggml-large-v3-turbo.bin"},
 }
 
 func newInitCmd() *cobra.Command {
@@ -47,19 +68,36 @@ func newInitCmd() *cobra.Command {
 				name = args[0]
 			}
 
-			// Step 1: backend
-			backend := "llama"
-			if err := huh.NewForm(huh.NewGroup(
-				huh.NewSelect[string]().
-					Title("Backend").
-					Options(
-						huh.NewOption("llama  — text generation (llama.cpp)", "llama"),
-						huh.NewOption("sd     — image generation (stable-diffusion.cpp)", "sd"),
-						huh.NewOption("whisper — speech recognition (whisper.cpp)", "whisper"),
-					).
-					Value(&backend),
-			)).Run(); err != nil {
-				return err
+			// Resolve template and inherit name if not supplied.
+			var tmpl templateDef
+			if flagTemplate != "" {
+				if t, ok := builtinTemplates[flagTemplate]; ok {
+					tmpl = t
+					if name == "" {
+						name = flagTemplate
+					}
+					if flagFrom == "" && tmpl.repo != "" {
+						flagFrom = tmpl.repo
+					}
+				}
+			}
+
+			// Determine backend: from template, or ask.
+			backend := tmpl.backend
+			if backend == "" {
+				backend = "llama"
+				if err := huh.NewForm(huh.NewGroup(
+					huh.NewSelect[string]().
+						Title("Backend").
+						Options(
+							huh.NewOption("llama  — text generation (llama.cpp)", "llama"),
+							huh.NewOption("sd     — image generation (stable-diffusion.cpp)", "sd"),
+							huh.NewOption("whisper — speech recognition (whisper.cpp)", "whisper"),
+						).
+						Value(&backend),
+				)).Run(); err != nil {
+					return err
+				}
 			}
 
 			switch backend {
@@ -68,7 +106,7 @@ func newInitCmd() *cobra.Command {
 			case "whisper":
 				return initWhisper(name, flagFrom, flagTemplate, flagOutput, appCtx.ConfigDir, p)
 			default:
-				return initLlama(name, flagFrom, flagTemplate, flagOutput, appCtx.ConfigDir, token, p)
+				return initLlama(name, tmpl, flagFrom, flagOutput, appCtx.ConfigDir, token, p)
 			}
 		},
 	}
@@ -79,26 +117,34 @@ func newInitCmd() *cobra.Command {
 	return cmd
 }
 
-func initLlama(name, flagFrom, flagTemplate, flagOutput, configDir, token string, p interface {
+func initLlama(name string, tmpl templateDef, flagFrom, flagOutput, configDir, token string, p interface {
 	Info(string, ...any)
 	Warn(string, ...any)
 	Success(string, ...any)
 }) error {
-	if flagTemplate != "" && flagFrom == "" {
-		if repo, ok := builtinTemplates[flagTemplate]; ok {
-			flagFrom = repo
-		}
-	}
-
 	var (
-		repo         string
-		file         string
-		port         = "8080"
-		mode         = "server"
+		repo         = flagFrom
+		file         = tmpl.file
+		port         = tmpl.port
+		mode         = tmpl.mode
 		systemPrompt string
 	)
-	if flagFrom != "" {
-		repo = flagFrom
+	if port == "" {
+		port = "8080"
+	}
+	if mode == "" {
+		mode = "server"
+	}
+
+	// When the template fully specifies all fields, skip every interactive form.
+	if tmpl.full() && name != "" {
+		name = strings.TrimSpace(name)
+		repo = strings.TrimSpace(repo)
+		outPath := resolveOutPath(flagOutput, configDir, name)
+		if cancelled, err := confirmOverwrite(outPath, p); err != nil || cancelled {
+			return err
+		}
+		return writeLlamaConfig(outPath, name, repo, file, mode, port, systemPrompt, p)
 	}
 
 	fields := []huh.Field{}
@@ -115,14 +161,18 @@ func initLlama(name, flagFrom, flagTemplate, flagOutput, configDir, token string
 			Placeholder("user/repo-GGUF").
 			Value(&repo))
 	}
+	if mode == "" {
+		fields = append(fields,
+			huh.NewSelect[string]().
+				Title("Mode").
+				Options(
+					huh.NewOption("server (OpenAI-compatible API)", "server"),
+					huh.NewOption("interactive (llama-cli terminal chat)", "interactive"),
+				).
+				Value(&mode),
+		)
+	}
 	fields = append(fields,
-		huh.NewSelect[string]().
-			Title("Mode").
-			Options(
-				huh.NewOption("server (OpenAI-compatible API)", "server"),
-				huh.NewOption("interactive (llama-cli terminal chat)", "interactive"),
-			).
-			Value(&mode),
 		huh.NewInput().
 			Title("Server port").
 			Placeholder("8080").
@@ -179,7 +229,13 @@ func initLlama(name, flagFrom, flagTemplate, flagOutput, configDir, token string
 	if cancelled, err := confirmOverwrite(outPath, p); err != nil || cancelled {
 		return err
 	}
+	return writeLlamaConfig(outPath, name, repo, file, mode, port, systemPrompt, p)
+}
 
+func writeLlamaConfig(outPath, name, repo, file, mode, port, systemPrompt string, p interface {
+	Success(string, ...any)
+	Info(string, ...any)
+}) error {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "version: 1\nname: %s\n\nbackend: llama\n\nmode: %s\n\nmodel:\n  source: huggingface\n  repo: %s\n  file: %s\n  download:\n    resume: true\n\nserver:\n  port: %s\n", name, mode, repo, file, port)
 	if systemPrompt != "" {
@@ -188,7 +244,6 @@ func initLlama(name, flagFrom, flagTemplate, flagOutput, configDir, token string
 			fmt.Fprintf(&sb, "    %s\n", line)
 		}
 	}
-
 	return writeConfig(outPath, sb.String(), name, p)
 }
 
@@ -198,8 +253,8 @@ func initSD(name, flagFrom, flagTemplate, flagOutput, configDir string, p interf
 	Success(string, ...any)
 }) error {
 	if flagTemplate != "" && flagFrom == "" {
-		if repo, ok := builtinTemplates[flagTemplate]; ok {
-			flagFrom = repo
+		if tmpl, ok := builtinTemplates[flagTemplate]; ok {
+			flagFrom = tmpl.repo
 		}
 	}
 
@@ -312,11 +367,8 @@ func initWhisper(name, flagFrom, flagTemplate, flagOutput, configDir string, p i
 	Success(string, ...any)
 }) error {
 	if flagTemplate != "" && flagFrom == "" {
-		switch flagTemplate {
-		case "whisper-turbo":
-			flagFrom = "ggml-large-v3-turbo.bin"
-		case "whisper-base":
-			flagFrom = "ggml-base.bin"
+		if tmpl, ok := builtinTemplates[flagTemplate]; ok && tmpl.file != "" {
+			flagFrom = tmpl.file
 		}
 	}
 
