@@ -64,8 +64,11 @@ archives:
     name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
     files:
       - README.md
-      - DOCS.md
       - config.reference.yaml
+      # Ship only the scripts that make sense for the target OS:
+      # .ps1 on Windows, .sh on Linux/macOS.
+      - src: "install.{{ if eq .Os \"windows\" }}ps1{{ else }}sh{{ end }}"
+      - src: "uninstall.{{ if eq .Os \"windows\" }}ps1{{ else }}sh{{ end }}"
 
 checksum:
   name_template: "checksums.txt"

@@ -30,11 +30,27 @@ Usage: install.sh [--prefix=PATH] [--version=vX.Y.Z] [--no-llama] [--update]
 
 The script downloads a prebuilt binary from GitHub Releases; no Go or
 git toolchain is required on the target machine.
+
+When run from inside an extracted release archive (i.e. the llamaconfig
+binary sits next to this script), the download step is skipped and the
+adjacent binary is installed directly — useful for offline installs.
 USAGE
       exit 0
       ;;
   esac
 done
+
+# Detect whether we're being run from inside an already-extracted release
+# archive. When piped via `curl ... | bash`, BASH_SOURCE[0] is empty or
+# non-resolvable, so this falls through to the download path.
+SCRIPT_DIR=""
+if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "")"
+fi
+LOCAL_MODE=false
+if [[ -n "$SCRIPT_DIR" && -f "$SCRIPT_DIR/$BINARY_NAME" && -z "$VERSION" ]]; then
+  LOCAL_MODE=true
+fi
 
 # --- colors ---
 RED='\033[0;31m'
@@ -101,11 +117,19 @@ EOF
 }
 
 STEP=0
-TOTAL_STEPS=4
-[[ "$NO_LLAMA" == false ]] && TOTAL_STEPS=5
+# Remote mode: pre-flight, resolve, download, install, (llama)
+# Local mode:  pre-flight, use-bundled, install, (llama)
+if [[ "$LOCAL_MODE" == true ]]; then
+  TOTAL_STEPS=3
+else
+  TOTAL_STEPS=4
+fi
+if [[ "$NO_LLAMA" == false ]]; then
+  TOTAL_STEPS=$(( TOTAL_STEPS + 1 ))
+fi
 
 step() {
-  ((STEP++))
+  STEP=$(( STEP + 1 ))
   printf "\n${BOLD}[%d/%d] %s${RESET}\n" "$STEP" "$TOTAL_STEPS" "$1"
 }
 
@@ -137,11 +161,6 @@ if (( available_mb < MIN_DISK_MB )); then
 fi
 step_ok "Disk: ${available_mb}MB available"
 
-if ! curl -sf --max-time 5 https://github.com > /dev/null 2>&1; then
-  die "No internet connection"
-fi
-step_ok "Internet: reachable"
-
 if ! command -v curl &>/dev/null; then
   die "curl not found — install curl first"
 fi
@@ -149,71 +168,106 @@ if ! command -v tar &>/dev/null; then
   die "tar not found — install tar first"
 fi
 
-# --- [2] Resolve release ---
-step "Resolving release"
-
-if [[ -z "$VERSION" ]]; then
-  spinner_start "Fetching latest release tag..."
-  VERSION=$(curl -sSL "https://api.github.com/repos/${REPO_SLUG}/releases/latest" \
-    | sed -n 's/.*"tag_name": *"\(v[^"]*\)".*/\1/p' | head -1)
-  spinner_stop
-  [[ -z "$VERSION" ]] && die "Could not determine latest release (API rate-limited? Try --version=vX.Y.Z)"
-fi
-VERSION_NO_V="${VERSION#v}"
-step_ok "Version: $VERSION"
-
-# Skip reinstall if same version already present
-if [[ "$UPDATE" == false ]] && command -v "$BINARY_NAME" &>/dev/null; then
-  INSTALLED=$("$BINARY_NAME" version 2>/dev/null | awk '{print $2}' || true)
-  if [[ -n "$INSTALLED" && "$INSTALLED" == "$VERSION_NO_V" ]]; then
-    step_ok "$BINARY_NAME $INSTALLED is already installed (use --update to reinstall)"
-    [[ "$NO_LLAMA" == true ]] && exit 0
+# In local mode we still want the network for llama.cpp install later,
+# but don't fail here if offline — `--no-llama` is a valid path.
+if [[ "$LOCAL_MODE" == false || "$NO_LLAMA" == false ]]; then
+  if ! curl -sf --max-time 5 https://github.com > /dev/null 2>&1; then
+    if [[ "$LOCAL_MODE" == true ]]; then
+      step_warn "No internet — --no-llama will be forced after install"
+      NO_LLAMA=true
+      TOTAL_STEPS=$(( TOTAL_STEPS - 1 ))
+    else
+      die "No internet connection"
+    fi
+  else
+    step_ok "Internet: reachable"
   fi
 fi
 
-ARCHIVE="llamaconfig-${VERSION_NO_V}-${OS}-${ARCH}.tar.gz"
-ARCHIVE_URL="https://github.com/${REPO_SLUG}/releases/download/${VERSION}/${ARCHIVE}"
-CHECKSUM_URL="https://github.com/${REPO_SLUG}/releases/download/${VERSION}/checksums.txt"
+# SRC_DIR is where install step reads binaries from: either a fresh
+# tmpdir (remote mode, filled by the download+extract step) or the
+# script's own directory (local mode, the extracted release archive).
+SRC_DIR=""
 
-# --- [3] Download & verify ---
-step "Downloading binary"
+if [[ "$LOCAL_MODE" == true ]]; then
+  # --- [2] Use bundled binary ---
+  step "Using bundled binary"
+  SRC_DIR="$SCRIPT_DIR"
+  VERSION_NO_V=$("$SRC_DIR/$BINARY_NAME" version 2>/dev/null | awk '{print $2}' || echo "bundled")
+  step_ok "Version: $VERSION_NO_V (from $SRC_DIR)"
 
-TMP="$(mktemp -d)"
-trap 'spinner_stop; rm -rf "$TMP"' EXIT
-
-spinner_start "Downloading $ARCHIVE..."
-if ! curl -sSLf "$ARCHIVE_URL" -o "$TMP/$ARCHIVE"; then
-  spinner_stop
-  die "Download failed: $ARCHIVE_URL"
-fi
-spinner_stop
-step_ok "Downloaded $(du -h "$TMP/$ARCHIVE" | cut -f1)"
-
-# Verify checksum — non-fatal if checksums.txt missing (older releases)
-if curl -sSLf "$CHECKSUM_URL" -o "$TMP/checksums.txt" 2>/dev/null; then
-  EXPECTED=$(grep "  $ARCHIVE\$" "$TMP/checksums.txt" | awk '{print $1}')
-  if [[ -n "$EXPECTED" ]]; then
-    if command -v sha256sum &>/dev/null; then
-      ACTUAL=$(sha256sum "$TMP/$ARCHIVE" | awk '{print $1}')
-    elif command -v shasum &>/dev/null; then
-      ACTUAL=$(shasum -a 256 "$TMP/$ARCHIVE" | awk '{print $1}')
+  if [[ "$UPDATE" == false ]] && command -v "$BINARY_NAME" &>/dev/null; then
+    INSTALLED=$("$BINARY_NAME" version 2>/dev/null | awk '{print $2}' || true)
+    if [[ -n "$INSTALLED" && "$INSTALLED" == "$VERSION_NO_V" ]]; then
+      step_ok "$BINARY_NAME $INSTALLED is already installed (use --update to reinstall)"
+      [[ "$NO_LLAMA" == true ]] && exit 0
     fi
-    if [[ -n "${ACTUAL:-}" && "$ACTUAL" != "$EXPECTED" ]]; then
-      die "Checksum mismatch (expected $EXPECTED, got $ACTUAL)"
-    fi
-    step_ok "Checksum verified"
   fi
 else
-  step_warn "No checksum file — skipping verification"
+  # --- [2] Resolve release ---
+  step "Resolving release"
+
+  if [[ -z "$VERSION" ]]; then
+    spinner_start "Fetching latest release tag..."
+    VERSION=$(curl -sSL "https://api.github.com/repos/${REPO_SLUG}/releases/latest" \
+      | sed -n 's/.*"tag_name": *"\(v[^"]*\)".*/\1/p' | head -1)
+    spinner_stop
+    [[ -z "$VERSION" ]] && die "Could not determine latest release (API rate-limited? Try --version=vX.Y.Z)"
+  fi
+  VERSION_NO_V="${VERSION#v}"
+  step_ok "Version: $VERSION"
+
+  if [[ "$UPDATE" == false ]] && command -v "$BINARY_NAME" &>/dev/null; then
+    INSTALLED=$("$BINARY_NAME" version 2>/dev/null | awk '{print $2}' || true)
+    if [[ -n "$INSTALLED" && "$INSTALLED" == "$VERSION_NO_V" ]]; then
+      step_ok "$BINARY_NAME $INSTALLED is already installed (use --update to reinstall)"
+      [[ "$NO_LLAMA" == true ]] && exit 0
+    fi
+  fi
+
+  ARCHIVE="llamaconfig-${VERSION_NO_V}-${OS}-${ARCH}.tar.gz"
+  ARCHIVE_URL="https://github.com/${REPO_SLUG}/releases/download/${VERSION}/${ARCHIVE}"
+  CHECKSUM_URL="https://github.com/${REPO_SLUG}/releases/download/${VERSION}/checksums.txt"
+
+  # --- [3] Download & verify ---
+  step "Downloading binary"
+
+  SRC_DIR="$(mktemp -d)"
+  trap 'spinner_stop; rm -rf "$SRC_DIR"' EXIT
+
+  spinner_start "Downloading $ARCHIVE..."
+  if ! curl -sSLf "$ARCHIVE_URL" -o "$SRC_DIR/$ARCHIVE"; then
+    spinner_stop
+    die "Download failed: $ARCHIVE_URL"
+  fi
+  spinner_stop
+  step_ok "Downloaded $(du -h "$SRC_DIR/$ARCHIVE" | cut -f1)"
+
+  if curl -sSLf "$CHECKSUM_URL" -o "$SRC_DIR/checksums.txt" 2>/dev/null; then
+    EXPECTED=$(grep "  $ARCHIVE\$" "$SRC_DIR/checksums.txt" | awk '{print $1}')
+    if [[ -n "$EXPECTED" ]]; then
+      if command -v sha256sum &>/dev/null; then
+        ACTUAL=$(sha256sum "$SRC_DIR/$ARCHIVE" | awk '{print $1}')
+      elif command -v shasum &>/dev/null; then
+        ACTUAL=$(shasum -a 256 "$SRC_DIR/$ARCHIVE" | awk '{print $1}')
+      fi
+      if [[ -n "${ACTUAL:-}" && "$ACTUAL" != "$EXPECTED" ]]; then
+        die "Checksum mismatch (expected $EXPECTED, got $ACTUAL)"
+      fi
+      step_ok "Checksum verified"
+    fi
+  else
+    step_warn "No checksum file — skipping verification"
+  fi
+
+  tar -xzf "$SRC_DIR/$ARCHIVE" -C "$SRC_DIR"
+  if [[ ! -f "$SRC_DIR/$BINARY_NAME" ]]; then
+    die "Archive did not contain $BINARY_NAME"
+  fi
 fi
 
-# --- [4] Install ---
+# --- Install ---
 step "Installing binary"
-
-tar -xzf "$TMP/$ARCHIVE" -C "$TMP"
-if [[ ! -f "$TMP/$BINARY_NAME" ]]; then
-  die "Archive did not contain $BINARY_NAME"
-fi
 
 mkdir -p "$PREFIX" 2>/dev/null || true
 DEST="$PREFIX/$BINARY_NAME"
@@ -228,11 +282,11 @@ install_binary() {
     ln_cmd="sudo ln"
     chmod_cmd="sudo chmod"
   fi
-  $cp_cmd "$TMP/$BINARY_NAME" "$DEST" && $chmod_cmd +x "$DEST"
+  $cp_cmd "$SRC_DIR/$BINARY_NAME" "$DEST" && $chmod_cmd +x "$DEST"
   # Prefer the bundled lc binary from the archive; fall back to a symlink
   # for older releases that don't include it.
-  if [[ -f "$TMP/lc" ]]; then
-    $cp_cmd "$TMP/lc" "$PREFIX/lc" && $chmod_cmd +x "$PREFIX/lc"
+  if [[ -f "$SRC_DIR/lc" ]]; then
+    $cp_cmd "$SRC_DIR/lc" "$PREFIX/lc" && $chmod_cmd +x "$PREFIX/lc"
   else
     $ln_cmd -sf "$DEST" "$PREFIX/lc" 2>/dev/null || true
   fi
