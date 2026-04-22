@@ -97,6 +97,7 @@ func newRmCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&flagKeepFile, "keep-file", false, "remove config only, keep the GGUF file in cache")
-	cmd.Flags().BoolVarP(&flagForce, "force", "f", false, "skip confirmation prompt")
+	cmd.Flags().BoolVarP(&flagForce, "yes", "y", false, "skip confirmation prompt")
+	cmd.Flags().BoolVarP(&flagForce, "force", "f", false, "alias for --yes")
 	return cmd
 }
