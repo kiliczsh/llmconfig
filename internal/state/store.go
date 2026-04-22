@@ -125,3 +125,20 @@ func (s *Store) Remove(name string) error {
 func (s *Store) EnsureDir() error {
 	return os.MkdirAll(filepath.Dir(s.statePath), 0755)
 }
+
+// LockModel acquires the per-model lock so concurrent `up X` invocations
+// don't both start the same model. Returns ErrLockHeld immediately if
+// another live process holds the lock; stale locks (dead holder) are
+// reclaimed transparently.
+//
+// Callers must defer the returned release function.
+func (s *Store) LockModel(name string) (release func(), err error) {
+	if err := os.MkdirAll(dirs.ModelLockDir(), 0755); err != nil {
+		return nil, fmt.Errorf("state: create lock dir: %w", err)
+	}
+	fl, err := tryAcquireLock(dirs.ModelLockFile(name))
+	if err != nil {
+		return nil, err
+	}
+	return fl.release, nil
+}

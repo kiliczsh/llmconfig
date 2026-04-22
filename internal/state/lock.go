@@ -1,6 +1,7 @@
 package state
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,31 +11,35 @@ import (
 	"github.com/kiliczsh/llamaconfig/internal/process"
 )
 
+// ErrLockHeld is returned by tryAcquireLock when the lock file exists and
+// its holder process is still alive. Callers typically present this as a
+// "already in progress, try again later" message to the user.
+var ErrLockHeld = errors.New("lock is held by another process")
+
+const staleLockAge = 30 * time.Second
+
 type fileLock struct {
 	path string
 	f    *os.File
 }
 
+// acquireLock blocks (up to ~1s across 20 retries) until the lock is free.
+// Used for short state-file mutations where we expect the lock to become
+// available quickly.
 func acquireLock(lockPath string) (*fileLock, error) {
 	const maxRetries = 20
 	const retryDelay = 50 * time.Millisecond
-	const staleAge = 30 * time.Second
 
 	for i := 0; i < maxRetries; i++ {
-		f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		fl, err := createLockFile(lockPath)
 		if err == nil {
-			// Best-effort: record PID so stale-detection on the next holder
-			// can check liveness rather than waiting for mtime to age out.
-			fmt.Fprintf(f, "%d", os.Getpid())
-			return &fileLock{path: lockPath, f: f}, nil
+			return fl, nil
 		}
-
 		if !os.IsExist(err) {
 			return nil, fmt.Errorf("state lock: %w", err)
 		}
 
-		if isStaleLock(lockPath, staleAge) {
-			// Removal may race with another acquirer; either way, retry.
+		if isStaleLock(lockPath, staleLockAge) {
 			_ = os.Remove(lockPath)
 			continue
 		}
@@ -43,6 +48,37 @@ func acquireLock(lockPath string) (*fileLock, error) {
 	}
 
 	return nil, fmt.Errorf("state lock: could not acquire after %d retries", maxRetries)
+}
+
+// tryAcquireLock makes one attempt (plus one stale-recovery attempt) to
+// acquire the lock and returns ErrLockHeld immediately otherwise. Suitable
+// for long-lived locks (e.g. per-model during `up`) where we'd rather fail
+// fast than wait for an in-progress download to finish.
+func tryAcquireLock(lockPath string) (*fileLock, error) {
+	fl, err := createLockFile(lockPath)
+	if err == nil {
+		return fl, nil
+	}
+	if !os.IsExist(err) {
+		return nil, fmt.Errorf("state lock: %w", err)
+	}
+
+	if isStaleLock(lockPath, staleLockAge) {
+		_ = os.Remove(lockPath)
+		if fl, err := createLockFile(lockPath); err == nil {
+			return fl, nil
+		}
+	}
+	return nil, ErrLockHeld
+}
+
+func createLockFile(lockPath string) (*fileLock, error) {
+	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Fprintf(f, "%d", os.Getpid())
+	return &fileLock{path: lockPath, f: f}, nil
 }
 
 func isStaleLock(lockPath string, staleAge time.Duration) bool {

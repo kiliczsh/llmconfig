@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"github.com/kiliczsh/llamaconfig/internal/downloader"
 	"github.com/kiliczsh/llamaconfig/internal/hardware"
 	"github.com/kiliczsh/llamaconfig/internal/runner"
+	"github.com/kiliczsh/llamaconfig/internal/state"
 	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
 	"github.com/kiliczsh/llamaconfig/pkg/stablediffusioncpp"
 	"github.com/kiliczsh/llamaconfig/pkg/whispercpp"
@@ -96,6 +98,28 @@ func newUpCmd() *cobra.Command {
 					fmt.Println(runner.FormatArgs(binaryPath, rc))
 				}
 				return nil
+			}
+
+			// Serialise concurrent `up <name>` against the same model. Two
+			// simultaneous callers could both Get "not running" and both spawn
+			// a process; the lock ensures only one proceeds.
+			release, err := appCtx.StateStore.LockModel(name)
+			if err != nil {
+				if errors.Is(err, state.ErrLockHeld) {
+					return fmt.Errorf("%s is already being started by another llamaconfig process", name)
+				}
+				return err
+			}
+			defer release()
+
+			// Re-check state under the lock — another process may have just
+			// finished starting the model between our first Get and the lock.
+			if current, _ := appCtx.StateStore.Get(name); current != nil && current.Status == "running" {
+				r := runner.New()
+				if r.IsAlive(current) {
+					p.Success("%s is already running at http://%s:%d (PID %d)", name, current.Host, current.Port, current.PID)
+					return nil
+				}
 			}
 
 			// Check binary exists before trying to start

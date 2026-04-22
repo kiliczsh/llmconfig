@@ -29,6 +29,17 @@ func StateLockFile() string {
 	return filepath.Join(BaseDir(), "state.json.lock")
 }
 
+// ModelLockDir is the directory holding per-model lock files for serialising
+// concurrent operations (e.g. `llamaconfig up X`) against the same model.
+func ModelLockDir() string {
+	return filepath.Join(BaseDir(), "locks")
+}
+
+// ModelLockFile is the path of the lock file for a single model.
+func ModelLockFile(name string) string {
+	return filepath.Join(ModelLockDir(), name+".lock")
+}
+
 func EnsureAll() error {
 	for _, d := range []string{ConfigDir(), CacheDir(), LogDir(), BenchDir()} {
 		if err := EnsureDir(d); err != nil {
