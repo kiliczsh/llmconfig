@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/kiliczsh/llamaconfig/internal/dirs"
 	"github.com/kiliczsh/llamaconfig/internal/output"
@@ -49,6 +51,14 @@ downloading, starting, stopping, and monitoring.`,
 }
 
 func Execute() error {
+	// Match Use to how the user invoked us, so `lc --help` shows
+	// "Usage: lc [command]" instead of the hardcoded project name.
+	if len(os.Args) > 0 {
+		invoked := strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
+		if invoked != "" {
+			rootCmd.Use = invoked
+		}
+	}
 	return rootCmd.Execute()
 }
 

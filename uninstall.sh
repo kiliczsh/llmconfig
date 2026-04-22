@@ -183,9 +183,9 @@ if has_selected 0; then
   else
     step_skip "Binary not found"
   fi
-  if [[ -L "$PREFIX/lc" ]]; then
+  if [[ -L "$PREFIX/lc" || -f "$PREFIX/lc" ]]; then
     rm -f "$PREFIX/lc" 2>/dev/null || sudo rm -f "$PREFIX/lc"
-    step_ok "Removed lc alias"
+    step_ok "Removed lc"
   fi
 fi
 

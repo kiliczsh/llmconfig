@@ -220,12 +220,21 @@ DEST="$PREFIX/$BINARY_NAME"
 
 install_binary() {
   local use_sudo="$1"
+  local cp_cmd="cp"
+  local ln_cmd="ln"
+  local chmod_cmd="chmod"
   if [[ "$use_sudo" == "sudo" ]]; then
-    sudo cp "$TMP/$BINARY_NAME" "$DEST" && sudo chmod +x "$DEST"
-    sudo ln -sf "$DEST" "$PREFIX/lc" 2>/dev/null || true
+    cp_cmd="sudo cp"
+    ln_cmd="sudo ln"
+    chmod_cmd="sudo chmod"
+  fi
+  $cp_cmd "$TMP/$BINARY_NAME" "$DEST" && $chmod_cmd +x "$DEST"
+  # Prefer the bundled lc binary from the archive; fall back to a symlink
+  # for older releases that don't include it.
+  if [[ -f "$TMP/lc" ]]; then
+    $cp_cmd "$TMP/lc" "$PREFIX/lc" && $chmod_cmd +x "$PREFIX/lc"
   else
-    cp "$TMP/$BINARY_NAME" "$DEST" && chmod +x "$DEST"
-    ln -sf "$DEST" "$PREFIX/lc" 2>/dev/null || true
+    $ln_cmd -sf "$DEST" "$PREFIX/lc" 2>/dev/null || true
   fi
 }
 

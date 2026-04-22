@@ -172,10 +172,18 @@ try {
     Copy-Item $extractedBin $dest -Force
     ok "Installed to $dest"
 
-    # lc.cmd alias (Windows has no ln -s for exes without admin; .cmd wrapper works everywhere)
-    $lcCmd = Join-Path $Prefix "lc.cmd"
-    Set-Content -Path $lcCmd -Value "@echo off`r`n`"$dest`" %*" -Encoding ASCII
-    ok "Alias: lc -> llamaconfig  ($lcCmd)"
+    # Prefer the bundled lc.exe from the archive; fall back to a .cmd
+    # wrapper for older releases that don't include it.
+    $extractedLc = Join-Path $tmp "lc.exe"
+    if (Test-Path $extractedLc) {
+        $lcDest = Join-Path $Prefix "lc.exe"
+        Copy-Item $extractedLc $lcDest -Force
+        ok "Installed lc to $lcDest"
+    } else {
+        $lcCmd = Join-Path $Prefix "lc.cmd"
+        Set-Content -Path $lcCmd -Value "@echo off`r`n`"$dest`" %*" -Encoding ASCII
+        ok "Alias: lc -> llamaconfig  ($lcCmd)"
+    }
 
     # PATH
     $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")

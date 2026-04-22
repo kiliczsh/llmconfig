@@ -7,7 +7,32 @@ before:
     - go mod tidy
 
 builds:
-  - env:
+  - id: llamaconfig
+    binary: llamaconfig
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.CommitDate}}
+    main: .
+  # Same source, published under the `lc` short name so release archives
+  # ship a ready-to-use alias. Cobra reads os.Args[0] for the command name
+  # so the binary behaves identically when invoked as either name.
+  - id: lc
+    binary: lc
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -27,7 +52,10 @@ builds:
     main: .
 
 archives:
-  - formats:
+  - ids:
+      - llamaconfig
+      - lc
+    formats:
       - tar.gz
     format_overrides:
       - goos: windows
