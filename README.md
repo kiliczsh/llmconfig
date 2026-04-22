@@ -136,7 +136,7 @@ Hardware profile is selected automatically at runtime. See [DOCS.md](DOCS.md) fo
 
 ## Requirements
 
-- Go 1.21+
+- Go 1.26+
 - A backend binary — `llamaconfig install llama` (or `install sd` /
   `install whisper`) downloads and installs the right build for your
   hardware.
