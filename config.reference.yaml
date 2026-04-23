@@ -77,10 +77,21 @@ model:
   #   devices: []                 # draft model GPU devices
   #   cache_type_k: f16           # draft model KV cache type K
   #   cache_type_v: f16           # draft model KV cache type V
+  #   spec_replace_target: ""     # speculative decoding string replacement target
+  #   spec_replace_draft: ""      # speculative decoding string replacement draft
 
   # --- LoRA adapters (optional) ---
   # lora: []                      # LoRA adapter file(s), e.g. ["./adapter.gguf"]
   # lora_scaled: []               # LoRA with scaling, format: ["./adapter.gguf:0.8"]
+
+  # --- Control vectors (optional) ---
+  # control_vector: []            # control vector file(s)
+  # control_vector_scaled: []     # control vector with scaling, format: ["./vector.gguf:0.8"]
+  # control_vector_layer_start: 0 # layer range start for control vector (default: not set)
+  # control_vector_layer_end: 0   # layer range end for control vector (default: not set)
+
+  # --- Model metadata overrides (advanced) ---
+  # override_kv: []               # override model metadata, e.g. ["tokenizer.ggml.add_bos_token=bool:false"]
 
   # --- Multimodal projection (optional, for vision models) ---
   # mmproj:
@@ -145,6 +156,16 @@ hardware_profiles:
     # fit_ctx: 4096               # minimum ctx size --fit can set (default: 4096)
     # override_tensor: []         # tensor buffer type overrides, e.g. ["blk\\..*\\.ffn=CPU"]
     # cpu_moe: false              # keep ALL MoE expert weights in CPU (default: false)
+    # cpu_mask: ""               # CPU affinity mask (hex), e.g. "FF00"
+    # cpu_mask_batch: ""         # CPU affinity mask for batch processing
+    # poll: 50                   # polling level 0-100 (0=no polling, default: 50)
+    # poll_batch: 50             # polling level for batch (default: same as poll)
+    # prio_batch: 0              # batch thread priority: 0=normal,1=medium,2=high,3=realtime
+    # repack: true               # weight repacking optimization (default: true)
+    # no_host: false             # bypass host buffer for extra device buffers (default: false)
+    # op_offload: true           # offload host tensor ops to device (default: true)
+    # rpc: ""                    # RPC servers for distributed inference, e.g. "host1:50052,host2:50052"
+    # direct_io: false           # use DirectIO if available (default: false)
 
   amd:
     n_gpu_layers: 99
@@ -186,6 +207,9 @@ context:
   # cache_ram: 8192               # max RAM cache in MiB (-1 = no limit, 0 = not set, default: 8192)
   # image_min_tokens: 0           # minimum image tokens for dynamic resolution vision models
   # image_max_tokens: 0           # maximum image tokens for dynamic resolution vision models
+  # check_tensors: false          # validate tensor data on load (default: false)
+  # ctx_checkpoints: 32           # max context checkpoints per slot (default: 32)
+  # checkpoint_every_n_tokens: 0  # checkpoint interval in tokens (-1 = disable, 0 = not set, default: 8192)
 
 # ── Sampling ──────────────────────────────────────────────────────────────────
 
@@ -234,6 +258,9 @@ sampling:
   # DRY custom sequence breakers (clears defaults: '\n', ':', '"', '*')
   # dry_sequence_breakers: []     # e.g. ["\n", ":"]
 
+  # Backend sampling (experimental)
+  # backend_sampling: false       # enable backend sampling (default: false)
+
   # Structured output — constrains generation to a grammar or schema
   # grammar: ""                   # inline BNF-like grammar string
   # grammar_file: ""              # path to a grammar file
@@ -252,6 +279,7 @@ chat:
   # reasoning_budget: -1          # thinking token budget: -1 unlimited, 0 immediate end, N>0 budget
   # reasoning_format: auto        # thought tag format: none | deepseek | deepseek-legacy (default: auto)
   # template_file: ""             # path to a jinja template file (overrides built-in template)
+  # skip_chat_parsing: false      # force pure content parser, output everything in content (default: false)
 
 # ── RoPE (Rotary Position Embedding) ─────────────────────────────────────────
 # Only needed to extend context beyond the model's trained limit.
@@ -282,7 +310,9 @@ resources:
 logging:
   level: info                     # log level: debug | info | warn | error (default: info)
   file: ""                        # log file path (default: ~/.llamaconfig/logs/<name>.log)
-  colors: auto                    # color output: auto | always | never (default: auto)
+  colors: auto                    # color output: auto | on | off (default: auto)
+  # prefix: false                 # enable prefix in log messages (default: false)
+  # timestamps: false             # enable timestamps in log messages (default: false)
 
 # ── Backend: whisper ──────────────────────────────────────────────────────────
 # Only applies when backend: whisper. Remove this block for other backends.

@@ -98,6 +98,36 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 		add("--override-tensor", ot)
 	}
 	addIf("--cpu-moe", p.CPUMoE)
+	if p.CPUMask != "" {
+		add("--cpu-mask", p.CPUMask)
+	}
+	if p.CPUMaskBatch != "" {
+		add("--cpu-mask-batch", p.CPUMaskBatch)
+	}
+	if p.Poll != nil {
+		add("--poll", strconv.Itoa(*p.Poll))
+	}
+	if p.PollBatch != nil {
+		add("--poll-batch", strconv.Itoa(*p.PollBatch))
+	}
+	if p.PrioBatch != 0 {
+		add("--prio-batch", strconv.Itoa(p.PrioBatch))
+	}
+	if p.Repack != nil && !*p.Repack {
+		args = append(args, "--no-repack")
+	}
+	if p.NoHost {
+		args = append(args, "--no-host")
+	}
+	if p.OpOffload != nil && !*p.OpOffload {
+		args = append(args, "--no-op-offload")
+	}
+	if p.RPC != "" {
+		add("--rpc", p.RPC)
+	}
+	if p.DirectIO != nil && *p.DirectIO {
+		args = append(args, "--direct-io")
+	}
 
 	// Threads
 	if p.Threads > 0 {
@@ -147,6 +177,13 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	}
 	if ctx.ImageMaxTokens > 0 {
 		add("--image-max-tokens", strconv.Itoa(ctx.ImageMaxTokens))
+	}
+	addIf("--check-tensors", ctx.CheckTensors)
+	if ctx.CtxCheckpoints > 0 {
+		add("--ctx-checkpoints", strconv.Itoa(ctx.CtxCheckpoints))
+	}
+	if ctx.CheckpointEveryNTokens != 0 {
+		add("--checkpoint-every-n-tokens", strconv.Itoa(ctx.CheckpointEveryNTokens))
 	}
 
 	// Sampling
@@ -217,6 +254,7 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if s.JSONSchemaFile != "" {
 		add("--json-schema-file", s.JSONSchemaFile)
 	}
+	addIf("--backend-sampling", s.BackendSampling)
 
 	// Chat template
 	if cfg.Chat.Template != "" {
@@ -245,6 +283,7 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if cfg.Chat.TemplateFile != "" {
 		add("--chat-template-file", cfg.Chat.TemplateFile)
 	}
+	addIf("--skip-chat-parsing", cfg.Chat.SkipChatParsing)
 
 	// RoPE
 	rope := cfg.Rope
@@ -293,6 +332,9 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 			if d.CacheTypeV != "" && d.CacheTypeV != "f16" {
 				add("--cache-type-v-draft", d.CacheTypeV)
 			}
+			if d.SpecReplaceTarget != "" && d.SpecReplaceDraft != "" {
+				add("--spec-replace", d.SpecReplaceTarget, d.SpecReplaceDraft)
+			}
 		}
 	}
 
@@ -302,6 +344,24 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	}
 	if len(cfg.Model.LoRAScaled) > 0 {
 		add("--lora-scaled", strings.Join(cfg.Model.LoRAScaled, ","))
+	}
+
+	// Control vectors
+	for _, cv := range cfg.Model.ControlVector {
+		add("--control-vector", cv)
+	}
+	if len(cfg.Model.ControlVectorScaled) > 0 {
+		add("--control-vector-scaled", strings.Join(cfg.Model.ControlVectorScaled, ","))
+	}
+	if cfg.Model.ControlVectorLayerStart >= 0 && cfg.Model.ControlVectorLayerEnd >= 0 {
+		add("--control-vector-layer-range",
+			strconv.Itoa(cfg.Model.ControlVectorLayerStart),
+			strconv.Itoa(cfg.Model.ControlVectorLayerEnd))
+	}
+
+	// Model metadata overrides
+	for _, kv := range cfg.Model.OverrideKV {
+		add("--override-kv", kv)
 	}
 
 	// Multimodal projection
@@ -322,6 +382,17 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if p.NUMA != "" {
 		add("--numa", p.NUMA)
 	}
+
+	// Logging
+	log := cfg.Logging
+	if log.File != "" {
+		add("--log-file", log.File)
+	}
+	if log.Colors != "" && log.Colors != "auto" {
+		add("--log-colors", log.Colors)
+	}
+	addIf("--log-prefix", log.Prefix)
+	addIf("--log-timestamps", log.Timestamps)
 
 	return args
 }

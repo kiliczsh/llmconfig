@@ -121,6 +121,14 @@ func ApplyDefaults(cfg *Config) {
 		}
 	}
 
+	// Model defaults
+	if cfg.Model.ControlVectorLayerStart == 0 {
+		cfg.Model.ControlVectorLayerStart = -1
+	}
+	if cfg.Model.ControlVectorLayerEnd == 0 {
+		cfg.Model.ControlVectorLayerEnd = -1
+	}
+
 	// Sampling defaults
 	if cfg.Sampling.Temperature == 0 {
 		cfg.Sampling.Temperature = 0.8

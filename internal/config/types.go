@@ -32,17 +32,22 @@ type Meta struct {
 }
 
 type ModelSpec struct {
-	Source     string       `yaml:"source"`
-	Repo       string       `yaml:"repo"`
-	File       string       `yaml:"file"`
-	Path       string       `yaml:"path"`
-	URL        string       `yaml:"url"`
-	Checksum   string       `yaml:"checksum"`
-	Download   DownloadSpec `yaml:"download"`
-	Draft      *DraftSpec   `yaml:"draft,omitempty"`
-	MMProj     *MMProjSpec  `yaml:"mmproj,omitempty"`
-	LoRA       []string     `yaml:"lora"`        // LoRA adapter file(s)
-	LoRAScaled []string     `yaml:"lora_scaled"` // LoRA with scaling, format: "FNAME:SCALE"
+	Source                  string       `yaml:"source"`
+	Repo                    string       `yaml:"repo"`
+	File                    string       `yaml:"file"`
+	Path                    string       `yaml:"path"`
+	URL                     string       `yaml:"url"`
+	Checksum                string       `yaml:"checksum"`
+	Download                DownloadSpec `yaml:"download"`
+	Draft                   *DraftSpec   `yaml:"draft,omitempty"`
+	MMProj                  *MMProjSpec  `yaml:"mmproj,omitempty"`
+	LoRA                    []string     `yaml:"lora"`                       // LoRA adapter file(s)
+	LoRAScaled              []string     `yaml:"lora_scaled"`                // LoRA with scaling, format: "FNAME:SCALE"
+	ControlVector           []string     `yaml:"control_vector"`             // control vector file(s)
+	ControlVectorScaled     []string     `yaml:"control_vector_scaled"`      // control vector with scaling, format: "FNAME:SCALE"
+	ControlVectorLayerStart int          `yaml:"control_vector_layer_start"` // layer range start (-1 = not set)
+	ControlVectorLayerEnd   int          `yaml:"control_vector_layer_end"`   // layer range end (-1 = not set)
+	OverrideKV              []string     `yaml:"override_kv"`                // model metadata overrides, format: "KEY=TYPE:VALUE"
 }
 
 type DownloadSpec struct {
@@ -54,17 +59,19 @@ type DownloadSpec struct {
 }
 
 type DraftSpec struct {
-	Source     string   `yaml:"source"`
-	Repo       string   `yaml:"repo"`
-	File       string   `yaml:"file"`
-	DraftN     int      `yaml:"draft_n"`
-	DraftMin   int      `yaml:"draft_min"`    // minimum draft tokens (default: 0)
-	DraftPMin  float64  `yaml:"draft_p_min"`  // minimum draft probability (default: 0.75)
-	NCtx       int      `yaml:"n_ctx"`        // draft model context size
-	NGPULayers int      `yaml:"n_gpu_layers"` // draft model GPU layers
-	Devices    []string `yaml:"devices"`      // draft model GPU devices
-	CacheTypeK string   `yaml:"cache_type_k"` // draft KV cache type K
-	CacheTypeV string   `yaml:"cache_type_v"` // draft KV cache type V
+	Source            string   `yaml:"source"`
+	Repo              string   `yaml:"repo"`
+	File              string   `yaml:"file"`
+	DraftN            int      `yaml:"draft_n"`
+	DraftMin          int      `yaml:"draft_min"`           // minimum draft tokens (default: 0)
+	DraftPMin         float64  `yaml:"draft_p_min"`         // minimum draft probability (default: 0.75)
+	NCtx              int      `yaml:"n_ctx"`               // draft model context size
+	NGPULayers        int      `yaml:"n_gpu_layers"`        // draft model GPU layers
+	Devices           []string `yaml:"devices"`             // draft model GPU devices
+	CacheTypeK        string   `yaml:"cache_type_k"`        // draft KV cache type K
+	CacheTypeV        string   `yaml:"cache_type_v"`        // draft KV cache type V
+	SpecReplaceTarget string   `yaml:"spec_replace_target"` // speculative decoding: target string
+	SpecReplaceDraft  string   `yaml:"spec_replace_draft"`  // speculative decoding: draft replacement
 }
 
 type MMProjSpec struct {
@@ -125,6 +132,16 @@ type HardwareProfile struct {
 	FitCtx         int       `yaml:"fit_ctx"`         // minimum ctx size fit can set
 	OverrideTensor []string  `yaml:"override_tensor"` // tensor buffer overrides, format: "pattern=type"
 	CPUMoE         bool      `yaml:"cpu_moe"`         // keep all MoE weights in CPU
+	CPUMask        string    `yaml:"cpu_mask"`        // CPU affinity mask (hex)
+	CPUMaskBatch   string    `yaml:"cpu_mask_batch"`  // CPU affinity mask for batch processing
+	Poll           *int      `yaml:"poll"`            // polling level 0-100 (default: 50)
+	PollBatch      *int      `yaml:"poll_batch"`      // polling level for batch (default: same as poll)
+	PrioBatch      int       `yaml:"prio_batch"`      // batch thread priority: 0=normal,1=medium,2=high,3=realtime
+	Repack         *bool     `yaml:"repack"`          // weight repacking (default: enabled)
+	NoHost         bool      `yaml:"no_host"`         // bypass host buffer for extra device buffers
+	OpOffload      *bool     `yaml:"op_offload"`      // offload host tensor ops to device (default: enabled)
+	RPC            string    `yaml:"rpc"`             // RPC servers, comma-separated host:port
+	DirectIO       *bool     `yaml:"direct_io"`       // use DirectIO if available (default: disabled)
 }
 
 type ContextSpec struct {
@@ -135,17 +152,20 @@ type ContextSpec struct {
 	CacheTypeK string `yaml:"cache_type_k"`
 	CacheTypeV string `yaml:"cache_type_v"`
 	// Pointer so an explicit `false` in YAML is honored; ApplyDefaults fills nil with true.
-	MMap           *bool `yaml:"mmap"`
-	MLock          bool  `yaml:"mlock"`
-	FlashAttention bool  `yaml:"flash_attention"`
-	NCPUMoE        int   `yaml:"n_cpu_moe"`
-	NPredict       int   `yaml:"n_predict"`        // tokens to predict (-1 = infinity, 0 = not set)
-	ContextShift   bool  `yaml:"context_shift"`    // enable context shift on infinite generation
-	KVOffload      *bool `yaml:"kv_offload"`       // KV cache GPU offload (default: enabled)
-	SWAFull        bool  `yaml:"swa_full"`         // use full-size SWA cache
-	CacheRAM       int   `yaml:"cache_ram"`        // max RAM cache in MiB (-1 = no limit, 0 = not set)
-	ImageMinTokens int   `yaml:"image_min_tokens"` // min tokens per image (vision models)
-	ImageMaxTokens int   `yaml:"image_max_tokens"` // max tokens per image (vision models)
+	MMap                   *bool `yaml:"mmap"`
+	MLock                  bool  `yaml:"mlock"`
+	FlashAttention         bool  `yaml:"flash_attention"`
+	NCPUMoE                int   `yaml:"n_cpu_moe"`
+	NPredict               int   `yaml:"n_predict"`                 // tokens to predict (-1 = infinity, 0 = not set)
+	ContextShift           bool  `yaml:"context_shift"`             // enable context shift on infinite generation
+	KVOffload              *bool `yaml:"kv_offload"`                // KV cache GPU offload (default: enabled)
+	SWAFull                bool  `yaml:"swa_full"`                  // use full-size SWA cache
+	CacheRAM               int   `yaml:"cache_ram"`                 // max RAM cache in MiB (-1 = no limit, 0 = not set)
+	ImageMinTokens         int   `yaml:"image_min_tokens"`          // min tokens per image (vision models)
+	ImageMaxTokens         int   `yaml:"image_max_tokens"`          // max tokens per image (vision models)
+	CheckTensors           bool  `yaml:"check_tensors"`             // validate tensor data on load
+	CtxCheckpoints         int   `yaml:"ctx_checkpoints"`           // max context checkpoints per slot
+	CheckpointEveryNTokens int   `yaml:"checkpoint_every_n_tokens"` // checkpoint interval (-1 = disable, 0 = not set)
 }
 
 type SamplingSpec struct {
@@ -175,6 +195,7 @@ type SamplingSpec struct {
 	AdaptiveTarget      float64  `yaml:"adaptive_target"`       // adaptive-p target (-1 = disabled, 0 = not set)
 	AdaptiveDecay       float64  `yaml:"adaptive_decay"`        // adaptive-p decay rate
 	DrySequenceBreakers []string `yaml:"dry_sequence_breakers"` // custom DRY sequence breakers
+	BackendSampling     bool     `yaml:"backend_sampling"`      // enable backend sampling (experimental)
 	Grammar             string   `yaml:"grammar"`               // BNF-like grammar string
 	GrammarFile         string   `yaml:"grammar_file"`          // path to grammar file
 	JSONSchema          string   `yaml:"json_schema"`           // JSON schema string
@@ -186,10 +207,11 @@ type ChatSpec struct {
 	SystemPrompt    string            `yaml:"system_prompt"`
 	TemplateKwargs  map[string]string `yaml:"template_kwargs"`
 	Jinja           bool              `yaml:"jinja"`
-	Reasoning       string            `yaml:"reasoning"`        // "on" | "off" | "auto"
-	ReasoningBudget *int              `yaml:"reasoning_budget"` // -1 unlimited, 0 immediate end, N>0 budget
-	ReasoningFormat string            `yaml:"reasoning_format"` // "none" | "deepseek" | "deepseek-legacy"
-	TemplateFile    string            `yaml:"template_file"`    // path to jinja template file
+	Reasoning       string            `yaml:"reasoning"`         // "on" | "off" | "auto"
+	ReasoningBudget *int              `yaml:"reasoning_budget"`  // -1 unlimited, 0 immediate end, N>0 budget
+	ReasoningFormat string            `yaml:"reasoning_format"`  // "none" | "deepseek" | "deepseek-legacy"
+	TemplateFile    string            `yaml:"template_file"`     // path to jinja template file
+	SkipChatParsing bool              `yaml:"skip_chat_parsing"` // force pure content parser
 }
 
 type RopeSpec struct {
@@ -214,9 +236,11 @@ type ResourceSpec struct {
 }
 
 type LoggingSpec struct {
-	Level  string `yaml:"level"`
-	File   string `yaml:"file"`
-	Colors string `yaml:"colors"`
+	Level      string `yaml:"level"`
+	File       string `yaml:"file"`
+	Colors     string `yaml:"colors"`
+	Prefix     bool   `yaml:"prefix"`     // enable prefix in log messages
+	Timestamps bool   `yaml:"timestamps"` // enable timestamps in log messages
 }
 
 // RunConfig is the flattened, resolved configuration passed to the runner.
