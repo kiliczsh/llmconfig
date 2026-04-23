@@ -351,10 +351,106 @@ type WhisperSpec struct {
 }
 
 type SDSpec struct {
-	Width          int     `yaml:"width"`
-	Height         int     `yaml:"height"`
-	Steps          int     `yaml:"steps"`
-	CFGScale       float64 `yaml:"cfg_scale"`
-	SamplingMethod string  `yaml:"sampling_method"` // "euler_a" | "euler" | "dpm++2m" | ...
-	Seed           int64   `yaml:"seed"`
+	// Output (cli only)
+	Output          string `yaml:"output"`           // output path, supports %d for sequences (default: ./output.png)
+	PreviewPath     string `yaml:"preview_path"`     // preview image path
+	PreviewInterval int    `yaml:"preview_interval"` // preview update interval in steps (default: 1)
+	Preview         string `yaml:"preview"`          // preview method: none|proj|tae|vae
+	Mode            string `yaml:"mode"`             // run mode: img_gen|vid_gen|upscale|convert|metadata
+
+	// Server (server only)
+	ServeHTMLPath string `yaml:"serve_html_path"` // path to HTML file to serve at root
+
+	// Model components
+	ClipL                   string `yaml:"clip_l"`
+	ClipG                   string `yaml:"clip_g"`
+	ClipVision              string `yaml:"clip_vision"`
+	T5XXL                   string `yaml:"t5xxl"`
+	LLM                     string `yaml:"llm"`
+	LLMVision               string `yaml:"llm_vision"`
+	DiffusionModel          string `yaml:"diffusion_model"`
+	HighNoiseDiffusionModel string `yaml:"high_noise_diffusion_model"`
+	VAE                     string `yaml:"vae"`
+	TAESD                   string `yaml:"taesd"`
+	ControlNet              string `yaml:"control_net"`
+	EmbedDir                string `yaml:"embd_dir"`
+	LoRAModelDir            string `yaml:"lora_model_dir"`
+	TensorTypeRules         string `yaml:"tensor_type_rules"` // e.g. "^vae\.=f16,model\.=q8_0"
+	PhotoMaker              string `yaml:"photo_maker"`
+	UpscaleModel            string `yaml:"upscale_model"`
+
+	// Hardware & weight type
+	Type                string `yaml:"type"`                  // weight type: f32|f16|q4_0|q8_0|...
+	RNG                 string `yaml:"rng"`                   // RNG: std_default|cuda|cpu
+	SamplerRNG          string `yaml:"sampler_rng"`           // sampler RNG (default: use --rng)
+	Prediction          string `yaml:"prediction"`            // prediction type: eps|v|edm_v|sd3_flow|flux_flow|flux2_flow
+	LoRAApplyMode       string `yaml:"lora_apply_mode"`       // auto|immediately|at_runtime
+	OffloadToCPU        bool   `yaml:"offload_to_cpu"`        // offload weights to RAM, load to VRAM when needed
+	MMap                bool   `yaml:"mmap"`                  // memory-map model
+	ControlNetCPU       bool   `yaml:"control_net_cpu"`       // keep controlnet in CPU
+	ClipOnCPU           bool   `yaml:"clip_on_cpu"`           // keep clip in CPU
+	VAEOnCPU            bool   `yaml:"vae_on_cpu"`            // keep vae in CPU
+	FlashAttention      bool   `yaml:"flash_attention"`       // --fa: enable flash attention
+	DiffusionFA         bool   `yaml:"diffusion_fa"`          // flash attention in diffusion model only
+	DiffusionConvDirect bool   `yaml:"diffusion_conv_direct"` // ggml_conv2d_direct in diffusion
+	VAEConvDirect       bool   `yaml:"vae_conv_direct"`       // ggml_conv2d_direct in VAE
+	Circular            bool   `yaml:"circular"`              // circular padding for convolutions
+	CircularX           bool   `yaml:"circular_x"`            // circular RoPE on x-axis (width)
+	CircularY           bool   `yaml:"circular_y"`            // circular RoPE on y-axis (height)
+
+	// Generation defaults
+	Width                   int     `yaml:"width"`                      // image width in pixels (default: 512)
+	Height                  int     `yaml:"height"`                     // image height in pixels (default: 512)
+	Steps                   int     `yaml:"steps"`                      // sampling steps (default: 20)
+	HighNoiseSteps          int     `yaml:"high_noise_steps"`           // high noise steps (-1 = auto)
+	ClipSkip                int     `yaml:"clip_skip"`                  // CLIP layers to skip (-1 = auto)
+	BatchCount              int     `yaml:"batch_count"`                // batch count
+	VideoFrames             int     `yaml:"video_frames"`               // video frames (default: 1)
+	FPS                     int     `yaml:"fps"`                        // FPS for video (default: 24)
+	TimestepShift           int     `yaml:"timestep_shift"`             // timestep shift for NitroFusion
+	UpscaleRepeats          int     `yaml:"upscale_repeats"`            // ESRGAN upscale repeats (default: 1)
+	UpscaleTileSize         int     `yaml:"upscale_tile_size"`          // ESRGAN tile size (default: 128)
+	CFGScale                float64 `yaml:"cfg_scale"`                  // guidance scale (default: 7.0)
+	ImgCFGScale             float64 `yaml:"img_cfg_scale"`              // image guidance scale for inpaint
+	Guidance                float64 `yaml:"guidance"`                   // distilled guidance scale (default: 3.5)
+	SLGScale                float64 `yaml:"slg_scale"`                  // skip layer guidance scale (0 = disabled)
+	SkipLayerStart          float64 `yaml:"skip_layer_start"`           // SLG enabling point (default: 0.01)
+	SkipLayerEnd            float64 `yaml:"skip_layer_end"`             // SLG disabling point (default: 0.2)
+	Eta                     float64 `yaml:"eta"`                        // noise multiplier
+	FlowShift               float64 `yaml:"flow_shift"`                 // flow shift for SD3/WAN (0 = auto)
+	Strength                float64 `yaml:"strength"`                   // noise strength for img2img (default: 0.75)
+	ControlStrength         float64 `yaml:"control_strength"`           // control net strength (default: 0.9)
+	VAETileOverlap          float64 `yaml:"vae_tile_overlap"`           // VAE tile overlap fraction (default: 0.5)
+	Seed                    int64   `yaml:"seed"`                       // RNG seed (default: 42, <0 = random)
+	SamplingMethod          string  `yaml:"sampling_method"`            // euler|euler_a|heun|dpm++2m|dpm++2s_a|...
+	HighNoiseSamplingMethod string  `yaml:"high_noise_sampling_method"` // sampling method for high noise stage
+	Scheduler               string  `yaml:"scheduler"`                  // sigma scheduler: discrete|karras|exponential|ays|...
+	NegativePrompt          string  `yaml:"negative_prompt"`            // default negative prompt
+	VAETiling               bool    `yaml:"vae_tiling"`                 // process VAE in tiles to reduce memory
+	VAETileSize             string  `yaml:"vae_tile_size"`              // VAE tile size, format: "32x32"
+	VAERelativeTileSize     string  `yaml:"vae_relative_tile_size"`     // relative VAE tile size
+	DisableImageMetadata    bool    `yaml:"disable_image_metadata"`     // do not embed generation metadata
+	SkipLayers              string  `yaml:"skip_layers"`                // SLG skip layers, e.g. "[7,8,9]"
+	Sigmas                  string  `yaml:"sigmas"`                     // custom sigma values, comma-separated
+	RefImage                string  `yaml:"ref_image"`                  // reference image for Flux Kontext
+
+	// High noise stage (two-stage generation)
+	HighNoiseCFGScale       float64 `yaml:"high_noise_cfg_scale"`
+	HighNoiseImgCFGScale    float64 `yaml:"high_noise_img_cfg_scale"`
+	HighNoiseGuidance       float64 `yaml:"high_noise_guidance"`
+	HighNoiseSLGScale       float64 `yaml:"high_noise_slg_scale"`
+	HighNoiseSkipLayerStart float64 `yaml:"high_noise_skip_layer_start"`
+	HighNoiseSkipLayerEnd   float64 `yaml:"high_noise_skip_layer_end"`
+	HighNoiseEta            float64 `yaml:"high_noise_eta"`
+	HighNoiseSkipLayers     string  `yaml:"high_noise_skip_layers"`
+
+	// Cache acceleration
+	CacheMode   string `yaml:"cache_mode"`   // easycache|ucache|dbcache|taylorseer|cache-dit|spectrum
+	CacheOption string `yaml:"cache_option"` // key=value cache params, comma-separated
+	SCMMask     string `yaml:"scm_mask"`     // SCM steps mask, e.g. "1,1,1,0,0,1"
+	SCMPolicy   string `yaml:"scm_policy"`   // SCM policy: dynamic|static
+
+	// Logging
+	Verbose bool `yaml:"verbose"` // print extra info
+	Color   bool `yaml:"color"`   // colored logging
 }

@@ -409,9 +409,85 @@ logging:
 # Only applies when backend: sd. Remove this block for other backends.
 
 # sd:
+#   # --- Output (cli mode only) ---
+#   output: ./output.png           # output path; use %d for sequences e.g. output_%03d.png
+#   preview_path: ./preview.png    # preview image path
+#   preview_interval: 1            # preview update interval in steps
+#   preview: none                  # preview method: none | proj | tae | vae
+#   mode: img_gen                  # run mode: img_gen | vid_gen | upscale | convert | metadata
+#
+#   # --- Server (server mode only) ---
+#   serve_html_path: ""            # path to HTML file to serve at root
+#
+#   # --- Model components ---
+#   clip_l: ""                     # path to clip-l text encoder
+#   clip_g: ""                     # path to clip-g text encoder (SDXL)
+#   clip_vision: ""                # path to clip-vision encoder
+#   t5xxl: ""                      # path to t5xxl text encoder (SD3/Flux)
+#   llm: ""                        # path to LLM text encoder (Flux2/QwenVL)
+#   llm_vision: ""                 # path to LLM visual encoder
+#   diffusion_model: ""            # path to standalone diffusion model (split model)
+#   high_noise_diffusion_model: "" # path to high-noise diffusion model
+#   vae: ""                        # path to standalone VAE model
+#   taesd: ""                      # path to Tiny AutoEncoder (fast decode, low quality)
+#   control_net: ""                # path to ControlNet model
+#   embd_dir: ""                   # embeddings directory
+#   lora_model_dir: ""             # LoRA model directory
+#   tensor_type_rules: ""          # weight type per tensor pattern, e.g. "^vae\.=f16,model\.=q8_0"
+#   photo_maker: ""                # path to PHOTOMAKER model
+#   upscale_model: ""              # path to ESRGAN upscale model
+#
+#   # --- Hardware & weight type ---
+#   type: ""                       # weight type: f32 | f16 | q4_0 | q4_1 | q8_0 | q2_K | ...
+#   rng: cuda                      # RNG: std_default | cuda | cpu
+#   sampler_rng: ""                # sampler RNG (default: same as --rng)
+#   prediction: ""                 # prediction type: eps | v | edm_v | sd3_flow | flux_flow | flux2_flow
+#   lora_apply_mode: auto          # LoRA apply mode: auto | immediately | at_runtime
+#   offload_to_cpu: false          # offload weights to RAM, load to VRAM when needed
+#   mmap: false                    # memory-map model file
+#   control_net_cpu: false         # keep ControlNet in CPU
+#   clip_on_cpu: false             # keep CLIP in CPU
+#   vae_on_cpu: false              # keep VAE in CPU
+#   flash_attention: false         # enable flash attention (--fa)
+#   diffusion_fa: false            # flash attention in diffusion model only
+#   circular: false                # circular padding for convolutions
+#
+#   # --- Generation defaults ---
 #   width: 512                     # output width in pixels (default: 512)
 #   height: 512                    # output height in pixels (default: 512)
 #   steps: 20                      # diffusion steps (default: 20)
+#   clip_skip: -1                  # CLIP layers to skip (-1 = auto: 1 for SD1.x, 2 for SD2.x)
+#   batch_count: 1                 # number of images to generate
 #   cfg_scale: 7.0                 # classifier-free guidance scale (default: 7.0)
-#   sampling_method: euler_a       # euler_a | euler | dpm++2m | lcm | ... (default: euler_a)
-#   seed: -1                       # -1 = random (default: -1)
+#   guidance: 3.5                  # distilled guidance scale for Flux/SD3 (default: 3.5)
+#   strength: 0.75                 # noise strength for img2img (default: 0.75)
+#   control_strength: 0.9          # ControlNet strength (default: 0.9)
+#   sampling_method: ""            # euler|euler_a|heun|dpm++2m|dpm++2s_a|lcm|tcd|... (default: auto)
+#   scheduler: discrete            # sigma scheduler: discrete|karras|exponential|ays|gits|smoothstep|...
+#   negative_prompt: ""            # default negative prompt
+#   seed: -1                       # RNG seed (-1 = random, default: 42)
+#
+#   # --- VAE tiling (reduce VRAM for high-res) ---
+#   vae_tiling: false              # process VAE in tiles
+#   vae_tile_size: 32x32           # tile size, format WxH
+#   vae_tile_overlap: 0.5          # tile overlap fraction (default: 0.5)
+#
+#   # --- SLG (Skip Layer Guidance, SD3.5) ---
+#   slg_scale: 0.0                 # SLG scale (0 = disabled; ~2.5 for SD3.5 medium)
+#   skip_layer_start: 0.01         # SLG enabling point (default: 0.01)
+#   skip_layer_end: 0.2            # SLG disabling point (default: 0.2)
+#   skip_layers: "[7,8,9]"         # layers to skip for SLG steps
+#
+#   # --- Cache acceleration ---
+#   cache_mode: ""                 # easycache|ucache|dbcache|taylorseer|cache-dit|spectrum
+#   cache_option: ""               # cache params, e.g. "threshold=0.25,reset=0"
+#
+#   # --- High noise stage (two-stage generation, e.g. Wan2.2 MoE) ---
+#   high_noise_steps: -1           # high noise steps (-1 = auto)
+#   high_noise_cfg_scale: 7.0      # high noise guidance scale
+#   high_noise_guidance: 3.5       # high noise distilled guidance
+#   high_noise_sampling_method: "" # high noise sampling method
+#
+#   # --- Logging ---
+#   verbose: false
+#   color: false

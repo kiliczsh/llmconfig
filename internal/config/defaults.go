@@ -46,9 +46,6 @@ func ApplyDefaults(cfg *Config) {
 		if cfg.SD.CFGScale == 0 {
 			cfg.SD.CFGScale = 7.0
 		}
-		if cfg.SD.SamplingMethod == "" {
-			cfg.SD.SamplingMethod = "euler_a"
-		}
 		if cfg.SD.Seed == 0 {
 			cfg.SD.Seed = -1
 		}
