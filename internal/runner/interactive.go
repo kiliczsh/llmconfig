@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
 	"time"
 
 	"github.com/kiliczsh/llamaconfig/internal/config"
@@ -51,51 +50,17 @@ func (r *interactiveRunner) IsAlive(_ *state.ModelState) bool {
 }
 
 func buildInteractiveArgs(rc *config.RunConfig) []string {
-	cfg := rc.Config
-	p := rc.Profile
 	var args []string
 
-	add := func(flag string, val string) { args = append(args, flag, val) }
-	addIf := func(flag string, cond bool) {
-		if cond {
-			args = append(args, flag)
-		}
-	}
+	// Model
+	args = append(args, "--model", rc.ModelPath)
 
-	add("--model", rc.ModelPath)
-	add("-ngl", strconv.Itoa(p.NGPULayers))
-
-	// Skip --threads on GPU backends — CUDA/Metal handle parallelism internally
-	if p.Threads > 0 && !p.CUDA && !p.Metal && !p.ROCm {
-		add("--threads", strconv.Itoa(p.Threads))
-	}
-
-	add("--ctx-size", strconv.Itoa(cfg.Context.NCtx))
-	add("--batch-size", strconv.Itoa(cfg.Context.NBatch))
-	if cfg.Context.FlashAttention != "" {
-		add("--flash-attn", cfg.Context.FlashAttention)
-	}
-	addIf("--no-mmap", !*cfg.Context.MMap)
-	addIf("--mlock", cfg.Context.MLock)
-
-	// --conversation enables chat mode; Enter submits (no multiline — that requires \ to submit)
+	// --conversation enables chat mode; Enter submits
 	args = append(args, "--conversation")
 
-	// Do not pass --chat-template in conversation mode — the model's embedded
-	// metadata template takes precedence and explicit overrides break formatting.
-	if cfg.Chat.SystemPrompt != "" {
-		add("--system-prompt", cfg.Chat.SystemPrompt)
-	}
-
-	// Sampling
-	s := cfg.Sampling
-	add("--temp", fmt.Sprintf("%.4f", s.Temperature))
-	add("--top-k", strconv.Itoa(s.TopK))
-	add("--top-p", fmt.Sprintf("%.4f", s.TopP))
-
-	if rc.MMProjPath != "" {
-		add("--mmproj", rc.MMProjPath)
-	}
+	// All shared flags (hardware, context, sampling, chat, rope, lora, etc.)
+	// interactive=true: skips --chat-template and applies GPU-aware thread handling
+	args = appendSharedArgs(args, rc, true)
 
 	return args
 }

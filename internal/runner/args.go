@@ -24,7 +24,6 @@ func BuildArgs(rc *config.RunConfig) []string {
 
 func buildLlamaArgs(rc *config.RunConfig) []string {
 	cfg := rc.Config
-	p := rc.Profile
 	var args []string
 
 	add := func(flag string, value ...string) {
@@ -155,59 +154,86 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	addIf("--rerank", cfg.Server.Endpoints.Rerank)
 	addIf("--props", cfg.Server.Endpoints.Props)
 
-	// Hardware / GPU
-	add("-ngl", strconv.Itoa(p.NGPULayers))
+	// Shared args (hardware, context, sampling, chat, rope, model extras)
+	args = appendSharedArgs(args, rc, false)
 
+	// Server-only: show-timings
+	if cfg.Logging.ShowTimings != nil && !*cfg.Logging.ShowTimings {
+		args = append(args, "--no-show-timings")
+	}
+
+	return args
+}
+
+// appendSharedArgs appends flags common to both llama-server and llama-cli.
+// interactive=true skips server-only flags and applies CLI-specific behaviour.
+func appendSharedArgs(args []string, rc *config.RunConfig, interactive bool) []string {
+	cfg := rc.Config
+	p := rc.Profile
+
+	add := func(flag string, value ...string) []string {
+		args = append(args, flag)
+		args = append(args, value...)
+		return args
+	}
+	addIf := func(flag string, cond bool) {
+		if cond {
+			args = append(args, flag)
+		}
+	}
+
+	// Hardware / GPU
+	args = add("-ngl", strconv.Itoa(p.NGPULayers))
 	if len(p.Devices) > 0 {
-		add("--device", strings.Join(p.Devices, ","))
+		args = add("--device", strings.Join(p.Devices, ","))
 	}
 	if len(p.TensorSplit) > 0 {
 		parts := make([]string, len(p.TensorSplit))
 		for i, v := range p.TensorSplit {
 			parts[i] = fmt.Sprintf("%.2f", v)
 		}
-		add("--tensor-split", strings.Join(parts, ","))
+		args = add("--tensor-split", strings.Join(parts, ","))
 	}
 	if p.SplitMode != "" {
-		add("--split-mode", p.SplitMode)
+		args = add("--split-mode", p.SplitMode)
 	}
 	if p.MainGPU >= 0 {
-		add("--main-gpu", strconv.Itoa(p.MainGPU))
+		args = add("--main-gpu", strconv.Itoa(p.MainGPU))
 	}
 	if p.Priority != 0 {
-		add("--prio", strconv.Itoa(p.Priority))
+		args = add("--prio", strconv.Itoa(p.Priority))
 	}
 	if p.Fit != "" {
-		add("--fit", p.Fit)
+		args = add("--fit", p.Fit)
 	}
 	if len(p.FitTarget) > 0 {
 		parts := make([]string, len(p.FitTarget))
 		for i, v := range p.FitTarget {
 			parts[i] = strconv.Itoa(v)
 		}
-		add("--fit-target", strings.Join(parts, ","))
+		args = add("--fit-target", strings.Join(parts, ","))
 	}
 	if p.FitCtx > 0 {
-		add("--fit-ctx", strconv.Itoa(p.FitCtx))
+		args = add("--fit-ctx", strconv.Itoa(p.FitCtx))
 	}
 	for _, ot := range p.OverrideTensor {
-		add("--override-tensor", ot)
+		args = add("--override-tensor", ot)
 	}
 	addIf("--cpu-moe", p.CPUMoE)
 	if p.CPUMask != "" {
-		add("--cpu-mask", p.CPUMask)
+		args = add("--cpu-mask", p.CPUMask)
 	}
 	if p.CPUMaskBatch != "" {
-		add("--cpu-mask-batch", p.CPUMaskBatch)
+		args = add("--cpu-mask-batch", p.CPUMaskBatch)
 	}
 	if p.Poll != nil {
-		add("--poll", strconv.Itoa(*p.Poll))
+		args = add("--poll", strconv.Itoa(*p.Poll))
 	}
 	if p.PollBatch != nil {
-		add("--poll-batch", strconv.Itoa(*p.PollBatch))
+		args = add("--poll-batch", strconv.Itoa(*p.PollBatch))
 	}
 	if p.PrioBatch != 0 {
-		add("--prio-batch", strconv.Itoa(p.PrioBatch))
+		args = add("--prio-batch", strconv.Itoa(p.PrioBatch))
 	}
 	if p.Repack != nil && !*p.Repack {
 		args = append(args, "--no-repack")
@@ -219,52 +245,54 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 		args = append(args, "--no-op-offload")
 	}
 	if p.RPC != "" {
-		add("--rpc", p.RPC)
+		args = add("--rpc", p.RPC)
 	}
 	if p.DirectIO != nil && *p.DirectIO {
 		args = append(args, "--direct-io")
 	}
 	if p.CPURangeBatch != "" {
-		add("--cpu-range-batch", p.CPURangeBatch)
+		args = add("--cpu-range-batch", p.CPURangeBatch)
 	}
 	if p.CPUStrictBatch {
 		args = append(args, "--cpu-strict-batch", "1")
 	}
 
-	// Threads
+	// Threads — interactive skips --threads on GPU backends
 	if p.Threads > 0 {
-		add("--threads", strconv.Itoa(p.Threads))
+		if !interactive || (!p.CUDA && !p.Metal && !p.ROCm) {
+			args = add("--threads", strconv.Itoa(p.Threads))
+		}
 	}
 	if p.ThreadsBatch > 0 {
-		add("--threads-batch", strconv.Itoa(p.ThreadsBatch))
+		args = add("--threads-batch", strconv.Itoa(p.ThreadsBatch))
 	}
 
 	// Context
 	ctx := cfg.Context
-	add("--ctx-size", strconv.Itoa(ctx.NCtx))
-	add("--batch-size", strconv.Itoa(ctx.NBatch))
+	args = add("--ctx-size", strconv.Itoa(ctx.NCtx))
+	args = add("--batch-size", strconv.Itoa(ctx.NBatch))
 	if ctx.NUBatch > 0 && ctx.NUBatch != ctx.NBatch {
-		add("--ubatch-size", strconv.Itoa(ctx.NUBatch))
+		args = add("--ubatch-size", strconv.Itoa(ctx.NUBatch))
 	}
 	if ctx.NKeep > 0 {
-		add("--keep", strconv.Itoa(ctx.NKeep))
+		args = add("--keep", strconv.Itoa(ctx.NKeep))
 	}
 	if ctx.CacheTypeK != "" && ctx.CacheTypeK != "f16" {
-		add("--cache-type-k", ctx.CacheTypeK)
+		args = add("--cache-type-k", ctx.CacheTypeK)
 	}
 	if ctx.CacheTypeV != "" && ctx.CacheTypeV != "f16" {
-		add("--cache-type-v", ctx.CacheTypeV)
+		args = add("--cache-type-v", ctx.CacheTypeV)
 	}
 	addIf("--no-mmap", !*ctx.MMap)
 	addIf("--mlock", ctx.MLock)
 	if ctx.FlashAttention != "" {
-		add("--flash-attn", ctx.FlashAttention)
+		args = add("--flash-attn", ctx.FlashAttention)
 	}
 	if ctx.NCPUMoE > 0 {
-		add("--n-cpu-moe", strconv.Itoa(ctx.NCPUMoE))
+		args = add("--n-cpu-moe", strconv.Itoa(ctx.NCPUMoE))
 	}
 	if ctx.NPredict != 0 {
-		add("--predict", strconv.Itoa(ctx.NPredict))
+		args = add("--predict", strconv.Itoa(ctx.NPredict))
 	}
 	addIf("--context-shift", ctx.ContextShift)
 	if ctx.KVOffload != nil && !*ctx.KVOffload {
@@ -272,102 +300,104 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	}
 	addIf("--swa-full", ctx.SWAFull)
 	if ctx.CacheRAM != 0 {
-		add("--cache-ram", strconv.Itoa(ctx.CacheRAM))
+		args = add("--cache-ram", strconv.Itoa(ctx.CacheRAM))
 	}
 	if ctx.ImageMinTokens > 0 {
-		add("--image-min-tokens", strconv.Itoa(ctx.ImageMinTokens))
+		args = add("--image-min-tokens", strconv.Itoa(ctx.ImageMinTokens))
 	}
 	if ctx.ImageMaxTokens > 0 {
-		add("--image-max-tokens", strconv.Itoa(ctx.ImageMaxTokens))
+		args = add("--image-max-tokens", strconv.Itoa(ctx.ImageMaxTokens))
 	}
 	addIf("--check-tensors", ctx.CheckTensors)
 	if ctx.CtxCheckpoints > 0 {
-		add("--ctx-checkpoints", strconv.Itoa(ctx.CtxCheckpoints))
+		args = add("--ctx-checkpoints", strconv.Itoa(ctx.CtxCheckpoints))
 	}
 	if ctx.CheckpointEveryNTokens != 0 {
-		add("--checkpoint-every-n-tokens", strconv.Itoa(ctx.CheckpointEveryNTokens))
+		args = add("--checkpoint-every-n-tokens", strconv.Itoa(ctx.CheckpointEveryNTokens))
 	}
 
 	// Sampling
 	s := cfg.Sampling
-	add("--temp", fmt.Sprintf("%.4f", s.Temperature))
-	add("--top-k", strconv.Itoa(s.TopK))
-	add("--top-p", fmt.Sprintf("%.4f", s.TopP))
-	add("--min-p", fmt.Sprintf("%.4f", s.MinP))
+	args = add("--temp", fmt.Sprintf("%.4f", s.Temperature))
+	args = add("--top-k", strconv.Itoa(s.TopK))
+	args = add("--top-p", fmt.Sprintf("%.4f", s.TopP))
+	args = add("--min-p", fmt.Sprintf("%.4f", s.MinP))
 	if s.RepeatPenalty != 1.0 {
-		add("--repeat-penalty", fmt.Sprintf("%.4f", s.RepeatPenalty))
-		add("--repeat-last-n", strconv.Itoa(s.RepeatLastN))
+		args = add("--repeat-penalty", fmt.Sprintf("%.4f", s.RepeatPenalty))
+		args = add("--repeat-last-n", strconv.Itoa(s.RepeatLastN))
 	}
 	if s.PresencePenalty != 0 {
-		add("--presence-penalty", fmt.Sprintf("%.4f", s.PresencePenalty))
+		args = add("--presence-penalty", fmt.Sprintf("%.4f", s.PresencePenalty))
 	}
 	if s.FrequencyPenalty != 0 {
-		add("--frequency-penalty", fmt.Sprintf("%.4f", s.FrequencyPenalty))
+		args = add("--frequency-penalty", fmt.Sprintf("%.4f", s.FrequencyPenalty))
 	}
 	if s.DryMultiplier > 0 {
-		add("--dry-multiplier", fmt.Sprintf("%.4f", s.DryMultiplier))
-		add("--dry-base", fmt.Sprintf("%.4f", s.DryBase))
-		add("--dry-allowed-length", strconv.Itoa(s.DryAllowedLength))
-		add("--dry-penalty-last-n", strconv.Itoa(s.DryPenaltyLastN))
+		args = add("--dry-multiplier", fmt.Sprintf("%.4f", s.DryMultiplier))
+		args = add("--dry-base", fmt.Sprintf("%.4f", s.DryBase))
+		args = add("--dry-allowed-length", strconv.Itoa(s.DryAllowedLength))
+		args = add("--dry-penalty-last-n", strconv.Itoa(s.DryPenaltyLastN))
 	}
 	if s.DynatempRange != 0 {
-		add("--dynatemp-range", fmt.Sprintf("%.4f", s.DynatempRange))
-		add("--dynatemp-exp", fmt.Sprintf("%.4f", s.DynatempExp))
+		args = add("--dynatemp-range", fmt.Sprintf("%.4f", s.DynatempRange))
+		args = add("--dynatemp-exp", fmt.Sprintf("%.4f", s.DynatempExp))
 	}
 	if s.XTCProbability != 0 {
-		add("--xtc-probability", fmt.Sprintf("%.4f", s.XTCProbability))
-		add("--xtc-threshold", fmt.Sprintf("%.4f", s.XTCThreshold))
+		args = add("--xtc-probability", fmt.Sprintf("%.4f", s.XTCProbability))
+		args = add("--xtc-threshold", fmt.Sprintf("%.4f", s.XTCThreshold))
 	}
 	if s.Typical != 0 {
-		add("--typical", fmt.Sprintf("%.4f", s.Typical))
+		args = add("--typical", fmt.Sprintf("%.4f", s.Typical))
 	}
 	if s.TopNSigma != 0 {
-		add("--top-nsigma", fmt.Sprintf("%.4f", s.TopNSigma))
+		args = add("--top-nsigma", fmt.Sprintf("%.4f", s.TopNSigma))
 	}
 	if s.AdaptiveTarget != 0 {
-		add("--adaptive-target", fmt.Sprintf("%.4f", s.AdaptiveTarget))
+		args = add("--adaptive-target", fmt.Sprintf("%.4f", s.AdaptiveTarget))
 		if s.AdaptiveDecay != 0 {
-			add("--adaptive-decay", fmt.Sprintf("%.4f", s.AdaptiveDecay))
+			args = add("--adaptive-decay", fmt.Sprintf("%.4f", s.AdaptiveDecay))
 		}
 	}
 	for _, breaker := range s.DrySequenceBreakers {
-		add("--dry-sequence-breaker", breaker)
+		args = add("--dry-sequence-breaker", breaker)
 	}
 	if s.Mirostat > 0 {
-		add("--mirostat", strconv.Itoa(s.Mirostat))
-		add("--mirostat-ent", fmt.Sprintf("%.4f", s.MirostatTau)) // tau = target entropy
-		add("--mirostat-lr", fmt.Sprintf("%.4f", s.MirostatEta))  // eta = learning rate
+		args = add("--mirostat", strconv.Itoa(s.Mirostat))
+		args = add("--mirostat-ent", fmt.Sprintf("%.4f", s.MirostatTau))
+		args = add("--mirostat-lr", fmt.Sprintf("%.4f", s.MirostatEta))
 	}
 	if s.Samplers != "" {
-		add("--samplers", s.Samplers)
+		args = add("--samplers", s.Samplers)
 	}
 	if s.SamplerSeq != "" {
-		add("--sampler-seq", s.SamplerSeq)
+		args = add("--sampler-seq", s.SamplerSeq)
 	}
 	addIf("--ignore-eos", s.IgnoreEOS)
 	if s.Seed != 0 {
-		add("--seed", strconv.FormatInt(s.Seed, 10))
+		args = add("--seed", strconv.FormatInt(s.Seed, 10))
 	}
 	if s.Grammar != "" {
-		add("--grammar", s.Grammar)
+		args = add("--grammar", s.Grammar)
 	}
 	if s.GrammarFile != "" {
-		add("--grammar-file", s.GrammarFile)
+		args = add("--grammar-file", s.GrammarFile)
 	}
 	if s.JSONSchema != "" {
-		add("--json-schema", s.JSONSchema)
+		args = add("--json-schema", s.JSONSchema)
 	}
 	if s.JSONSchemaFile != "" {
-		add("--json-schema-file", s.JSONSchemaFile)
+		args = add("--json-schema-file", s.JSONSchemaFile)
 	}
 	addIf("--backend-sampling", s.BackendSampling)
 
 	// Chat template
-	if cfg.Chat.Template != "" {
-		add("--chat-template", cfg.Chat.Template)
+	// In interactive mode, skip --chat-template: the model's embedded template takes
+	// precedence and explicit overrides break formatting in conversation mode.
+	if !interactive && cfg.Chat.Template != "" {
+		args = add("--chat-template", cfg.Chat.Template)
 	}
 	if cfg.Chat.SystemPrompt != "" {
-		add("--system-prompt", cfg.Chat.SystemPrompt)
+		args = add("--system-prompt", cfg.Chat.SystemPrompt)
 	}
 	if cfg.Chat.Jinja != nil {
 		if *cfg.Chat.Jinja {
@@ -378,144 +408,144 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	}
 	if len(cfg.Chat.TemplateKwargs) > 0 {
 		if b, err := json.Marshal(cfg.Chat.TemplateKwargs); err == nil {
-			add("--chat-template-kwargs", string(b))
+			args = add("--chat-template-kwargs", string(b))
 		}
 	}
 	if cfg.Chat.Reasoning != "" {
-		add("--reasoning", cfg.Chat.Reasoning)
+		args = add("--reasoning", cfg.Chat.Reasoning)
 	}
 	if cfg.Chat.ReasoningBudget != nil {
-		add("--reasoning-budget", strconv.Itoa(*cfg.Chat.ReasoningBudget))
+		args = add("--reasoning-budget", strconv.Itoa(*cfg.Chat.ReasoningBudget))
 	}
 	if cfg.Chat.ReasoningBudgetMessage != "" {
-		add("--reasoning-budget-message", cfg.Chat.ReasoningBudgetMessage)
+		args = add("--reasoning-budget-message", cfg.Chat.ReasoningBudgetMessage)
 	}
 	if cfg.Chat.ReasoningFormat != "" {
-		add("--reasoning-format", cfg.Chat.ReasoningFormat)
+		args = add("--reasoning-format", cfg.Chat.ReasoningFormat)
 	}
 	if cfg.Chat.TemplateFile != "" {
-		add("--chat-template-file", cfg.Chat.TemplateFile)
+		args = add("--chat-template-file", cfg.Chat.TemplateFile)
 	}
 	addIf("--skip-chat-parsing", cfg.Chat.SkipChatParsing)
 
 	// RoPE
 	rope := cfg.Rope
 	if rope.Scaling != "" {
-		add("--rope-scaling", rope.Scaling)
+		args = add("--rope-scaling", rope.Scaling)
 	}
 	if rope.Scale > 0 {
-		add("--rope-scale", fmt.Sprintf("%.6f", rope.Scale))
+		args = add("--rope-scale", fmt.Sprintf("%.6f", rope.Scale))
 	}
 	if rope.FreqBase > 0 {
-		add("--rope-freq-base", fmt.Sprintf("%.1f", rope.FreqBase))
+		args = add("--rope-freq-base", fmt.Sprintf("%.1f", rope.FreqBase))
 	}
 	if rope.FreqScale > 0 && rope.FreqScale != 1.0 {
-		add("--rope-freq-scale", fmt.Sprintf("%.6f", rope.FreqScale))
+		args = add("--rope-freq-scale", fmt.Sprintf("%.6f", rope.FreqScale))
 	}
 	if rope.Scaling == "yarn" {
-		add("--yarn-ext-factor", fmt.Sprintf("%.4f", rope.YarnExtFactor))
-		add("--yarn-attn-factor", fmt.Sprintf("%.4f", rope.YarnAttnFactor))
+		args = add("--yarn-ext-factor", fmt.Sprintf("%.4f", rope.YarnExtFactor))
+		args = add("--yarn-attn-factor", fmt.Sprintf("%.4f", rope.YarnAttnFactor))
 		if rope.YarnBetaSlow != 0 {
-			add("--yarn-beta-slow", fmt.Sprintf("%.4f", rope.YarnBetaSlow))
+			args = add("--yarn-beta-slow", fmt.Sprintf("%.4f", rope.YarnBetaSlow))
 		}
 		if rope.YarnBetaFast != 0 {
-			add("--yarn-beta-fast", fmt.Sprintf("%.4f", rope.YarnBetaFast))
+			args = add("--yarn-beta-fast", fmt.Sprintf("%.4f", rope.YarnBetaFast))
 		}
 		if rope.YarnOrigCtx > 0 {
-			add("--yarn-orig-ctx", strconv.Itoa(rope.YarnOrigCtx))
+			args = add("--yarn-orig-ctx", strconv.Itoa(rope.YarnOrigCtx))
 		}
 	}
 
 	// Draft model (speculative decoding)
 	if rc.DraftModelPath != "" {
-		add("--model-draft", rc.DraftModelPath)
+		args = add("--model-draft", rc.DraftModelPath)
 		if d := cfg.Model.Draft; d != nil {
 			if d.DraftN > 0 {
-				add("--draft", strconv.Itoa(d.DraftN))
+				args = add("--draft", strconv.Itoa(d.DraftN))
 			}
 			if d.DraftMin > 0 {
-				add("--draft-min", strconv.Itoa(d.DraftMin))
+				args = add("--draft-min", strconv.Itoa(d.DraftMin))
 			}
 			if d.DraftPMin > 0 {
-				add("--draft-p-min", fmt.Sprintf("%.4f", d.DraftPMin))
+				args = add("--draft-p-min", fmt.Sprintf("%.4f", d.DraftPMin))
 			}
 			if d.NCtx > 0 {
-				add("--ctx-size-draft", strconv.Itoa(d.NCtx))
+				args = add("--ctx-size-draft", strconv.Itoa(d.NCtx))
 			}
 			if d.NGPULayers > 0 {
-				add("--n-gpu-layers-draft", strconv.Itoa(d.NGPULayers))
+				args = add("--n-gpu-layers-draft", strconv.Itoa(d.NGPULayers))
 			}
 			if len(d.Devices) > 0 {
-				add("--device-draft", strings.Join(d.Devices, ","))
+				args = add("--device-draft", strings.Join(d.Devices, ","))
 			}
 			if d.CacheTypeK != "" && d.CacheTypeK != "f16" {
-				add("--cache-type-k-draft", d.CacheTypeK)
+				args = add("--cache-type-k-draft", d.CacheTypeK)
 			}
 			if d.CacheTypeV != "" && d.CacheTypeV != "f16" {
-				add("--cache-type-v-draft", d.CacheTypeV)
+				args = add("--cache-type-v-draft", d.CacheTypeV)
 			}
 			if d.SpecReplaceTarget != "" && d.SpecReplaceDraft != "" {
-				add("--spec-replace", d.SpecReplaceTarget, d.SpecReplaceDraft)
+				args = add("--spec-replace", d.SpecReplaceTarget, d.SpecReplaceDraft)
 			}
 			for _, ot := range d.OverrideTensor {
-				add("--override-tensor-draft", ot)
+				args = add("--override-tensor-draft", ot)
 			}
 			if d.CPUMoE {
 				args = append(args, "--cpu-moe-draft")
 			}
 			if d.NCPUMoE > 0 {
-				add("--n-cpu-moe-draft", strconv.Itoa(d.NCPUMoE))
+				args = add("--n-cpu-moe-draft", strconv.Itoa(d.NCPUMoE))
 			}
 			if d.ThreadsDraft > 0 {
-				add("--threads-draft", strconv.Itoa(d.ThreadsDraft))
+				args = add("--threads-draft", strconv.Itoa(d.ThreadsDraft))
 			}
 			if d.ThreadsBatchDraft > 0 {
-				add("--threads-batch-draft", strconv.Itoa(d.ThreadsBatchDraft))
+				args = add("--threads-batch-draft", strconv.Itoa(d.ThreadsBatchDraft))
 			}
 			if d.SpecType != "" {
-				add("--spec-type", d.SpecType)
+				args = add("--spec-type", d.SpecType)
 			}
 			if d.SpecNgramSizeN > 0 {
-				add("--spec-ngram-size-n", strconv.Itoa(d.SpecNgramSizeN))
+				args = add("--spec-ngram-size-n", strconv.Itoa(d.SpecNgramSizeN))
 			}
 			if d.SpecNgramSizeM > 0 {
-				add("--spec-ngram-size-m", strconv.Itoa(d.SpecNgramSizeM))
+				args = add("--spec-ngram-size-m", strconv.Itoa(d.SpecNgramSizeM))
 			}
 			if d.SpecNgramMinHits > 0 {
-				add("--spec-ngram-min-hits", strconv.Itoa(d.SpecNgramMinHits))
+				args = add("--spec-ngram-min-hits", strconv.Itoa(d.SpecNgramMinHits))
 			}
 		}
 	}
 
 	// LoRA
 	for _, lora := range cfg.Model.LoRA {
-		add("--lora", lora)
+		args = add("--lora", lora)
 	}
 	if len(cfg.Model.LoRAScaled) > 0 {
-		add("--lora-scaled", strings.Join(cfg.Model.LoRAScaled, ","))
+		args = add("--lora-scaled", strings.Join(cfg.Model.LoRAScaled, ","))
 	}
 
 	// Control vectors
 	for _, cv := range cfg.Model.ControlVector {
-		add("--control-vector", cv)
+		args = add("--control-vector", cv)
 	}
 	if len(cfg.Model.ControlVectorScaled) > 0 {
-		add("--control-vector-scaled", strings.Join(cfg.Model.ControlVectorScaled, ","))
+		args = add("--control-vector-scaled", strings.Join(cfg.Model.ControlVectorScaled, ","))
 	}
 	if cfg.Model.ControlVectorLayerStart >= 0 && cfg.Model.ControlVectorLayerEnd >= 0 {
-		add("--control-vector-layer-range",
+		args = add("--control-vector-layer-range",
 			strconv.Itoa(cfg.Model.ControlVectorLayerStart),
 			strconv.Itoa(cfg.Model.ControlVectorLayerEnd))
 	}
 
 	// Model metadata overrides
 	for _, kv := range cfg.Model.OverrideKV {
-		add("--override-kv", kv)
+		args = add("--override-kv", kv)
 	}
 
 	// Multimodal projection
 	if rc.MMProjPath != "" {
-		add("--mmproj", rc.MMProjPath)
+		args = add("--mmproj", rc.MMProjPath)
 		if cfg.Model.MMProj != nil && cfg.Model.MMProj.Offload != nil && !*cfg.Model.MMProj.Offload {
 			args = append(args, "--no-mmproj-offload")
 		}
@@ -523,30 +553,27 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 
 	// CPU-specific
 	if p.CPURange != "" {
-		add("--cpu-range", p.CPURange)
+		args = add("--cpu-range", p.CPURange)
 	}
 	if p.CPUStrict {
 		args = append(args, "--cpu-strict", "1")
 	}
 	if p.NUMA != "" {
-		add("--numa", p.NUMA)
+		args = add("--numa", p.NUMA)
 	}
 
 	// Logging
 	log := cfg.Logging
 	if log.File != "" {
-		add("--log-file", log.File)
+		args = add("--log-file", log.File)
 	}
 	if log.Colors != "" && log.Colors != "auto" {
-		add("--log-colors", log.Colors)
+		args = add("--log-colors", log.Colors)
 	}
 	addIf("--log-prefix", log.Prefix)
 	addIf("--log-timestamps", log.Timestamps)
 	if log.Verbosity >= 0 {
-		add("--log-verbosity", strconv.Itoa(log.Verbosity))
-	}
-	if log.ShowTimings != nil && !*log.ShowTimings {
-		args = append(args, "--no-show-timings")
+		args = add("--log-verbosity", strconv.Itoa(log.Verbosity))
 	}
 
 	return args
