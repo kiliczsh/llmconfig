@@ -1,0 +1,83 @@
+# llamaconfig reference — sd backend, server mode (sd-server)
+# Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
+# Required: version, name, model.source + repo/file/path/url
+
+version: 1
+name: my-sd-server
+description: ""
+tags: []
+
+backend: sd
+mode: server                      # server → sd-server (HTTP API)
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+
+model:
+  source: huggingface
+  repo: city96/FLUX.1-schnell-gguf
+  file: flux1-schnell-Q4_0.gguf
+  download:
+    resume: true
+    verify_checksum: false
+
+# ── Server ────────────────────────────────────────────────────────────────────
+
+server:
+  host: 127.0.0.1
+  port: 8091                      # sd-server default port differs from llama-server
+
+# ── Hardware Profiles ─────────────────────────────────────────────────────────
+
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+    threads: 8
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+    threads: 8
+  cpu:
+    n_gpu_layers: 0
+    threads: 8
+
+# ── Stable Diffusion ──────────────────────────────────────────────────────────
+
+sd:
+  # --- Server-specific ---
+  # serve_html_path: ""           # path to HTML file to serve at root
+
+  # --- Split model components (optional) ---
+  # diffusion_model: ""
+  # vae: ""
+  # clip_l: ""
+  # clip_g: ""
+  # t5xxl: ""
+  # taesd: ""
+  # lora_model_dir: ""
+  # control_net: ""
+
+  # --- Hardware ---
+  # type: ""                      # f32 | f16 | q4_0 | q8_0 | ...
+  # offload_to_cpu: false
+  # vae_on_cpu: false
+  # clip_on_cpu: false
+  flash_attention: false          # true = --fa
+
+  # --- Generation defaults (applied to all requests unless overridden) ---
+  width: 512
+  height: 512
+  steps: 20
+  cfg_scale: 7.0
+  # guidance: 3.5                 # Flux/SD3
+  # negative_prompt: ""
+  sampling_method: euler_a
+  # scheduler: discrete
+  seed: -1
+
+  # --- VAE tiling ---
+  # vae_tiling: false
+  # vae_tile_size: 32x32
+
+  # --- Logging ---
+  # verbose: false

@@ -1,0 +1,126 @@
+# llamaconfig reference — llama backend, interactive mode (llama-cli)
+# Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
+# Required: version, name, model.source + repo/file/path/url
+
+version: 1
+name: my-model                    # unique identifier used in all CLI commands
+description: ""
+tags: []                          # e.g. [instruct, 7b, q4]
+
+backend: llama
+mode: interactive
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+
+model:
+  source: huggingface             # huggingface | local | url
+  repo: bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+  file: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+  # path: /path/to/model.gguf    # use when source: local
+  # url: https://...             # use when source: url
+  download:
+    resume: true
+    connections: 4
+    verify_checksum: false
+    # cache_dir: ""
+
+  # --- LoRA adapters (optional) ---
+  # lora: []                      # e.g. ["./adapter.gguf"]
+  # lora_scaled: []               # e.g. ["./adapter.gguf:0.8"]
+
+  # --- Multimodal projection (vision models) ---
+  # mmproj:
+  #   source: huggingface
+  #   repo: user/repo-GGUF
+  #   file: mmproj-model-f16.gguf
+
+  # --- Speculative decoding (optional) ---
+  # draft:
+  #   source: huggingface
+  #   repo: bartowski/some-draft-GGUF
+  #   file: draft-Q4_K_M.gguf
+  #   draft_n: 5
+
+# ── Hardware Profiles ─────────────────────────────────────────────────────────
+
+hardware_profiles:
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+    threads: 8
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+    threads: 8
+    # threads_batch: 8
+    # tensor_split: [0.5, 0.5]   # multi-GPU weight split
+    # split_mode: layer           # none | layer | row | tensor
+    # main_gpu: 0
+    # priority: 0                 # -1=low, 0=normal, 1=medium, 2=high, 3=realtime
+    # fit: on                     # auto-fit layers to VRAM
+  amd:
+    n_gpu_layers: 99
+    rocm: true
+    threads: 8
+  cpu:
+    n_gpu_layers: 0
+    threads: 8
+    # numa: ""                    # distribute | isolate | numactl
+
+# ── Context ───────────────────────────────────────────────────────────────────
+
+context:
+  n_ctx: 4096                     # context window (tokens)
+  n_batch: 512                    # logical batch size
+  # n_ubatch: 512                 # physical batch size
+  flash_attention: on             # on | off | auto (recommended: on)
+  mmap: true
+  # mlock: false
+  # cache_type_k: f16             # f16 | bf16 | q8_0 | q4_0 | q4_1 — quantize KV cache to save VRAM
+  # cache_type_v: f16
+  # n_keep: 0                     # tokens to keep on context overflow
+  # context_shift: false          # enable context shift on infinite generation
+  # n_predict: -1                 # max tokens to generate (-1 = infinity)
+  # kv_offload: true              # set false to disable KV GPU offload
+  # swa_full: false               # full-size SWA cache
+
+# ── Sampling ──────────────────────────────────────────────────────────────────
+
+sampling:
+  temperature: 0.8
+  top_k: 40
+  top_p: 0.95
+  min_p: 0.05
+  # repeat_penalty: 1.0
+  # repeat_last_n: 64
+  # presence_penalty: 0.0
+  # frequency_penalty: 0.0
+  # seed: 0                       # 0 = random
+  # dry_multiplier: 0.0           # DRY sampling (0 = disabled)
+  # dry_base: 1.75
+  # dry_allowed_length: 2
+  # grammar: ""                   # BNF grammar for structured output
+  # json_schema: ""               # JSON schema for structured output
+
+# ── Chat ──────────────────────────────────────────────────────────────────────
+
+chat:
+  system_prompt: |
+    You are a helpful assistant.
+  # reasoning: auto              # on | off | auto — thinking mode for reasoning models
+  # reasoning_budget: -1         # -1=unlimited, 0=immediate end, N=token budget
+  # template_kwargs: {}          # extra params passed to chat template as JSON
+  # template_file: ""            # path to custom jinja template file
+
+# ── RoPE (context extension) ──────────────────────────────────────────────────
+# Only needed to extend context beyond the model's trained limit.
+
+# rope:
+#   scaling: yarn                 # linear | yarn
+#   yarn_orig_ctx: 8192           # model's original context size
+#   yarn_ext_factor: -1.0         # -1 = auto
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+
+# logging:
+#   verbosity: -1                 # 0=generic,1=error,2=warn,3=info,4=debug (-1=default)

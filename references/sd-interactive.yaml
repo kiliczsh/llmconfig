@@ -1,0 +1,84 @@
+# llamaconfig reference — sd backend, interactive/cli mode (sd-cli)
+# Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
+# Required: version, name, model.source + repo/file/path/url
+
+version: 1
+name: my-sd-model
+description: ""
+tags: []                          # e.g. [flux, sdxl, sd15]
+
+backend: sd
+mode: interactive                 # interactive → sd-cli (generates to file)
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+
+model:
+  source: huggingface
+  repo: city96/FLUX.1-schnell-gguf
+  file: flux1-schnell-Q4_0.gguf
+  # source: url
+  # url: https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors
+  download:
+    resume: true
+    verify_checksum: false
+
+# ── Hardware Profiles ─────────────────────────────────────────────────────────
+
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+    threads: 8
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+    threads: 8
+  cpu:
+    n_gpu_layers: 0
+    threads: 8
+
+# ── Stable Diffusion ──────────────────────────────────────────────────────────
+
+sd:
+  # --- Output (cli mode) ---
+  output: ./output.png            # supports %d for sequences: output_%03d.png
+  # preview: none                 # none | proj | tae | vae
+  # preview_path: ./preview.png
+  # mode: img_gen                 # img_gen | vid_gen | upscale | convert | metadata
+
+  # --- Split model components (optional, for models distributed as separate files) ---
+  # diffusion_model: ""           # standalone diffusion model (e.g. Flux unet)
+  # vae: ""                       # standalone VAE
+  # clip_l: ""                    # CLIP-L text encoder (SDXL/Flux)
+  # clip_g: ""                    # CLIP-G text encoder (SDXL)
+  # t5xxl: ""                     # T5-XXL text encoder (SD3/Flux)
+  # taesd: ""                     # Tiny AutoEncoder (fast preview decode)
+  # lora_model_dir: ""            # LoRA directory
+  # control_net: ""               # ControlNet model
+
+  # --- Hardware ---
+  # type: ""                      # weight type: f32 | f16 | q4_0 | q8_0 | ...
+  # offload_to_cpu: false         # offload weights to RAM, load to VRAM on demand
+  # vae_on_cpu: false
+  # clip_on_cpu: false
+  flash_attention: false          # true = --fa (enable flash attention)
+
+  # --- Generation defaults ---
+  width: 512
+  height: 512
+  steps: 20
+  cfg_scale: 7.0                  # classifier-free guidance scale
+  # guidance: 3.5                 # distilled guidance (Flux/SD3)
+  # strength: 0.75                # img2img noise strength
+  # negative_prompt: ""
+  # batch_count: 1
+  sampling_method: euler_a        # euler | euler_a | heun | dpm++2m | dpm++2s_a | lcm | tcd | ...
+  # scheduler: discrete           # discrete | karras | exponential | ays | gits | ...
+  seed: -1                        # -1 = random
+
+  # --- VAE tiling (reduce VRAM for high-res) ---
+  # vae_tiling: false
+  # vae_tile_size: 32x32
+
+  # --- Logging ---
+  # verbose: false

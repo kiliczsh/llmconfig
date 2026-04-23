@@ -1,0 +1,153 @@
+# llamaconfig reference — llama backend, server mode (llama-server)
+# Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
+# Required: version, name, model.source + repo/file/path/url
+
+version: 1
+name: my-model-server
+description: ""
+tags: []                          # e.g. [instruct, 7b, q4, server]
+
+backend: llama
+mode: server
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+
+model:
+  source: huggingface             # huggingface | local | url
+  repo: bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+  file: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+  # path: /path/to/model.gguf
+  # url: https://...
+  download:
+    resume: true
+    connections: 4
+    verify_checksum: false
+
+  # --- LoRA adapters (optional) ---
+  # lora: []
+  # lora_scaled: []               # e.g. ["./adapter.gguf:0.8"]
+
+  # --- Multimodal projection (vision models) ---
+  # mmproj:
+  #   source: huggingface
+  #   repo: user/repo-GGUF
+  #   file: mmproj-model-f16.gguf
+
+  # --- Speculative decoding (optional) ---
+  # draft:
+  #   source: huggingface
+  #   repo: bartowski/some-draft-GGUF
+  #   file: draft-Q4_K_M.gguf
+  #   draft_n: 5
+  #   spec_type: ""               # ngram-cache | ngram-simple | ... (no draft model needed)
+
+# ── Server ────────────────────────────────────────────────────────────────────
+
+server:
+  host: 127.0.0.1
+  port: 8080
+  parallel: 1                     # concurrent request slots
+  # api_key: ""                   # bearer token auth
+  # api_key_file: ""              # path to file with API keys
+  # cors_origins: []
+  # timeout: 0                    # read/write timeout in seconds
+  # threads_http: -1              # HTTP handler threads (-1 = auto)
+  # cont_batching: true           # continuous batching (set false to disable)
+  # cache_prompt: true            # prompt caching (set false to disable)
+  # cache_reuse: 0                # min chunk size for KV-shift cache reuse
+
+  # --- SSL ---
+  # ssl_key_file: ""
+  # ssl_cert_file: ""
+
+  # --- Slots ---
+  # slot_prompt_similarity: 0.10  # slot matching threshold
+  # slot_save_path: ""
+
+  # --- Web UI ---
+  # webui: true                   # set false to disable
+  # alias: ""                     # model name shown in API
+
+  endpoints:
+    metrics: false
+    slots: true
+    embeddings: false
+    rerank: false
+    # props: false
+
+# ── Hardware Profiles ─────────────────────────────────────────────────────────
+
+hardware_profiles:
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+    threads: 8
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+    threads: 8
+    threads_batch: 8
+    # tensor_split: [0.5, 0.5]
+    # split_mode: layer
+    # fit: on
+  amd:
+    n_gpu_layers: 99
+    rocm: true
+    threads: 8
+  cpu:
+    n_gpu_layers: 0
+    threads: 8
+
+# ── Context ───────────────────────────────────────────────────────────────────
+
+context:
+  n_ctx: 4096
+  n_batch: 512
+  # n_ubatch: 512
+  flash_attention: on             # on | off | auto
+  mmap: true
+  # mlock: false
+  # cache_type_k: f16             # f16 | bf16 | q8_0 | q4_0 — quantize KV cache
+  # cache_type_v: f16
+  # kv_offload: true
+  # context_shift: false
+  # swa_full: false
+  # cache_ram: 8192               # max RAM cache in MiB (-1 = no limit)
+
+# ── Sampling ──────────────────────────────────────────────────────────────────
+
+sampling:
+  temperature: 0.8
+  top_k: 40
+  top_p: 0.95
+  min_p: 0.05
+  # repeat_penalty: 1.0
+  # presence_penalty: 0.0
+  # frequency_penalty: 0.0
+  # seed: 0
+  # dry_multiplier: 0.0
+  # grammar: ""
+  # json_schema: ""
+
+# ── Chat ──────────────────────────────────────────────────────────────────────
+
+chat:
+  # system_prompt: ""
+  # reasoning: auto              # on | off | auto
+  # reasoning_budget: -1
+  # reasoning_format: auto       # none | deepseek | deepseek-legacy
+  # jinja: true                  # true=--jinja, false=--no-jinja, omit=default(enabled)
+  # template_kwargs: {}
+
+# ── RoPE ──────────────────────────────────────────────────────────────────────
+
+# rope:
+#   scaling: yarn
+#   yarn_orig_ctx: 8192
+#   yarn_ext_factor: -1.0
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+
+# logging:
+#   verbosity: -1
+#   colors: auto

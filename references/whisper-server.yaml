@@ -1,0 +1,82 @@
+# llamaconfig reference — whisper backend, server mode (whisper-server)
+# Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
+# Required: version, name, model.source + repo/file/path/url
+
+version: 1
+name: my-whisper-server
+description: ""
+tags: []
+
+backend: whisper
+mode: server                      # server → whisper-server (HTTP inference API)
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+
+model:
+  source: huggingface
+  repo: ggerganov/whisper.cpp
+  file: ggml-large-v3-turbo.bin
+  download:
+    resume: true
+    verify_checksum: false
+
+# ── Server ────────────────────────────────────────────────────────────────────
+
+server:
+  host: 127.0.0.1
+  port: 8082                      # whisper-server default
+
+# ── Hardware Profiles ─────────────────────────────────────────────────────────
+
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+    threads: 8
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+    threads: 8
+  cpu:
+    n_gpu_layers: 0
+    threads: 8
+
+# ── Whisper ───────────────────────────────────────────────────────────────────
+
+whisper:
+  language: auto                  # auto | en | tr | de | fr | ...
+  task: transcribe                # transcribe | translate
+
+  # --- Performance ---
+  processors: 1
+  beam_size: 5
+  best_of: 2                      # server default differs from cli (2 vs 5)
+  # no_fallback: false
+
+  # --- Word-level timestamps ---
+  # dtw: ""                       # DTW model: tiny | base | small | medium | large-v1/v2/v3
+
+  # --- VAD ---
+  # vad: false
+  # vad_model: ""
+  # vad_threshold: 0.50
+  # vad_min_speech_duration_ms: 250
+  # vad_min_silence_duration_ms: 100
+
+  # --- GPU ---
+  # flash_attention: true         # set false to pass --no-flash-attn (default: enabled)
+  # no_gpu: false
+  # device: 0
+
+  # --- Server-specific ---
+  # inference_path: ""            # inference path (default: /inference)
+  # public_path: ""               # path to public folder
+  # request_path: ""              # request path prefix
+  # convert: false                # convert audio to WAV via ffmpeg
+  # tmp_dir: ""                   # temp dir for ffmpeg files
+  # no_language_probabilities: false  # exclude lang probs from verbose_json
+
+  # --- Suppress ---
+  # suppress_nst: false
+  # no_timestamps: false
+  # print_realtime: false

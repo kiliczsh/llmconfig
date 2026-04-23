@@ -1,0 +1,80 @@
+# llamaconfig reference — whisper backend, interactive/cli mode (whisper-cli)
+# Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
+# Required: version, name, model.source + repo/file/path/url
+
+version: 1
+name: my-whisper
+description: ""
+tags: []                          # e.g. [whisper, asr, large]
+
+backend: whisper
+mode: interactive                 # interactive → whisper-cli (transcribes a file)
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+
+model:
+  source: huggingface
+  repo: ggerganov/whisper.cpp
+  file: ggml-large-v3-turbo.bin   # 142MB: ggml-base.bin | 1.5GB: ggml-medium.bin
+  download:
+    resume: true
+    verify_checksum: false
+
+# ── Hardware Profiles ─────────────────────────────────────────────────────────
+
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+    threads: 8
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+    threads: 8
+  cpu:
+    n_gpu_layers: 0
+    threads: 8
+
+# ── Whisper ───────────────────────────────────────────────────────────────────
+
+whisper:
+  language: auto                  # auto | en | tr | de | fr | ...
+  task: transcribe                # transcribe | translate
+
+  # --- Output formats (cli only) ---
+  # output_txt: false             # write .txt file
+  # output_vtt: false             # write .vtt subtitle file
+  # output_srt: false             # write .srt subtitle file
+  # output_json: false            # write .json file
+  # output_json_full: false       # include more info in JSON
+  # output_csv: false
+  # output_file: ""               # output path without extension
+  # no_timestamps: false
+
+  # --- Performance ---
+  processors: 1                   # parallel processor count
+  beam_size: 5
+  best_of: 5
+  # no_fallback: false            # disable temperature fallback
+
+  # --- Word-level timestamps ---
+  # dtw: ""                       # DTW model: tiny | base | small | medium | large-v1/v2/v3
+
+  # --- VAD (Voice Activity Detection) ---
+  # vad: false
+  # vad_model: ""                 # path to Silero VAD model
+  # vad_threshold: 0.50
+
+  # --- GPU ---
+  # flash_attention: true         # set false to pass --no-flash-attn (default: enabled)
+  # no_gpu: false
+  # device: 0
+
+  # --- Suppress / Grammar ---
+  # suppress_nst: false           # suppress non-speech tokens
+  # grammar: ""                   # GBNF grammar to guide decoding
+
+  # --- Logging ---
+  # debug_mode: false
+  # print_colors: false
+  # print_progress: false
