@@ -396,14 +396,101 @@ logging:
 # Only applies when backend: whisper. Remove this block for other backends.
 
 # whisper:
-#   language: auto                 # auto | en | tr | de | ... (default: auto)
+#   # --- Core ---
+#   language: auto                 # auto | en | tr | de | fr | ... (default: en)
 #   task: transcribe               # transcribe | translate (default: transcribe)
+#   processors: 1                  # parallel processor count (default: 1)
+#
+#   # --- Timing & segmentation ---
+#   offset_t: 0                    # time offset in milliseconds
+#   offset_n: 0                    # segment index offset
+#   duration: 0                    # audio duration to process in ms (0 = all)
+#   max_context: -1                # max text context tokens (-1 = all)
+#   max_len: 0                     # max segment length in characters
+#   audio_ctx: 0                   # audio context size (0 = all)
+#   split_on_word: false           # split on word rather than token
+#
+#   # --- Decoder thresholds ---
+#   word_thold: 0.01               # word timestamp probability threshold
+#   entropy_thold: 2.40            # entropy threshold for decoder fail
+#   logprob_thold: -1.00           # log probability threshold
+#   no_speech_thold: 0.60          # no speech threshold
+#
+#   # --- Sampling ---
 #   beam_size: 5                   # beam search width (default: 5)
-#   best_of: 5                     # candidates considered (default: 5)
-#   vad: true                      # voice activity detection (default: false)
-#   vad_threshold: 0.5             # VAD activation threshold (default: 0.5)
-#   word_timestamps: false         # emit per-word timestamps (default: false)
-#   processors: 1                  # parallel decode threads (default: 1)
+#   best_of: 5                     # best candidates to keep (default: 5)
+#   temperature: 0.00              # sampling temperature (default: 0.0)
+#   temperature_inc: 0.20          # temperature increment (default: 0.20)
+#   no_fallback: false             # do not use temperature fallback
+#
+#   # --- Language & prompt ---
+#   detect_language: false         # exit after detecting language
+#   prompt: ""                     # initial prompt (max n_text_ctx/2 tokens)
+#   carry_initial_prompt: false    # always prepend initial prompt (cli only)
+#
+#   # --- Diarization ---
+#   diarize: false                 # stereo audio diarization
+#   tinydiarize: false             # tdrz model diarization
+#
+#   # --- Word-level timestamps ---
+#   word_timestamps: false         # shorthand: uses dtw=tiny if dtw is empty
+#   dtw: ""                        # DTW model: tiny|base|small|medium|large-v1/v2/v3
+#
+#   # --- GPU ---
+#   no_gpu: false                  # disable GPU
+#   device: 0                      # GPU device ID
+#   flash_attention: true          # set false to pass --no-flash-attn (default: enabled)
+#
+#   # --- Suppress ---
+#   suppress_nst: false            # suppress non-speech tokens
+#   suppress_regex: ""             # regex matching tokens to suppress (cli only)
+#
+#   # --- Grammar (cli only) ---
+#   grammar: ""                    # GBNF grammar to guide decoding
+#   grammar_rule: ""               # top-level grammar rule name
+#   grammar_penalty: 100.0         # scales down nongrammar token logits
+#
+#   # --- OpenVINO ---
+#   ov_e_device: CPU               # OpenVINO encode device (default: CPU)
+#
+#   # --- Output formats (cli only) ---
+#   output_txt: false
+#   output_vtt: false              # .vtt subtitle file
+#   output_srt: false              # .srt subtitle file
+#   output_lrc: false              # .lrc lyrics file
+#   output_csv: false
+#   output_json: false
+#   output_json_full: false        # include more info in JSON
+#   output_file: ""                # output path without extension
+#   no_timestamps: false           # do not print timestamps
+#
+#   # --- Logging ---
+#   no_prints: false               # suppress output except results (cli)
+#   print_special: false
+#   print_colors: false
+#   print_confidence: false        # cli only
+#   print_progress: false
+#   print_realtime: false          # server only
+#   log_score: false               # log decoder scores (cli only)
+#   debug_mode: false
+#
+#   # --- VAD (Voice Activity Detection) ---
+#   vad: false
+#   vad_model: ""                  # path to VAD model file
+#   vad_threshold: 0.50            # speech detection threshold
+#   vad_min_speech_duration_ms: 250
+#   vad_min_silence_duration_ms: 100
+#   vad_max_speech_duration_s: 0   # 0 = unlimited
+#   vad_speech_pad_ms: 30
+#   vad_samples_overlap: 0.10
+#
+#   # --- Server-only ---
+#   public_path: ""                # path to public folder (default: examples/server/public)
+#   request_path: ""               # request path prefix
+#   inference_path: ""             # inference path (default: /inference)
+#   convert: false                 # convert audio to WAV via ffmpeg
+#   tmp_dir: ""                    # temp dir for ffmpeg files
+#   no_language_probabilities: false # exclude language probs from verbose_json
 
 # ── Backend: sd ───────────────────────────────────────────────────────────────
 # Only applies when backend: sd. Remove this block for other backends.

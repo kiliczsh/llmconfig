@@ -340,14 +340,103 @@ type RunConfig struct {
 }
 
 type WhisperSpec struct {
-	Language       string  `yaml:"language"` // "auto" | "en" | "tr" | ...
-	Task           string  `yaml:"task"`     // "transcribe" | "translate"
-	BeamSize       int     `yaml:"beam_size"`
-	BestOf         int     `yaml:"best_of"`
-	VAD            bool    `yaml:"vad"`
-	VADThreshold   float64 `yaml:"vad_threshold"`
-	WordTimestamps bool    `yaml:"word_timestamps"`
-	Processors     int     `yaml:"processors"`
+	// Core
+	Language   string `yaml:"language"`   // "auto" | "en" | "tr" | ... (default: en)
+	Task       string `yaml:"task"`       // "transcribe" | "translate"
+	Processors int    `yaml:"processors"` // parallel processor count (default: 1)
+
+	// Timing & segmentation
+	OffsetT     int  `yaml:"offset_t"`      // time offset in milliseconds
+	OffsetN     int  `yaml:"offset_n"`      // segment index offset
+	Duration    int  `yaml:"duration"`      // audio duration to process in ms (0 = all)
+	MaxContext  int  `yaml:"max_context"`   // max text context tokens (-1 = all)
+	MaxLen      int  `yaml:"max_len"`       // max segment length in characters
+	AudioCtx    int  `yaml:"audio_ctx"`     // audio context size (0 = all)
+	SplitOnWord bool `yaml:"split_on_word"` // split on word rather than token
+
+	// Decoder thresholds
+	WordThreshold     float64 `yaml:"word_thold"`      // word timestamp probability threshold (default: 0.01)
+	EntropyThreshold  float64 `yaml:"entropy_thold"`   // entropy threshold for decoder fail (default: 2.40)
+	LogProbThreshold  float64 `yaml:"logprob_thold"`   // log probability threshold (default: -1.0)
+	NoSpeechThreshold float64 `yaml:"no_speech_thold"` // no speech threshold (default: 0.60)
+
+	// Sampling
+	BeamSize       int     `yaml:"beam_size"`       // beam size for beam search (default: 5)
+	BestOf         int     `yaml:"best_of"`         // best candidates to keep (default: 5)
+	Temperature    float64 `yaml:"temperature"`     // sampling temperature (default: 0.0)
+	TemperatureInc float64 `yaml:"temperature_inc"` // temperature increment (default: 0.20)
+	NoFallback     bool    `yaml:"no_fallback"`     // no temperature fallback
+
+	// Language
+	DetectLanguage     bool   `yaml:"detect_language"`      // exit after auto-detecting language
+	Prompt             string `yaml:"prompt"`               // initial prompt
+	CarryInitialPrompt bool   `yaml:"carry_initial_prompt"` // always prepend initial prompt (cli)
+
+	// Diarization
+	Diarize     bool `yaml:"diarize"`     // stereo audio diarization
+	TinyDiarize bool `yaml:"tinydiarize"` // tdrz model diarization
+
+	// Word-level timestamps
+	WordTimestamps bool   `yaml:"word_timestamps"` // shorthand: sets dtw to "tiny" if dtw is empty
+	DTW            string `yaml:"dtw"`             // DTW model: tiny|base|small|medium|large-v1/2/3
+
+	// GPU
+	NoGPU          bool  `yaml:"no_gpu"`          // disable GPU
+	Device         int   `yaml:"device"`          // GPU device ID (default: 0)
+	FlashAttention *bool `yaml:"flash_attention"` // nil=default(on), false=--no-flash-attn
+
+	// Suppress
+	SuppressNST   bool   `yaml:"suppress_nst"`   // suppress non-speech tokens
+	SuppressRegex string `yaml:"suppress_regex"` // regex matching tokens to suppress (cli)
+
+	// Grammar (cli only)
+	Grammar        string  `yaml:"grammar"`         // GBNF grammar to guide decoding
+	GrammarRule    string  `yaml:"grammar_rule"`    // top-level grammar rule name
+	GrammarPenalty float64 `yaml:"grammar_penalty"` // grammar penalty scale (default: 100.0)
+
+	// OpenVINO
+	OVEDevice string `yaml:"ov_e_device"` // OpenVINO encode device (default: CPU)
+
+	// Output formats (cli only)
+	OutputTXT      bool   `yaml:"output_txt"`       // output .txt file
+	OutputVTT      bool   `yaml:"output_vtt"`       // output .vtt subtitle file
+	OutputSRT      bool   `yaml:"output_srt"`       // output .srt subtitle file
+	OutputLRC      bool   `yaml:"output_lrc"`       // output .lrc lyrics file
+	OutputWords    bool   `yaml:"output_words"`     // output karaoke video script
+	OutputCSV      bool   `yaml:"output_csv"`       // output .csv file
+	OutputJSON     bool   `yaml:"output_json"`      // output .json file
+	OutputJSONFull bool   `yaml:"output_json_full"` // include more info in JSON
+	OutputFile     string `yaml:"output_file"`      // output file path (without extension)
+	FontPath       string `yaml:"font_path"`        // monospace font for karaoke video
+	NoTimestamps   bool   `yaml:"no_timestamps"`    // do not print timestamps
+
+	// Logging / printing
+	NoPrints        bool `yaml:"no_prints"`        // suppress all output except results (cli)
+	PrintSpecial    bool `yaml:"print_special"`    // print special tokens
+	PrintColors     bool `yaml:"print_colors"`     // print colors
+	PrintConfidence bool `yaml:"print_confidence"` // print confidence (cli)
+	PrintProgress   bool `yaml:"print_progress"`   // print progress
+	PrintRealtime   bool `yaml:"print_realtime"`   // print output in realtime (server)
+	LogScore        bool `yaml:"log_score"`        // log best decoder scores (cli)
+	DebugMode       bool `yaml:"debug_mode"`       // debug mode (dump log_mel)
+
+	// VAD (Voice Activity Detection)
+	VAD                   bool    `yaml:"vad"`
+	VADModel              string  `yaml:"vad_model"`
+	VADThreshold          float64 `yaml:"vad_threshold"`               // speech threshold (default: 0.50)
+	VADMinSpeechDuration  int     `yaml:"vad_min_speech_duration_ms"`  // min speech duration ms (default: 250)
+	VADMinSilenceDuration int     `yaml:"vad_min_silence_duration_ms"` // min silence ms (default: 100)
+	VADMaxSpeechDuration  float64 `yaml:"vad_max_speech_duration_s"`   // max speech duration s (default: unlimited)
+	VADSpeechPad          int     `yaml:"vad_speech_pad_ms"`           // speech padding ms (default: 30)
+	VADSamplesOverlap     float64 `yaml:"vad_samples_overlap"`         // samples overlap seconds (default: 0.10)
+
+	// Server-only
+	PublicPath      string `yaml:"public_path"`               // path to public folder
+	RequestPath     string `yaml:"request_path"`              // request path prefix
+	InferencePath   string `yaml:"inference_path"`            // inference path (default: /inference)
+	Convert         bool   `yaml:"convert"`                   // convert audio to WAV via ffmpeg
+	TmpDir          string `yaml:"tmp_dir"`                   // temp dir for ffmpeg files
+	NoLanguageProbs bool   `yaml:"no_language_probabilities"` // exclude language probs from JSON output
 }
 
 type SDSpec struct {
