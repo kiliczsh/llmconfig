@@ -180,4 +180,3 @@ func runStatsWatch(appCtx *AppContext, interval time.Duration) error {
 	_, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
 	return err
 }
-
