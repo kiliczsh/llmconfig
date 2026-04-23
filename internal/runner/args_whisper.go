@@ -151,12 +151,8 @@ func buildWhisperArgs(rc *config.RunConfig) []string {
 	addIf("--tinydiarize", w.TinyDiarize)
 
 	// Word-level timestamps (DTW)
-	dtw := w.DTW
-	if dtw == "" && w.WordTimestamps {
-		dtw = "tiny"
-	}
-	if dtw != "" {
-		add("--dtw", dtw)
+	if w.DTW != "" {
+		add("--dtw", w.DTW)
 	}
 
 	// GPU

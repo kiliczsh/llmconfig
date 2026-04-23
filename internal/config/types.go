@@ -377,8 +377,7 @@ type WhisperSpec struct {
 	TinyDiarize bool `yaml:"tinydiarize"` // tdrz model diarization
 
 	// Word-level timestamps
-	WordTimestamps bool   `yaml:"word_timestamps"` // shorthand: sets dtw to "tiny" if dtw is empty
-	DTW            string `yaml:"dtw"`             // DTW model: tiny|base|small|medium|large-v1/2/3
+	DTW string `yaml:"dtw"` // DTW model: tiny|base|small|medium|large-v1/v2/v3
 
 	// GPU
 	NoGPU          bool  `yaml:"no_gpu"`          // disable GPU
