@@ -227,20 +227,20 @@ type ContextSpec struct {
 	CacheTypeK string `yaml:"cache_type_k"`
 	CacheTypeV string `yaml:"cache_type_v"`
 	// Pointer so an explicit `false` in YAML is honored; ApplyDefaults fills nil with true.
-	MMap                   *bool `yaml:"mmap"`
-	MLock                  bool  `yaml:"mlock"`
-	FlashAttention         bool  `yaml:"flash_attention"`
-	NCPUMoE                int   `yaml:"n_cpu_moe"`
-	NPredict               int   `yaml:"n_predict"`                 // tokens to predict (-1 = infinity, 0 = not set)
-	ContextShift           bool  `yaml:"context_shift"`             // enable context shift on infinite generation
-	KVOffload              *bool `yaml:"kv_offload"`                // KV cache GPU offload (default: enabled)
-	SWAFull                bool  `yaml:"swa_full"`                  // use full-size SWA cache
-	CacheRAM               int   `yaml:"cache_ram"`                 // max RAM cache in MiB (-1 = no limit, 0 = not set)
-	ImageMinTokens         int   `yaml:"image_min_tokens"`          // min tokens per image (vision models)
-	ImageMaxTokens         int   `yaml:"image_max_tokens"`          // max tokens per image (vision models)
-	CheckTensors           bool  `yaml:"check_tensors"`             // validate tensor data on load
-	CtxCheckpoints         int   `yaml:"ctx_checkpoints"`           // max context checkpoints per slot
-	CheckpointEveryNTokens int   `yaml:"checkpoint_every_n_tokens"` // checkpoint interval (-1 = disable, 0 = not set)
+	MMap                   *bool  `yaml:"mmap"`
+	MLock                  bool   `yaml:"mlock"`
+	FlashAttention         string `yaml:"flash_attention"` // "on" | "off" | "auto" (default: "auto")
+	NCPUMoE                int    `yaml:"n_cpu_moe"`
+	NPredict               int    `yaml:"n_predict"`                 // tokens to predict (-1 = infinity, 0 = not set)
+	ContextShift           bool   `yaml:"context_shift"`             // enable context shift on infinite generation
+	KVOffload              *bool  `yaml:"kv_offload"`                // KV cache GPU offload (default: enabled)
+	SWAFull                bool   `yaml:"swa_full"`                  // use full-size SWA cache
+	CacheRAM               int    `yaml:"cache_ram"`                 // max RAM cache in MiB (-1 = no limit, 0 = not set)
+	ImageMinTokens         int    `yaml:"image_min_tokens"`          // min tokens per image (vision models)
+	ImageMaxTokens         int    `yaml:"image_max_tokens"`          // max tokens per image (vision models)
+	CheckTensors           bool   `yaml:"check_tensors"`             // validate tensor data on load
+	CtxCheckpoints         int    `yaml:"ctx_checkpoints"`           // max context checkpoints per slot
+	CheckpointEveryNTokens int    `yaml:"checkpoint_every_n_tokens"` // checkpoint interval (-1 = disable, 0 = not set)
 }
 
 type SamplingSpec struct {
@@ -283,7 +283,7 @@ type ChatSpec struct {
 	Template               string            `yaml:"template"`
 	SystemPrompt           string            `yaml:"system_prompt"`
 	TemplateKwargs         map[string]string `yaml:"template_kwargs"`
-	Jinja                  bool              `yaml:"jinja"`
+	Jinja                  *bool             `yaml:"jinja"`                    // nil=default(enabled), true=--jinja, false=--no-jinja
 	Reasoning              string            `yaml:"reasoning"`                // "on" | "off" | "auto"
 	ReasoningBudget        *int              `yaml:"reasoning_budget"`         // -1 unlimited, 0 immediate end, N>0 budget
 	ReasoningBudgetMessage string            `yaml:"reasoning_budget_message"` // message injected when budget exhausted

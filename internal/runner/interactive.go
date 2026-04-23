@@ -72,8 +72,8 @@ func buildInteractiveArgs(rc *config.RunConfig) []string {
 
 	add("--ctx-size", strconv.Itoa(cfg.Context.NCtx))
 	add("--batch-size", strconv.Itoa(cfg.Context.NBatch))
-	if cfg.Context.FlashAttention {
-		add("--flash-attn", "on")
+	if cfg.Context.FlashAttention != "" {
+		add("--flash-attn", cfg.Context.FlashAttention)
 	}
 	addIf("--no-mmap", !*cfg.Context.MMap)
 	addIf("--mlock", cfg.Context.MLock)

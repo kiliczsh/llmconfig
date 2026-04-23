@@ -257,11 +257,11 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	}
 	addIf("--no-mmap", !*ctx.MMap)
 	addIf("--mlock", ctx.MLock)
-	if ctx.FlashAttention {
-		add("--flash-attn", "on")
+	if ctx.FlashAttention != "" {
+		add("--flash-attn", ctx.FlashAttention)
 	}
 	if ctx.NCPUMoE > 0 {
-		add("--cpu-moe-layers", strconv.Itoa(ctx.NCPUMoE))
+		add("--n-cpu-moe", strconv.Itoa(ctx.NCPUMoE))
 	}
 	if ctx.NPredict != 0 {
 		add("--predict", strconv.Itoa(ctx.NPredict))
@@ -369,8 +369,12 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if cfg.Chat.SystemPrompt != "" {
 		add("--system-prompt", cfg.Chat.SystemPrompt)
 	}
-	if cfg.Chat.Jinja {
-		args = append(args, "--jinja")
+	if cfg.Chat.Jinja != nil {
+		if *cfg.Chat.Jinja {
+			args = append(args, "--jinja")
+		} else {
+			args = append(args, "--no-jinja")
+		}
 	}
 	if len(cfg.Chat.TemplateKwargs) > 0 {
 		if b, err := json.Marshal(cfg.Chat.TemplateKwargs); err == nil {

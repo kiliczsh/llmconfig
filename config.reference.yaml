@@ -266,7 +266,7 @@ context:
   cache_type_v: f16               # value cache type: same options as cache_type_k (default: f16)
   mmap: true                      # memory-map model file (default: true)
   mlock: false                    # lock model in RAM, prevent swap (default: false)
-  flash_attention: true           # enable Flash Attention (default: false, recommended: true)
+  # flash_attention: on          # Flash Attention: "on" | "off" | "auto" (default: auto, recommended: on)
   n_cpu_moe: 0                    # CPU layers for MoE experts (0 = use n_gpu_layers logic)
   # n_predict: 0                  # max tokens to generate (-1 = infinity, 0 = not set)
   # context_shift: false          # enable context shift on infinite generation (default: false)
@@ -345,7 +345,7 @@ chat:
   system_prompt: ""               # system prompt prepended to every conversation
   template: ""                    # chat template name (leave empty to use model's built-in)
                                   # examples: llama3, chatml, gemma, mistral, phi3
-  jinja: false                    # use Jinja2 template engine (default: false)
+  # jinja: true                   # true=--jinja, false=--no-jinja, omit=use llama.cpp default (enabled)
   template_kwargs: {}             # extra key-value pairs passed as JSON to --chat-template-kwargs
   # reasoning: auto               # thinking/reasoning mode: "on", "off", or "auto" (default: auto)
   # reasoning_budget: -1          # thinking token budget: -1 unlimited, 0 immediate end, N>0 budget
@@ -439,7 +439,7 @@ logging:
 #   # --- GPU ---
 #   no_gpu: false                  # disable GPU
 #   device: 0                      # GPU device ID
-#   flash_attention: true          # set false to pass --no-flash-attn (default: enabled)
+#   flash_attention: on          # set false to pass --no-flash-attn (default: enabled)
 #
 #   # --- Suppress ---
 #   suppress_nst: false            # suppress non-speech tokens
