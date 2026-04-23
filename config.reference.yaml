@@ -71,6 +71,10 @@ model:
   #   file: draft-model-Q4_K_M.gguf
   #   draft_n: 5                  # tokens to draft ahead (default: 5)
 
+  # --- LoRA adapters (optional) ---
+  # lora: []                      # LoRA adapter file(s), e.g. ["./adapter.gguf"]
+  # lora_scaled: []               # LoRA with scaling, format: ["./adapter.gguf:0.8"]
+
   # --- Multimodal projection (optional, for vision models) ---
   # mmproj:
   #   source: huggingface
@@ -125,6 +129,9 @@ hardware_profiles:
     threads_batch: 8
     # devices: ["0"]              # specific CUDA device IDs (default: all)
     # tensor_split: [0.5, 0.5]   # VRAM split across multiple GPUs (must sum to 1.0)
+    # split_mode: layer           # multi-GPU split: none | layer | row | tensor (default: layer)
+    # main_gpu: 0                 # primary GPU index for split-mode none/row (default: 0)
+    # priority: 0                 # process priority: -1=low, 0=normal, 1=medium, 2=high, 3=realtime
 
   amd:
     n_gpu_layers: 99
@@ -159,6 +166,8 @@ context:
   mlock: false                    # lock model in RAM, prevent swap (default: false)
   flash_attention: true           # enable Flash Attention (default: false, recommended: true)
   n_cpu_moe: 0                    # CPU layers for MoE experts (0 = use n_gpu_layers logic)
+  # n_predict: 0                  # max tokens to generate (-1 = infinity, 0 = not set)
+  # context_shift: false          # enable context shift on infinite generation (default: false)
 
 # ── Sampling ──────────────────────────────────────────────────────────────────
 
@@ -169,6 +178,9 @@ sampling:
   min_p: 0.05                     # minimum probability threshold (default: 0.05)
   repeat_penalty: 1.0             # penalize repeated tokens (1.0 = disabled, default: 1.0)
   repeat_last_n: 64               # tokens to look back for repeat penalty (default: 64)
+  # presence_penalty: 0.0         # presence penalty — discourages any repeated token (default: 0.0)
+  # frequency_penalty: 0.0        # frequency penalty — discourages frequent tokens (default: 0.0)
+  # seed: 0                       # RNG seed for reproducible output (0 = random, default: 0)
 
   # DRY (Don't Repeat Yourself) sampling — suppresses repetitive patterns
   dry_multiplier: 0.0             # DRY penalty multiplier (0 = disabled, default: 0)
@@ -183,6 +195,20 @@ sampling:
 
   # samplers: ""                  # sampler order override, e.g. "top_k;top_p;temp"
 
+  # Dynamic temperature — varies temperature based on entropy
+  # dynatemp_range: 0.0           # range around base temperature (0.0 = disabled)
+  # dynatemp_exp: 1.0             # exponent for dynamic temperature curve
+
+  # XTC (eXclude Top Choices) sampling — removes high-probability tokens to increase diversity
+  # xtc_probability: 0.0          # probability of applying XTC (0.0 = disabled)
+  # xtc_threshold: 0.1            # minimum token probability to be excluded
+
+  # Structured output — constrains generation to a grammar or schema
+  # grammar: ""                   # inline BNF-like grammar string
+  # grammar_file: ""              # path to a grammar file
+  # json_schema: ""               # inline JSON schema string
+  # json_schema_file: ""          # path to a JSON schema file
+
 # ── Chat ──────────────────────────────────────────────────────────────────────
 
 chat:
@@ -190,8 +216,10 @@ chat:
   template: ""                    # chat template name (leave empty to use model's built-in)
                                   # examples: llama3, chatml, gemma, mistral, phi3
   jinja: false                    # use Jinja2 template engine (default: false)
-  template_kwargs: {}             # extra key-value pairs passed to the chat template
+  template_kwargs: {}             # extra key-value pairs passed as JSON to --chat-template-kwargs
   # reasoning: auto               # thinking/reasoning mode: "on", "off", or "auto" (default: auto)
+  # reasoning_budget: -1          # thinking token budget: -1 unlimited, 0 immediate end, N>0 budget
+  # reasoning_format: auto        # thought tag format: none | deepseek | deepseek-legacy (default: auto)
 
 # ── RoPE (Rotary Position Embedding) ─────────────────────────────────────────
 # Only needed to extend context beyond the model's trained limit.

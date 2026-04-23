@@ -32,15 +32,17 @@ type Meta struct {
 }
 
 type ModelSpec struct {
-	Source   string       `yaml:"source"`
-	Repo     string       `yaml:"repo"`
-	File     string       `yaml:"file"`
-	Path     string       `yaml:"path"`
-	URL      string       `yaml:"url"`
-	Checksum string       `yaml:"checksum"`
-	Download DownloadSpec `yaml:"download"`
-	Draft    *DraftSpec   `yaml:"draft,omitempty"`
-	MMProj   *MMProjSpec  `yaml:"mmproj,omitempty"`
+	Source     string       `yaml:"source"`
+	Repo       string       `yaml:"repo"`
+	File       string       `yaml:"file"`
+	Path       string       `yaml:"path"`
+	URL        string       `yaml:"url"`
+	Checksum   string       `yaml:"checksum"`
+	Download   DownloadSpec `yaml:"download"`
+	Draft      *DraftSpec   `yaml:"draft,omitempty"`
+	MMProj     *MMProjSpec  `yaml:"mmproj,omitempty"`
+	LoRA       []string     `yaml:"lora"`        // LoRA adapter file(s)
+	LoRAScaled []string     `yaml:"lora_scaled"` // LoRA with scaling, format: "FNAME:SCALE"
 }
 
 type DownloadSpec struct {
@@ -107,6 +109,9 @@ type HardwareProfile struct {
 	CPURange     string    `yaml:"cpu_range"`
 	CPUStrict    bool      `yaml:"cpu_strict"`
 	NUMA         string    `yaml:"numa"`
+	SplitMode    string    `yaml:"split_mode"` // "none" | "layer" | "row" | "tensor"
+	MainGPU      int       `yaml:"main_gpu"`   // main GPU index (-1 = use default)
+	Priority     int       `yaml:"priority"`   // -1=low, 0=normal, 1=medium, 2=high, 3=realtime
 }
 
 type ContextSpec struct {
@@ -121,6 +126,8 @@ type ContextSpec struct {
 	MLock          bool  `yaml:"mlock"`
 	FlashAttention bool  `yaml:"flash_attention"`
 	NCPUMoE        int   `yaml:"n_cpu_moe"`
+	NPredict       int   `yaml:"n_predict"`     // tokens to predict (-1 = infinity, 0 = not set)
+	ContextShift   bool  `yaml:"context_shift"` // enable context shift on infinite generation
 }
 
 type SamplingSpec struct {
@@ -130,22 +137,35 @@ type SamplingSpec struct {
 	MinP             float64 `yaml:"min_p"`
 	RepeatPenalty    float64 `yaml:"repeat_penalty"`
 	RepeatLastN      int     `yaml:"repeat_last_n"`
+	PresencePenalty  float64 `yaml:"presence_penalty"`  // presence penalty (0.0 = disabled)
+	FrequencyPenalty float64 `yaml:"frequency_penalty"` // frequency penalty (0.0 = disabled)
 	DryMultiplier    float64 `yaml:"dry_multiplier"`
 	DryBase          float64 `yaml:"dry_base"`
 	DryAllowedLength int     `yaml:"dry_allowed_length"`
 	DryPenaltyLastN  int     `yaml:"dry_penalty_last_n"`
+	DynatempRange    float64 `yaml:"dynatemp_range"`  // dynamic temperature range (0.0 = disabled)
+	DynatempExp      float64 `yaml:"dynatemp_exp"`    // dynamic temperature exponent
+	XTCProbability   float64 `yaml:"xtc_probability"` // XTC probability (0.0 = disabled)
+	XTCThreshold     float64 `yaml:"xtc_threshold"`   // XTC threshold
 	Mirostat         int     `yaml:"mirostat"`
 	MirostatTau      float64 `yaml:"mirostat_tau"`
 	MirostatEta      float64 `yaml:"mirostat_eta"`
 	Samplers         string  `yaml:"samplers"`
+	Seed             int64   `yaml:"seed"`             // RNG seed (0 = not set, use random)
+	Grammar          string  `yaml:"grammar"`          // BNF-like grammar string
+	GrammarFile      string  `yaml:"grammar_file"`     // path to grammar file
+	JSONSchema       string  `yaml:"json_schema"`      // JSON schema string
+	JSONSchemaFile   string  `yaml:"json_schema_file"` // path to JSON schema file
 }
 
 type ChatSpec struct {
-	Template       string            `yaml:"template"`
-	SystemPrompt   string            `yaml:"system_prompt"`
-	TemplateKwargs map[string]string `yaml:"template_kwargs"`
-	Jinja          bool              `yaml:"jinja"`
-	Reasoning      string            `yaml:"reasoning"` // "on" | "off" | "auto"
+	Template        string            `yaml:"template"`
+	SystemPrompt    string            `yaml:"system_prompt"`
+	TemplateKwargs  map[string]string `yaml:"template_kwargs"`
+	Jinja           bool              `yaml:"jinja"`
+	Reasoning       string            `yaml:"reasoning"`        // "on" | "off" | "auto"
+	ReasoningBudget *int              `yaml:"reasoning_budget"` // -1 unlimited, 0 immediate end, N>0 budget
+	ReasoningFormat string            `yaml:"reasoning_format"` // "none" | "deepseek" | "deepseek-legacy"
 }
 
 type RopeSpec struct {

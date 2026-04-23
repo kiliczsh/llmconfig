@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -71,6 +72,15 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 		}
 		add("--tensor-split", strings.Join(parts, ","))
 	}
+	if p.SplitMode != "" {
+		add("--split-mode", p.SplitMode)
+	}
+	if p.MainGPU >= 0 {
+		add("--main-gpu", strconv.Itoa(p.MainGPU))
+	}
+	if p.Priority != 0 {
+		add("--prio", strconv.Itoa(p.Priority))
+	}
 
 	// Threads
 	if p.Threads > 0 {
@@ -104,6 +114,10 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if ctx.NCPUMoE > 0 {
 		add("--cpu-moe-layers", strconv.Itoa(ctx.NCPUMoE))
 	}
+	if ctx.NPredict != 0 {
+		add("--predict", strconv.Itoa(ctx.NPredict))
+	}
+	addIf("--context-shift", ctx.ContextShift)
 
 	// Sampling
 	s := cfg.Sampling
@@ -115,11 +129,25 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 		add("--repeat-penalty", fmt.Sprintf("%.4f", s.RepeatPenalty))
 		add("--repeat-last-n", strconv.Itoa(s.RepeatLastN))
 	}
+	if s.PresencePenalty != 0 {
+		add("--presence-penalty", fmt.Sprintf("%.4f", s.PresencePenalty))
+	}
+	if s.FrequencyPenalty != 0 {
+		add("--frequency-penalty", fmt.Sprintf("%.4f", s.FrequencyPenalty))
+	}
 	if s.DryMultiplier > 0 {
 		add("--dry-multiplier", fmt.Sprintf("%.4f", s.DryMultiplier))
 		add("--dry-base", fmt.Sprintf("%.4f", s.DryBase))
 		add("--dry-allowed-length", strconv.Itoa(s.DryAllowedLength))
 		add("--dry-penalty-last-n", strconv.Itoa(s.DryPenaltyLastN))
+	}
+	if s.DynatempRange != 0 {
+		add("--dynatemp-range", fmt.Sprintf("%.4f", s.DynatempRange))
+		add("--dynatemp-exp", fmt.Sprintf("%.4f", s.DynatempExp))
+	}
+	if s.XTCProbability != 0 {
+		add("--xtc-probability", fmt.Sprintf("%.4f", s.XTCProbability))
+		add("--xtc-threshold", fmt.Sprintf("%.4f", s.XTCThreshold))
 	}
 	if s.Mirostat > 0 {
 		add("--mirostat", strconv.Itoa(s.Mirostat))
@@ -128,6 +156,21 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	}
 	if s.Samplers != "" {
 		add("--samplers", s.Samplers)
+	}
+	if s.Seed != 0 {
+		add("--seed", strconv.FormatInt(s.Seed, 10))
+	}
+	if s.Grammar != "" {
+		add("--grammar", s.Grammar)
+	}
+	if s.GrammarFile != "" {
+		add("--grammar-file", s.GrammarFile)
+	}
+	if s.JSONSchema != "" {
+		add("--json-schema", s.JSONSchema)
+	}
+	if s.JSONSchemaFile != "" {
+		add("--json-schema-file", s.JSONSchemaFile)
 	}
 
 	// Chat template
@@ -140,8 +183,19 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if cfg.Chat.Jinja {
 		args = append(args, "--jinja")
 	}
+	if len(cfg.Chat.TemplateKwargs) > 0 {
+		if b, err := json.Marshal(cfg.Chat.TemplateKwargs); err == nil {
+			add("--chat-template-kwargs", string(b))
+		}
+	}
 	if cfg.Chat.Reasoning != "" {
 		add("--reasoning", cfg.Chat.Reasoning)
+	}
+	if cfg.Chat.ReasoningBudget != nil {
+		add("--reasoning-budget", strconv.Itoa(*cfg.Chat.ReasoningBudget))
+	}
+	if cfg.Chat.ReasoningFormat != "" {
+		add("--reasoning-format", cfg.Chat.ReasoningFormat)
 	}
 
 	// RoPE
@@ -169,6 +223,14 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 		if cfg.Model.Draft != nil && cfg.Model.Draft.DraftN > 0 {
 			add("--draft", strconv.Itoa(cfg.Model.Draft.DraftN))
 		}
+	}
+
+	// LoRA
+	for _, lora := range cfg.Model.LoRA {
+		add("--lora", lora)
+	}
+	if len(cfg.Model.LoRAScaled) > 0 {
+		add("--lora-scaled", strings.Join(cfg.Model.LoRAScaled, ","))
 	}
 
 	// Multimodal projection

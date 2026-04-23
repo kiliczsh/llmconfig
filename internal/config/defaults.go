@@ -108,6 +108,19 @@ func ApplyDefaults(cfg *Config) {
 		cfg.Context.MMap = boolPtr(true)
 	}
 
+	// Hardware defaults
+	for _, p := range []*HardwareProfile{
+		&cfg.HardwareProfiles.AppleSilicon,
+		&cfg.HardwareProfiles.NVIDIA,
+		&cfg.HardwareProfiles.AMD,
+		&cfg.HardwareProfiles.IntelGPU,
+		&cfg.HardwareProfiles.CPU,
+	} {
+		if p.MainGPU == 0 {
+			p.MainGPU = -1 // -1 = use llama.cpp default (GPU 0)
+		}
+	}
+
 	// Sampling defaults
 	if cfg.Sampling.Temperature == 0 {
 		cfg.Sampling.Temperature = 0.8
