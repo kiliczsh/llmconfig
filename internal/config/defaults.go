@@ -76,6 +76,9 @@ func ApplyDefaults(cfg *Config) {
 	if cfg.Server.Endpoints.Slots == nil {
 		cfg.Server.Endpoints.Slots = boolPtr(true)
 	}
+	if cfg.Server.ModelsMax == 0 {
+		cfg.Server.ModelsMax = -1 // -1 = not set, use llama-server default (4)
+	}
 
 	// Download defaults
 	if cfg.Model.Download.VerifyChecksum == nil {

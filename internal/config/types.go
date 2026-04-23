@@ -75,6 +75,12 @@ type DraftSpec struct {
 	OverrideTensor    []string `yaml:"override_tensor"`     // tensor buffer overrides for draft model
 	CPUMoE            bool     `yaml:"cpu_moe"`             // keep all MoE weights in CPU for draft
 	NCPUMoE           int      `yaml:"n_cpu_moe"`           // keep first N layers MoE in CPU for draft
+	ThreadsDraft      int      `yaml:"threads_draft"`       // draft model generation threads (server only)
+	ThreadsBatchDraft int      `yaml:"threads_batch_draft"` // draft model batch threads (server only)
+	SpecType          string   `yaml:"spec_type"`           // speculative decoding type: none|ngram-cache|ngram-simple|...
+	SpecNgramSizeN    int      `yaml:"spec_ngram_size_n"`   // ngram lookup size N (default: 12)
+	SpecNgramSizeM    int      `yaml:"spec_ngram_size_m"`   // ngram draft size M (default: 48)
+	SpecNgramMinHits  int      `yaml:"spec_ngram_min_hits"` // min hits for ngram-map (default: 1)
 }
 
 type MMProjSpec struct {
@@ -88,12 +94,74 @@ type ServerSpec struct {
 	Host         string       `yaml:"host"`
 	Port         int          `yaml:"port"`
 	APIKey       string       `yaml:"api_key"`
+	APIKeyFile   string       `yaml:"api_key_file"` // path to file containing API keys
 	CORSOrigins  []string     `yaml:"cors_origins"`
 	Parallel     int          `yaml:"parallel"`
 	QueueSize    int          `yaml:"queue_size"`
 	Endpoints    EndpointSpec `yaml:"endpoints"`
 	ReadTimeout  string       `yaml:"read_timeout"`
 	WriteTimeout string       `yaml:"write_timeout"`
+	Timeout      int          `yaml:"timeout"`      // server read/write timeout in seconds (0 = not set)
+	ThreadsHTTP  int          `yaml:"threads_http"` // HTTP request handler threads (-1 = auto)
+	ReusePort    bool         `yaml:"reuse_port"`   // allow multiple sockets on same port
+	StaticPath   string       `yaml:"path"`         // path to serve static files
+	APIPrefix    string       `yaml:"api_prefix"`   // API path prefix (without trailing slash)
+
+	// SSL
+	SSLKeyFile  string `yaml:"ssl_key_file"`  // PEM-encoded SSL private key
+	SSLCertFile string `yaml:"ssl_cert_file"` // PEM-encoded SSL certificate
+
+	// Prompt & cache
+	CachePrompt *bool `yaml:"cache_prompt"` // prompt caching (default: enabled)
+	CacheReuse  int   `yaml:"cache_reuse"`  // min chunk size for KV-shift cache reuse (0 = disabled)
+
+	// Slots
+	SlotPromptSimilarity float64 `yaml:"slot_prompt_similarity"`  // slot matching threshold (0.0 = disabled, default: 0.10)
+	SlotSavePath         string  `yaml:"slot_save_path"`          // path to save slot KV cache
+	SleepIdleSeconds     int     `yaml:"sleep_idle_seconds"`      // sleep after idle (-1 = disabled, 0 = not set)
+	LoRAInitWithoutApply bool    `yaml:"lora_init_without_apply"` // load LoRA without applying
+
+	// KV
+	KVUnified *bool `yaml:"kv_unified"` // unified KV buffer (default: auto)
+	ClearIdle *bool `yaml:"clear_idle"` // save and clear idle slots on new task
+
+	// Continuous batching
+	ContBatching *bool `yaml:"cont_batching"` // continuous batching (default: enabled)
+
+	// Model identification
+	Alias string `yaml:"alias"` // model name aliases, comma-separated
+	Tags  string `yaml:"tags"`  // model tags, comma-separated
+
+	// Web UI
+	WebUI           *bool  `yaml:"webui"`             // enable/disable Web UI (default: enabled)
+	WebUIConfig     string `yaml:"webui_config"`      // JSON for default WebUI settings
+	WebUIConfigFile string `yaml:"webui_config_file"` // path to JSON file for WebUI settings
+	WebUIMCPProxy   bool   `yaml:"webui_mcp_proxy"`   // experimental: MCP CORS proxy
+
+	// Agent tools (experimental)
+	Tools string `yaml:"tools"` // comma-separated built-in tools, or "all"
+
+	// Embeddings & reranking
+	Pooling string `yaml:"pooling"` // pooling type: none|mean|cls|last|rank
+
+	// Infill
+	SPMInfill bool `yaml:"spm_infill"` // use Suffix/Prefix/Middle pattern (default: Prefix/Suffix/Middle)
+
+	// Prefill
+	PrefillAssistant *bool `yaml:"prefill_assistant"` // prefill assistant response (default: enabled)
+
+	// Media
+	MediaPath string `yaml:"media_path"` // directory for local media files (file:// URLs)
+
+	// Router server
+	ModelsDir      string `yaml:"models_dir"`      // directory of models for router server
+	ModelsPreset   string `yaml:"models_preset"`   // INI file for model presets
+	ModelsMax      int    `yaml:"models_max"`      // max simultaneous models (-1 = not set, 0 = unlimited)
+	ModelsAutoload *bool  `yaml:"models_autoload"` // auto-load models (default: enabled)
+
+	// Lookup cache (for lookup decoding)
+	LookupCacheStatic  string `yaml:"lookup_cache_static"`  // path to static lookup cache
+	LookupCacheDynamic string `yaml:"lookup_cache_dynamic"` // path to dynamic lookup cache
 }
 
 type EndpointSpec struct {
@@ -104,6 +172,8 @@ type EndpointSpec struct {
 	Completions bool  `yaml:"completions"`
 	Chat        bool  `yaml:"chat"`
 	Embeddings  bool  `yaml:"embeddings"`
+	Rerank      bool  `yaml:"rerank"` // reranking endpoint
+	Props       bool  `yaml:"props"`  // POST /props endpoint for dynamic property changes
 }
 
 type HardwareProfiles struct {

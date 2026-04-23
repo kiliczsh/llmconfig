@@ -82,6 +82,12 @@ model:
   #   override_tensor: []         # tensor buffer overrides for draft model
   #   cpu_moe: false              # keep all MoE weights in CPU for draft (default: false)
   #   n_cpu_moe: 0                # keep first N layers MoE in CPU for draft (0 = not set)
+  #   threads_draft: 0            # draft model generation threads (0 = same as --threads, server only)
+  #   threads_batch_draft: 0      # draft model batch threads (0 = same as threads_draft, server only)
+  #   spec_type: ""               # speculative decoding type: none|ngram-cache|ngram-simple|ngram-map-k|...
+  #   spec_ngram_size_n: 0        # ngram lookup size N (0 = use default 12)
+  #   spec_ngram_size_m: 0        # ngram draft size M (0 = use default 48)
+  #   spec_ngram_min_hits: 0      # min hits for ngram-map (0 = use default 1)
 
   # --- LoRA adapters (optional) ---
   # lora: []                      # LoRA adapter file(s), e.g. ["./adapter.gguf"]
@@ -110,20 +116,77 @@ server:
   host: 127.0.0.1                 # bind address (default: 127.0.0.1)
   port: 8080                      # listen port (default: 8080)
   api_key: ""                     # bearer token for Authorization header (default: none)
+  # api_key_file: ""              # path to file containing API keys (one per line)
   parallel: 1                     # number of concurrent request slots (default: 1)
   cors_origins: []                # allowed CORS origins, e.g. ["https://myapp.com"]
-  read_timeout: 600s              # HTTP read timeout (default: 600s)
-  write_timeout: 600s             # HTTP write timeout (default: 600s)
+  read_timeout: 600s              # llamaconfig internal timeout (default: 600s)
+  write_timeout: 600s             # llamaconfig internal timeout (default: 600s)
+  # timeout: 0                    # llama-server read/write timeout in seconds (0 = not set)
+  # threads_http: -1              # HTTP request handler threads (-1 = auto)
+  # reuse_port: false             # allow multiple sockets on same port (default: false)
+  # path: ""                      # directory to serve static files from
+  # api_prefix: ""                # API path prefix, without trailing slash
+
+  # SSL / HTTPS
+  # ssl_key_file: ""              # path to PEM-encoded SSL private key
+  # ssl_cert_file: ""             # path to PEM-encoded SSL certificate
+
+  # Prompt cache
+  # cache_prompt: true            # prompt caching (set false to disable, default: true)
+  # cache_reuse: 0                # min chunk size for KV-shift cache reuse (0 = disabled)
+
+  # Slots
+  # slot_prompt_similarity: 0.10  # slot matching threshold (0.0 = disabled, default: 0.10)
+  # slot_save_path: ""            # directory to save slot KV cache
+  # sleep_idle_seconds: 0         # sleep after idle seconds (-1 = disabled, 0 = not set)
+  # lora_init_without_apply: false # load LoRA adapters without applying (apply via POST /lora-adapters)
+
+  # KV
+  # kv_unified: true              # unified KV buffer shared across slots (set false to disable)
+  # clear_idle: true              # save and clear idle slots on new task (set false to disable)
+
+  # Batching
+  # cont_batching: true           # continuous batching / dynamic batching (set false to disable)
+
+  # Model identification
+  # alias: ""                     # model name aliases, comma-separated (used by API)
+  # tags: ""                      # model tags, comma-separated (informational)
+
+  # Web UI
+  # webui: true                   # enable Web UI (set false to disable)
+  # webui_config: ""              # JSON string for default WebUI settings
+  # webui_config_file: ""         # path to JSON file for WebUI settings
+  # webui_mcp_proxy: false        # experimental: MCP CORS proxy (do not enable in untrusted env)
+  # tools: ""                     # experimental: built-in AI agent tools, comma-separated or "all"
+
+  # Embeddings
+  # pooling: ""                   # pooling type for embeddings: none | mean | cls | last | rank
+
+  # Infill
+  # spm_infill: false             # use Suffix/Prefix/Middle pattern (default: Prefix/Suffix/Middle)
+
+  # Response behavior
+  # prefill_assistant: true       # prefill assistant response if last message is assistant (set false to disable)
+
+  # Media
+  # media_path: ""                # directory for local media files accessible via file:// URLs
+
+  # Router server (for multi-model serving)
+  # models_dir: ""                # directory containing models
+  # models_preset: ""             # path to INI file with model presets
+  # models_max: -1                # max simultaneous models (-1 = not set, 0 = unlimited, default: 4)
+  # models_autoload: true         # auto-load models (set false to disable)
+
+  # Lookup cache (for lookup decoding)
+  # lookup_cache_static: ""       # path to static lookup cache (not updated by generation)
+  # lookup_cache_dynamic: ""      # path to dynamic lookup cache (updated by generation)
 
   endpoints:
-    metrics: false                # pass --metrics to llama-server (default: false)
-    slots: true                   # when false, pass --no-slots (default: true)
-    embeddings: false             # pass --embedding to llama-server (default: false)
-    # The following flags are reserved for future use; they are parsed but not
-    # yet wired through to the server:
-    # health: true
-    # completions: true
-    # chat: true
+    metrics: false                # enable Prometheus metrics endpoint (default: false)
+    slots: true                   # when false, disables slots monitoring endpoint
+    embeddings: false             # restrict to embedding use case only (default: false)
+    rerank: false                 # enable reranking endpoint (default: false)
+    props: false                  # enable POST /props for dynamic property changes (default: false)
 
 # ── Hardware Profiles ─────────────────────────────────────────────────────────
 # llamaconfig auto-selects the matching profile at runtime based on detected hardware.

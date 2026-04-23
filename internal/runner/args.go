@@ -47,17 +47,113 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if cfg.Server.APIKey != "" {
 		add("--api-key", cfg.Server.APIKey)
 	}
+	if cfg.Server.APIKeyFile != "" {
+		add("--api-key-file", cfg.Server.APIKeyFile)
+	}
 	if cfg.Server.Parallel > 1 {
 		add("--parallel", strconv.Itoa(cfg.Server.Parallel))
 	}
 	for _, origin := range cfg.Server.CORSOrigins {
 		add("--cors", origin)
 	}
+	if cfg.Server.Timeout > 0 {
+		add("--timeout", strconv.Itoa(cfg.Server.Timeout))
+	}
+	if cfg.Server.ThreadsHTTP > 0 {
+		add("--threads-http", strconv.Itoa(cfg.Server.ThreadsHTTP))
+	}
+	addIf("--reuse-port", cfg.Server.ReusePort)
+	if cfg.Server.StaticPath != "" {
+		add("--path", cfg.Server.StaticPath)
+	}
+	if cfg.Server.APIPrefix != "" {
+		add("--api-prefix", cfg.Server.APIPrefix)
+	}
+	if cfg.Server.SSLKeyFile != "" {
+		add("--ssl-key-file", cfg.Server.SSLKeyFile)
+	}
+	if cfg.Server.SSLCertFile != "" {
+		add("--ssl-cert-file", cfg.Server.SSLCertFile)
+	}
+	if cfg.Server.CachePrompt != nil && !*cfg.Server.CachePrompt {
+		args = append(args, "--no-cache-prompt")
+	}
+	if cfg.Server.CacheReuse > 0 {
+		add("--cache-reuse", strconv.Itoa(cfg.Server.CacheReuse))
+	}
+	if cfg.Server.SlotPromptSimilarity != 0 {
+		add("--slot-prompt-similarity", fmt.Sprintf("%.4f", cfg.Server.SlotPromptSimilarity))
+	}
+	if cfg.Server.SlotSavePath != "" {
+		add("--slot-save-path", cfg.Server.SlotSavePath)
+	}
+	if cfg.Server.SleepIdleSeconds != 0 {
+		add("--sleep-idle-seconds", strconv.Itoa(cfg.Server.SleepIdleSeconds))
+	}
+	addIf("--lora-init-without-apply", cfg.Server.LoRAInitWithoutApply)
+	if cfg.Server.KVUnified != nil && !*cfg.Server.KVUnified {
+		args = append(args, "--no-kv-unified")
+	}
+	if cfg.Server.ClearIdle != nil && !*cfg.Server.ClearIdle {
+		args = append(args, "--no-clear-idle")
+	}
+	if cfg.Server.ContBatching != nil && !*cfg.Server.ContBatching {
+		args = append(args, "--no-cont-batching")
+	}
+	if cfg.Server.Alias != "" {
+		add("--alias", cfg.Server.Alias)
+	}
+	if cfg.Server.Tags != "" {
+		add("--tags", cfg.Server.Tags)
+	}
+	if cfg.Server.WebUI != nil && !*cfg.Server.WebUI {
+		args = append(args, "--no-webui")
+	}
+	if cfg.Server.WebUIConfig != "" {
+		add("--webui-config", cfg.Server.WebUIConfig)
+	}
+	if cfg.Server.WebUIConfigFile != "" {
+		add("--webui-config-file", cfg.Server.WebUIConfigFile)
+	}
+	addIf("--webui-mcp-proxy", cfg.Server.WebUIMCPProxy)
+	if cfg.Server.Tools != "" {
+		add("--tools", cfg.Server.Tools)
+	}
+	if cfg.Server.Pooling != "" {
+		add("--pooling", cfg.Server.Pooling)
+	}
+	addIf("--spm-infill", cfg.Server.SPMInfill)
+	if cfg.Server.PrefillAssistant != nil && !*cfg.Server.PrefillAssistant {
+		args = append(args, "--no-prefill-assistant")
+	}
+	if cfg.Server.MediaPath != "" {
+		add("--media-path", cfg.Server.MediaPath)
+	}
+	if cfg.Server.ModelsDir != "" {
+		add("--models-dir", cfg.Server.ModelsDir)
+	}
+	if cfg.Server.ModelsPreset != "" {
+		add("--models-preset", cfg.Server.ModelsPreset)
+	}
+	if cfg.Server.ModelsMax >= 0 {
+		add("--models-max", strconv.Itoa(cfg.Server.ModelsMax))
+	}
+	if cfg.Server.ModelsAutoload != nil && !*cfg.Server.ModelsAutoload {
+		args = append(args, "--no-models-autoload")
+	}
+	if cfg.Server.LookupCacheStatic != "" {
+		add("--lookup-cache-static", cfg.Server.LookupCacheStatic)
+	}
+	if cfg.Server.LookupCacheDynamic != "" {
+		add("--lookup-cache-dynamic", cfg.Server.LookupCacheDynamic)
+	}
 
 	// Endpoints
 	addIf("--metrics", cfg.Server.Endpoints.Metrics)
 	addIf("--no-slots", !*cfg.Server.Endpoints.Slots)
 	addIf("--embedding", cfg.Server.Endpoints.Embeddings)
+	addIf("--rerank", cfg.Server.Endpoints.Rerank)
+	addIf("--props", cfg.Server.Endpoints.Props)
 
 	// Hardware / GPU
 	add("-ngl", strconv.Itoa(p.NGPULayers))
@@ -365,6 +461,24 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 			}
 			if d.NCPUMoE > 0 {
 				add("--n-cpu-moe-draft", strconv.Itoa(d.NCPUMoE))
+			}
+			if d.ThreadsDraft > 0 {
+				add("--threads-draft", strconv.Itoa(d.ThreadsDraft))
+			}
+			if d.ThreadsBatchDraft > 0 {
+				add("--threads-batch-draft", strconv.Itoa(d.ThreadsBatchDraft))
+			}
+			if d.SpecType != "" {
+				add("--spec-type", d.SpecType)
+			}
+			if d.SpecNgramSizeN > 0 {
+				add("--spec-ngram-size-n", strconv.Itoa(d.SpecNgramSizeN))
+			}
+			if d.SpecNgramSizeM > 0 {
+				add("--spec-ngram-size-m", strconv.Itoa(d.SpecNgramSizeM))
+			}
+			if d.SpecNgramMinHits > 0 {
+				add("--spec-ngram-min-hits", strconv.Itoa(d.SpecNgramMinHits))
 			}
 		}
 	}
