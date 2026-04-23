@@ -191,6 +191,7 @@ chat:
                                   # examples: llama3, chatml, gemma, mistral, phi3
   jinja: false                    # use Jinja2 template engine (default: false)
   template_kwargs: {}             # extra key-value pairs passed to the chat template
+  # reasoning: auto               # thinking/reasoning mode: "on", "off", or "auto" (default: auto)
 
 # ── RoPE (Rotary Position Embedding) ─────────────────────────────────────────
 # Only needed to extend context beyond the model's trained limit.

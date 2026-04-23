@@ -145,6 +145,7 @@ type ChatSpec struct {
 	SystemPrompt   string            `yaml:"system_prompt"`
 	TemplateKwargs map[string]string `yaml:"template_kwargs"`
 	Jinja          bool              `yaml:"jinja"`
+	Reasoning      string            `yaml:"reasoning"` // "on" | "off" | "auto"
 }
 
 type RopeSpec struct {

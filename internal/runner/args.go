@@ -140,6 +140,9 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if cfg.Chat.Jinja {
 		args = append(args, "--jinja")
 	}
+	if cfg.Chat.Reasoning != "" {
+		add("--reasoning", cfg.Chat.Reasoning)
+	}
 
 	// RoPE
 	rope := cfg.Rope
