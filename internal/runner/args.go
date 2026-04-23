@@ -81,6 +81,23 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if p.Priority != 0 {
 		add("--prio", strconv.Itoa(p.Priority))
 	}
+	if p.Fit != "" {
+		add("--fit", p.Fit)
+	}
+	if len(p.FitTarget) > 0 {
+		parts := make([]string, len(p.FitTarget))
+		for i, v := range p.FitTarget {
+			parts[i] = strconv.Itoa(v)
+		}
+		add("--fit-target", strings.Join(parts, ","))
+	}
+	if p.FitCtx > 0 {
+		add("--fit-ctx", strconv.Itoa(p.FitCtx))
+	}
+	for _, ot := range p.OverrideTensor {
+		add("--override-tensor", ot)
+	}
+	addIf("--cpu-moe", p.CPUMoE)
 
 	// Threads
 	if p.Threads > 0 {
@@ -118,6 +135,19 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 		add("--predict", strconv.Itoa(ctx.NPredict))
 	}
 	addIf("--context-shift", ctx.ContextShift)
+	if ctx.KVOffload != nil && !*ctx.KVOffload {
+		args = append(args, "--no-kv-offload")
+	}
+	addIf("--swa-full", ctx.SWAFull)
+	if ctx.CacheRAM != 0 {
+		add("--cache-ram", strconv.Itoa(ctx.CacheRAM))
+	}
+	if ctx.ImageMinTokens > 0 {
+		add("--image-min-tokens", strconv.Itoa(ctx.ImageMinTokens))
+	}
+	if ctx.ImageMaxTokens > 0 {
+		add("--image-max-tokens", strconv.Itoa(ctx.ImageMaxTokens))
+	}
 
 	// Sampling
 	s := cfg.Sampling
@@ -148,6 +178,21 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if s.XTCProbability != 0 {
 		add("--xtc-probability", fmt.Sprintf("%.4f", s.XTCProbability))
 		add("--xtc-threshold", fmt.Sprintf("%.4f", s.XTCThreshold))
+	}
+	if s.Typical != 0 {
+		add("--typical", fmt.Sprintf("%.4f", s.Typical))
+	}
+	if s.TopNSigma != 0 {
+		add("--top-nsigma", fmt.Sprintf("%.4f", s.TopNSigma))
+	}
+	if s.AdaptiveTarget != 0 {
+		add("--adaptive-target", fmt.Sprintf("%.4f", s.AdaptiveTarget))
+		if s.AdaptiveDecay != 0 {
+			add("--adaptive-decay", fmt.Sprintf("%.4f", s.AdaptiveDecay))
+		}
+	}
+	for _, breaker := range s.DrySequenceBreakers {
+		add("--dry-sequence-breaker", breaker)
 	}
 	if s.Mirostat > 0 {
 		add("--mirostat", strconv.Itoa(s.Mirostat))
@@ -197,6 +242,9 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if cfg.Chat.ReasoningFormat != "" {
 		add("--reasoning-format", cfg.Chat.ReasoningFormat)
 	}
+	if cfg.Chat.TemplateFile != "" {
+		add("--chat-template-file", cfg.Chat.TemplateFile)
+	}
 
 	// RoPE
 	rope := cfg.Rope
@@ -220,8 +268,31 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	// Draft model (speculative decoding)
 	if rc.DraftModelPath != "" {
 		add("--model-draft", rc.DraftModelPath)
-		if cfg.Model.Draft != nil && cfg.Model.Draft.DraftN > 0 {
-			add("--draft", strconv.Itoa(cfg.Model.Draft.DraftN))
+		if d := cfg.Model.Draft; d != nil {
+			if d.DraftN > 0 {
+				add("--draft", strconv.Itoa(d.DraftN))
+			}
+			if d.DraftMin > 0 {
+				add("--draft-min", strconv.Itoa(d.DraftMin))
+			}
+			if d.DraftPMin > 0 {
+				add("--draft-p-min", fmt.Sprintf("%.4f", d.DraftPMin))
+			}
+			if d.NCtx > 0 {
+				add("--ctx-size-draft", strconv.Itoa(d.NCtx))
+			}
+			if d.NGPULayers > 0 {
+				add("--n-gpu-layers-draft", strconv.Itoa(d.NGPULayers))
+			}
+			if len(d.Devices) > 0 {
+				add("--device-draft", strings.Join(d.Devices, ","))
+			}
+			if d.CacheTypeK != "" && d.CacheTypeK != "f16" {
+				add("--cache-type-k-draft", d.CacheTypeK)
+			}
+			if d.CacheTypeV != "" && d.CacheTypeV != "f16" {
+				add("--cache-type-v-draft", d.CacheTypeV)
+			}
 		}
 	}
 
@@ -236,6 +307,9 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	// Multimodal projection
 	if rc.MMProjPath != "" {
 		add("--mmproj", rc.MMProjPath)
+		if cfg.Model.MMProj != nil && cfg.Model.MMProj.Offload != nil && !*cfg.Model.MMProj.Offload {
+			args = append(args, "--no-mmproj-offload")
+		}
 	}
 
 	// CPU-specific

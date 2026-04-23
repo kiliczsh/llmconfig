@@ -70,6 +70,13 @@ model:
   #   repo: bartowski/some-draft-GGUF
   #   file: draft-model-Q4_K_M.gguf
   #   draft_n: 5                  # tokens to draft ahead (default: 5)
+  #   draft_min: 0                # minimum draft tokens (default: 0)
+  #   draft_p_min: 0.75           # minimum speculative decoding probability (default: 0.75)
+  #   n_ctx: 0                    # draft model context size (0 = same as main model)
+  #   n_gpu_layers: 0             # draft model GPU layers (0 = same as main model)
+  #   devices: []                 # draft model GPU devices
+  #   cache_type_k: f16           # draft model KV cache type K
+  #   cache_type_v: f16           # draft model KV cache type V
 
   # --- LoRA adapters (optional) ---
   # lora: []                      # LoRA adapter file(s), e.g. ["./adapter.gguf"]
@@ -80,6 +87,7 @@ model:
   #   source: huggingface
   #   repo: user/repo-GGUF
   #   file: mmproj-model.gguf
+  #   offload: true               # GPU offload for mmproj (default: true)
 
 # ── Server ────────────────────────────────────────────────────────────────────
 # Only applies when mode: server
@@ -132,6 +140,11 @@ hardware_profiles:
     # split_mode: layer           # multi-GPU split: none | layer | row | tensor (default: layer)
     # main_gpu: 0                 # primary GPU index for split-mode none/row (default: 0)
     # priority: 0                 # process priority: -1=low, 0=normal, 1=medium, 2=high, 3=realtime
+    # fit: on                     # auto-fit layers to device memory: "on" | "off" (default: on)
+    # fit_target: [1024]          # target free margin per device in MiB (default: 1024)
+    # fit_ctx: 4096               # minimum ctx size --fit can set (default: 4096)
+    # override_tensor: []         # tensor buffer type overrides, e.g. ["blk\\..*\\.ffn=CPU"]
+    # cpu_moe: false              # keep ALL MoE expert weights in CPU (default: false)
 
   amd:
     n_gpu_layers: 99
@@ -168,6 +181,11 @@ context:
   n_cpu_moe: 0                    # CPU layers for MoE experts (0 = use n_gpu_layers logic)
   # n_predict: 0                  # max tokens to generate (-1 = infinity, 0 = not set)
   # context_shift: false          # enable context shift on infinite generation (default: false)
+  # kv_offload: true              # KV cache GPU offload (set false to disable, default: true)
+  # swa_full: false               # use full-size SWA cache (default: false)
+  # cache_ram: 8192               # max RAM cache in MiB (-1 = no limit, 0 = not set, default: 8192)
+  # image_min_tokens: 0           # minimum image tokens for dynamic resolution vision models
+  # image_max_tokens: 0           # maximum image tokens for dynamic resolution vision models
 
 # ── Sampling ──────────────────────────────────────────────────────────────────
 
@@ -203,6 +221,19 @@ sampling:
   # xtc_probability: 0.0          # probability of applying XTC (0.0 = disabled)
   # xtc_threshold: 0.1            # minimum token probability to be excluded
 
+  # Locally typical sampling
+  # typical: 0.0                  # typical-p value (0 = not set, 1.0 = disabled)
+
+  # Top-n-sigma sampling
+  # top_nsigma: 0.0               # sigma threshold (0 = not set, -1 = disabled)
+
+  # Adaptive-p sampling — selects tokens near a target probability
+  # adaptive_target: 0.0          # target probability (0 = not set, -1 = disabled)
+  # adaptive_decay: 0.9           # decay rate for target adaptation (default: 0.9)
+
+  # DRY custom sequence breakers (clears defaults: '\n', ':', '"', '*')
+  # dry_sequence_breakers: []     # e.g. ["\n", ":"]
+
   # Structured output — constrains generation to a grammar or schema
   # grammar: ""                   # inline BNF-like grammar string
   # grammar_file: ""              # path to a grammar file
@@ -220,6 +251,7 @@ chat:
   # reasoning: auto               # thinking/reasoning mode: "on", "off", or "auto" (default: auto)
   # reasoning_budget: -1          # thinking token budget: -1 unlimited, 0 immediate end, N>0 budget
   # reasoning_format: auto        # thought tag format: none | deepseek | deepseek-legacy (default: auto)
+  # template_file: ""             # path to a jinja template file (overrides built-in template)
 
 # ── RoPE (Rotary Position Embedding) ─────────────────────────────────────────
 # Only needed to extend context beyond the model's trained limit.
