@@ -193,6 +193,9 @@ func ApplyDefaults(cfg *Config) {
 	if cfg.Logging.Colors == "" {
 		cfg.Logging.Colors = "auto"
 	}
+	if cfg.Logging.Verbosity == 0 {
+		cfg.Logging.Verbosity = -1 // -1 = not set, use llama.cpp default
+	}
 
 	// Draft defaults
 	if cfg.Model.Draft != nil && cfg.Model.Draft.DraftN == 0 {

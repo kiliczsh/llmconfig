@@ -79,6 +79,9 @@ model:
   #   cache_type_v: f16           # draft model KV cache type V
   #   spec_replace_target: ""     # speculative decoding string replacement target
   #   spec_replace_draft: ""      # speculative decoding string replacement draft
+  #   override_tensor: []         # tensor buffer overrides for draft model
+  #   cpu_moe: false              # keep all MoE weights in CPU for draft (default: false)
+  #   n_cpu_moe: 0                # keep first N layers MoE in CPU for draft (0 = not set)
 
   # --- LoRA adapters (optional) ---
   # lora: []                      # LoRA adapter file(s), e.g. ["./adapter.gguf"]
@@ -158,6 +161,8 @@ hardware_profiles:
     # cpu_moe: false              # keep ALL MoE expert weights in CPU (default: false)
     # cpu_mask: ""               # CPU affinity mask (hex), e.g. "FF00"
     # cpu_mask_batch: ""         # CPU affinity mask for batch processing
+    # cpu_range_batch: ""        # CPU range for batch affinity, e.g. "0-3"
+    # cpu_strict_batch: false    # strict CPU placement for batch (default: false)
     # poll: 50                   # polling level 0-100 (0=no polling, default: 50)
     # poll_batch: 50             # polling level for batch (default: same as poll)
     # prio_batch: 0              # batch thread priority: 0=normal,1=medium,2=high,3=realtime
@@ -258,6 +263,10 @@ sampling:
   # DRY custom sequence breakers (clears defaults: '\n', ':', '"', '*')
   # dry_sequence_breakers: []     # e.g. ["\n", ":"]
 
+  # Sampler sequence shorthand
+  # sampler_seq: ""              # simplified sampler order, e.g. "edskypmxt"
+  # ignore_eos: false            # ignore end-of-stream token and continue generating (default: false)
+
   # Backend sampling (experimental)
   # backend_sampling: false       # enable backend sampling (default: false)
 
@@ -277,6 +286,7 @@ chat:
   template_kwargs: {}             # extra key-value pairs passed as JSON to --chat-template-kwargs
   # reasoning: auto               # thinking/reasoning mode: "on", "off", or "auto" (default: auto)
   # reasoning_budget: -1          # thinking token budget: -1 unlimited, 0 immediate end, N>0 budget
+  # reasoning_budget_message: ""  # message injected before end-of-thinking tag when budget exhausted
   # reasoning_format: auto        # thought tag format: none | deepseek | deepseek-legacy (default: auto)
   # template_file: ""             # path to a jinja template file (overrides built-in template)
   # skip_chat_parsing: false      # force pure content parser, output everything in content (default: false)
@@ -286,11 +296,14 @@ chat:
 
 rope:
   scaling: ""                     # scaling type: linear | yarn | longrope (default: none)
+  # scale: 0                      # context scaling factor, expands context by N (--rope-scale)
   freq_base: 0                    # RoPE frequency base (0 = use model default)
-  freq_scale: 0                   # RoPE frequency scale (0 = use model default)
+  freq_scale: 0                   # RoPE frequency scale factor, expands context by 1/N
   # YaRN-specific:
   yarn_ext_factor: -1.0           # extrapolation mix factor (-1 = auto, default: -1.0)
   yarn_attn_factor: 1.0           # attention scaling factor (default: 1.0)
+  # yarn_beta_slow: 0             # YaRN high correction dim / alpha (default: -1.0)
+  # yarn_beta_fast: 0             # YaRN low correction dim / beta (default: -1.0)
   yarn_orig_ctx: 0                # original context size the model was trained on
 
 # ── Resources ─────────────────────────────────────────────────────────────────
@@ -313,6 +326,8 @@ logging:
   colors: auto                    # color output: auto | on | off (default: auto)
   # prefix: false                 # enable prefix in log messages (default: false)
   # timestamps: false             # enable timestamps in log messages (default: false)
+  # verbosity: -1                 # verbosity threshold: 0=generic,1=error,2=warn,3=info,4=debug (-1 = not set)
+  # show_timings: true            # show timing info after each response (set false to disable)
 
 # ── Backend: whisper ──────────────────────────────────────────────────────────
 # Only applies when backend: whisper. Remove this block for other backends.

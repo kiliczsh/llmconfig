@@ -72,6 +72,9 @@ type DraftSpec struct {
 	CacheTypeV        string   `yaml:"cache_type_v"`        // draft KV cache type V
 	SpecReplaceTarget string   `yaml:"spec_replace_target"` // speculative decoding: target string
 	SpecReplaceDraft  string   `yaml:"spec_replace_draft"`  // speculative decoding: draft replacement
+	OverrideTensor    []string `yaml:"override_tensor"`     // tensor buffer overrides for draft model
+	CPUMoE            bool     `yaml:"cpu_moe"`             // keep all MoE weights in CPU for draft
+	NCPUMoE           int      `yaml:"n_cpu_moe"`           // keep first N layers MoE in CPU for draft
 }
 
 type MMProjSpec struct {
@@ -124,24 +127,26 @@ type HardwareProfile struct {
 	CPURange       string    `yaml:"cpu_range"`
 	CPUStrict      bool      `yaml:"cpu_strict"`
 	NUMA           string    `yaml:"numa"`
-	SplitMode      string    `yaml:"split_mode"`      // "none" | "layer" | "row" | "tensor"
-	MainGPU        int       `yaml:"main_gpu"`        // main GPU index (-1 = use default)
-	Priority       int       `yaml:"priority"`        // -1=low, 0=normal, 1=medium, 2=high, 3=realtime
-	Fit            string    `yaml:"fit"`             // "on" | "off" — auto-fit to device memory
-	FitTarget      []int     `yaml:"fit_target"`      // target margin per device in MiB
-	FitCtx         int       `yaml:"fit_ctx"`         // minimum ctx size fit can set
-	OverrideTensor []string  `yaml:"override_tensor"` // tensor buffer overrides, format: "pattern=type"
-	CPUMoE         bool      `yaml:"cpu_moe"`         // keep all MoE weights in CPU
-	CPUMask        string    `yaml:"cpu_mask"`        // CPU affinity mask (hex)
-	CPUMaskBatch   string    `yaml:"cpu_mask_batch"`  // CPU affinity mask for batch processing
-	Poll           *int      `yaml:"poll"`            // polling level 0-100 (default: 50)
-	PollBatch      *int      `yaml:"poll_batch"`      // polling level for batch (default: same as poll)
-	PrioBatch      int       `yaml:"prio_batch"`      // batch thread priority: 0=normal,1=medium,2=high,3=realtime
-	Repack         *bool     `yaml:"repack"`          // weight repacking (default: enabled)
-	NoHost         bool      `yaml:"no_host"`         // bypass host buffer for extra device buffers
-	OpOffload      *bool     `yaml:"op_offload"`      // offload host tensor ops to device (default: enabled)
-	RPC            string    `yaml:"rpc"`             // RPC servers, comma-separated host:port
-	DirectIO       *bool     `yaml:"direct_io"`       // use DirectIO if available (default: disabled)
+	SplitMode      string    `yaml:"split_mode"`       // "none" | "layer" | "row" | "tensor"
+	MainGPU        int       `yaml:"main_gpu"`         // main GPU index (-1 = use default)
+	Priority       int       `yaml:"priority"`         // -1=low, 0=normal, 1=medium, 2=high, 3=realtime
+	Fit            string    `yaml:"fit"`              // "on" | "off" — auto-fit to device memory
+	FitTarget      []int     `yaml:"fit_target"`       // target margin per device in MiB
+	FitCtx         int       `yaml:"fit_ctx"`          // minimum ctx size fit can set
+	OverrideTensor []string  `yaml:"override_tensor"`  // tensor buffer overrides, format: "pattern=type"
+	CPUMoE         bool      `yaml:"cpu_moe"`          // keep all MoE weights in CPU
+	CPUMask        string    `yaml:"cpu_mask"`         // CPU affinity mask (hex)
+	CPUMaskBatch   string    `yaml:"cpu_mask_batch"`   // CPU affinity mask for batch processing
+	Poll           *int      `yaml:"poll"`             // polling level 0-100 (default: 50)
+	PollBatch      *int      `yaml:"poll_batch"`       // polling level for batch (default: same as poll)
+	PrioBatch      int       `yaml:"prio_batch"`       // batch thread priority: 0=normal,1=medium,2=high,3=realtime
+	CPURangeBatch  string    `yaml:"cpu_range_batch"`  // CPU range for batch affinity (e.g. "0-3")
+	CPUStrictBatch bool      `yaml:"cpu_strict_batch"` // strict CPU placement for batch
+	Repack         *bool     `yaml:"repack"`           // weight repacking (default: enabled)
+	NoHost         bool      `yaml:"no_host"`          // bypass host buffer for extra device buffers
+	OpOffload      *bool     `yaml:"op_offload"`       // offload host tensor ops to device (default: enabled)
+	RPC            string    `yaml:"rpc"`              // RPC servers, comma-separated host:port
+	DirectIO       *bool     `yaml:"direct_io"`        // use DirectIO if available (default: disabled)
 }
 
 type ContextSpec struct {
@@ -196,6 +201,8 @@ type SamplingSpec struct {
 	AdaptiveDecay       float64  `yaml:"adaptive_decay"`        // adaptive-p decay rate
 	DrySequenceBreakers []string `yaml:"dry_sequence_breakers"` // custom DRY sequence breakers
 	BackendSampling     bool     `yaml:"backend_sampling"`      // enable backend sampling (experimental)
+	SamplerSeq          string   `yaml:"sampler_seq"`           // simplified sampler sequence (e.g. "edskypmxt")
+	IgnoreEOS           bool     `yaml:"ignore_eos"`            // ignore end-of-stream token
 	Grammar             string   `yaml:"grammar"`               // BNF-like grammar string
 	GrammarFile         string   `yaml:"grammar_file"`          // path to grammar file
 	JSONSchema          string   `yaml:"json_schema"`           // JSON schema string
@@ -203,23 +210,27 @@ type SamplingSpec struct {
 }
 
 type ChatSpec struct {
-	Template        string            `yaml:"template"`
-	SystemPrompt    string            `yaml:"system_prompt"`
-	TemplateKwargs  map[string]string `yaml:"template_kwargs"`
-	Jinja           bool              `yaml:"jinja"`
-	Reasoning       string            `yaml:"reasoning"`         // "on" | "off" | "auto"
-	ReasoningBudget *int              `yaml:"reasoning_budget"`  // -1 unlimited, 0 immediate end, N>0 budget
-	ReasoningFormat string            `yaml:"reasoning_format"`  // "none" | "deepseek" | "deepseek-legacy"
-	TemplateFile    string            `yaml:"template_file"`     // path to jinja template file
-	SkipChatParsing bool              `yaml:"skip_chat_parsing"` // force pure content parser
+	Template               string            `yaml:"template"`
+	SystemPrompt           string            `yaml:"system_prompt"`
+	TemplateKwargs         map[string]string `yaml:"template_kwargs"`
+	Jinja                  bool              `yaml:"jinja"`
+	Reasoning              string            `yaml:"reasoning"`                // "on" | "off" | "auto"
+	ReasoningBudget        *int              `yaml:"reasoning_budget"`         // -1 unlimited, 0 immediate end, N>0 budget
+	ReasoningBudgetMessage string            `yaml:"reasoning_budget_message"` // message injected when budget exhausted
+	ReasoningFormat        string            `yaml:"reasoning_format"`         // "none" | "deepseek" | "deepseek-legacy"
+	TemplateFile           string            `yaml:"template_file"`            // path to jinja template file
+	SkipChatParsing        bool              `yaml:"skip_chat_parsing"`        // force pure content parser
 }
 
 type RopeSpec struct {
 	Scaling        string  `yaml:"scaling"`
+	Scale          float64 `yaml:"scale"` // context scaling factor (--rope-scale)
 	FreqBase       float64 `yaml:"freq_base"`
 	FreqScale      float64 `yaml:"freq_scale"`
 	YarnExtFactor  float64 `yaml:"yarn_ext_factor"`
 	YarnAttnFactor float64 `yaml:"yarn_attn_factor"`
+	YarnBetaSlow   float64 `yaml:"yarn_beta_slow"` // YaRN high correction dim / alpha
+	YarnBetaFast   float64 `yaml:"yarn_beta_fast"` // YaRN low correction dim / beta
 	YarnOrigCtx    int     `yaml:"yarn_orig_ctx"`
 }
 
@@ -236,11 +247,13 @@ type ResourceSpec struct {
 }
 
 type LoggingSpec struct {
-	Level      string `yaml:"level"`
-	File       string `yaml:"file"`
-	Colors     string `yaml:"colors"`
-	Prefix     bool   `yaml:"prefix"`     // enable prefix in log messages
-	Timestamps bool   `yaml:"timestamps"` // enable timestamps in log messages
+	Level       string `yaml:"level"`
+	File        string `yaml:"file"`
+	Colors      string `yaml:"colors"`
+	Prefix      bool   `yaml:"prefix"`       // enable prefix in log messages
+	Timestamps  bool   `yaml:"timestamps"`   // enable timestamps in log messages
+	Verbosity   int    `yaml:"verbosity"`    // verbosity threshold: 0=generic,1=error,2=warn,3=info,4=debug (-1 = not set)
+	ShowTimings *bool  `yaml:"show_timings"` // show timing info after each response (default: true)
 }
 
 // RunConfig is the flattened, resolved configuration passed to the runner.

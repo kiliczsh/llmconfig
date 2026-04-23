@@ -128,6 +128,12 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if p.DirectIO != nil && *p.DirectIO {
 		args = append(args, "--direct-io")
 	}
+	if p.CPURangeBatch != "" {
+		add("--cpu-range-batch", p.CPURangeBatch)
+	}
+	if p.CPUStrictBatch {
+		args = append(args, "--cpu-strict-batch", "1")
+	}
 
 	// Threads
 	if p.Threads > 0 {
@@ -233,12 +239,16 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	}
 	if s.Mirostat > 0 {
 		add("--mirostat", strconv.Itoa(s.Mirostat))
-		add("--mirostat-tau", fmt.Sprintf("%.4f", s.MirostatTau))
-		add("--mirostat-eta", fmt.Sprintf("%.4f", s.MirostatEta))
+		add("--mirostat-ent", fmt.Sprintf("%.4f", s.MirostatTau)) // tau = target entropy
+		add("--mirostat-lr", fmt.Sprintf("%.4f", s.MirostatEta))  // eta = learning rate
 	}
 	if s.Samplers != "" {
 		add("--samplers", s.Samplers)
 	}
+	if s.SamplerSeq != "" {
+		add("--sampler-seq", s.SamplerSeq)
+	}
+	addIf("--ignore-eos", s.IgnoreEOS)
 	if s.Seed != 0 {
 		add("--seed", strconv.FormatInt(s.Seed, 10))
 	}
@@ -277,6 +287,9 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if cfg.Chat.ReasoningBudget != nil {
 		add("--reasoning-budget", strconv.Itoa(*cfg.Chat.ReasoningBudget))
 	}
+	if cfg.Chat.ReasoningBudgetMessage != "" {
+		add("--reasoning-budget-message", cfg.Chat.ReasoningBudgetMessage)
+	}
 	if cfg.Chat.ReasoningFormat != "" {
 		add("--reasoning-format", cfg.Chat.ReasoningFormat)
 	}
@@ -290,6 +303,9 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if rope.Scaling != "" {
 		add("--rope-scaling", rope.Scaling)
 	}
+	if rope.Scale > 0 {
+		add("--rope-scale", fmt.Sprintf("%.6f", rope.Scale))
+	}
 	if rope.FreqBase > 0 {
 		add("--rope-freq-base", fmt.Sprintf("%.1f", rope.FreqBase))
 	}
@@ -299,6 +315,12 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if rope.Scaling == "yarn" {
 		add("--yarn-ext-factor", fmt.Sprintf("%.4f", rope.YarnExtFactor))
 		add("--yarn-attn-factor", fmt.Sprintf("%.4f", rope.YarnAttnFactor))
+		if rope.YarnBetaSlow != 0 {
+			add("--yarn-beta-slow", fmt.Sprintf("%.4f", rope.YarnBetaSlow))
+		}
+		if rope.YarnBetaFast != 0 {
+			add("--yarn-beta-fast", fmt.Sprintf("%.4f", rope.YarnBetaFast))
+		}
 		if rope.YarnOrigCtx > 0 {
 			add("--yarn-orig-ctx", strconv.Itoa(rope.YarnOrigCtx))
 		}
@@ -334,6 +356,15 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 			}
 			if d.SpecReplaceTarget != "" && d.SpecReplaceDraft != "" {
 				add("--spec-replace", d.SpecReplaceTarget, d.SpecReplaceDraft)
+			}
+			for _, ot := range d.OverrideTensor {
+				add("--override-tensor-draft", ot)
+			}
+			if d.CPUMoE {
+				args = append(args, "--cpu-moe-draft")
+			}
+			if d.NCPUMoE > 0 {
+				add("--n-cpu-moe-draft", strconv.Itoa(d.NCPUMoE))
 			}
 		}
 	}
@@ -393,6 +424,12 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	}
 	addIf("--log-prefix", log.Prefix)
 	addIf("--log-timestamps", log.Timestamps)
+	if log.Verbosity >= 0 {
+		add("--log-verbosity", strconv.Itoa(log.Verbosity))
+	}
+	if log.ShowTimings != nil && !*log.ShowTimings {
+		args = append(args, "--no-show-timings")
+	}
 
 	return args
 }
