@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
-	"github.com/kiliczsh/llamaconfig/internal/state"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/state"
 )
 
 type serverRunner struct{}

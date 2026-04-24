@@ -8,10 +8,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
 )
 
-// BinDir returns the directory where llamaconfig manages llama.cpp binaries.
+// BinDir returns the directory where llmconfig manages llama.cpp binaries.
 func BinDir() string {
 	return filepath.Join(dirs.BaseDir(), "bin", "llama")
 }
@@ -34,7 +34,7 @@ func FindServer() (string, error) {
 		return path, nil
 	}
 
-	return "", fmt.Errorf("llama-server not found — run: llamaconfig install llama")
+	return "", fmt.Errorf("llama-server not found — run: llmconfig install llama")
 }
 
 // Version runs llama-server --version and returns the version string.

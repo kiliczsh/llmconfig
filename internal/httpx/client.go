@@ -1,5 +1,5 @@
 // Package httpx provides pre-configured http.Client instances with
-// sensible timeouts for llamaconfig's HTTP calls.
+// sensible timeouts for llmconfig's HTTP calls.
 package httpx
 
 import (

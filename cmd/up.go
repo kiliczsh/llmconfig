@@ -7,15 +7,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
-	"github.com/kiliczsh/llamaconfig/internal/downloader"
-	"github.com/kiliczsh/llamaconfig/internal/hardware"
-	"github.com/kiliczsh/llamaconfig/internal/runner"
-	"github.com/kiliczsh/llamaconfig/internal/state"
-	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
-	"github.com/kiliczsh/llamaconfig/pkg/stablediffusioncpp"
-	"github.com/kiliczsh/llamaconfig/pkg/whispercpp"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/downloader"
+	"github.com/kiliczsh/llmconfig/internal/hardware"
+	"github.com/kiliczsh/llmconfig/internal/runner"
+	"github.com/kiliczsh/llmconfig/internal/state"
+	"github.com/kiliczsh/llmconfig/pkg/llamacpp"
+	"github.com/kiliczsh/llmconfig/pkg/stablediffusioncpp"
+	"github.com/kiliczsh/llmconfig/pkg/whispercpp"
 	"github.com/spf13/cobra"
 )
 
@@ -111,7 +111,7 @@ func newUpCmd() *cobra.Command {
 			release, err := appCtx.StateStore.LockModel(name)
 			if err != nil {
 				if errors.Is(err, state.ErrLockHeld) {
-					return fmt.Errorf("%s is already being started by another llamaconfig process", name)
+					return fmt.Errorf("%s is already being started by another llmconfig process", name)
 				}
 				return err
 			}
@@ -129,7 +129,7 @@ func newUpCmd() *cobra.Command {
 
 			// Check binary exists before trying to start
 			if _, err := os.Stat(binaryPath); err != nil {
-				return fmt.Errorf("%s not found at %q — run: llamaconfig install %s",
+				return fmt.Errorf("%s not found at %q — run: llmconfig install %s",
 					filepath.Base(binaryPath), binaryPath, cfg.Backend)
 			}
 
@@ -142,7 +142,7 @@ func newUpCmd() *cobra.Command {
 				if flagNoDownload {
 					hint := "download the model or remove --no-download"
 					if art.source == "huggingface" && art.repo != "" {
-						hint = fmt.Sprintf("run: llamaconfig pull %s", art.repo)
+						hint = fmt.Sprintf("run: llmconfig pull %s", art.repo)
 					}
 					return fmt.Errorf("%s file not found at %q (--no-download is set) — %s", art.kind, art.destPath, hint)
 				}

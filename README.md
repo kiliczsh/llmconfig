@@ -1,39 +1,41 @@
-# llamaconfig
+# llmconfig
 
-Manage local inference with llama.cpp, stable-diffusion.cpp, and whisper.cpp.
+**Local Large Model Config** — manage local inference with llama.cpp, stable-diffusion.cpp, and whisper.cpp.
 
-Define your model once in a YAML config file. llamaconfig handles downloading, starting, stopping, and monitoring — across any hardware and across all three backends.
+Define your model once in a YAML config file. llmconfig handles downloading, starting, stopping, and monitoring — across any hardware and across all three backends.
 
 ```
-llamaconfig up gemma-4-e2b
+llmconfig up gemma-4-e2b        # or just: llmc up gemma-4-e2b
 ✓ gemma-4-e2b is ready at http://127.0.0.1:8080
 ```
+
+> Ships with a shorter `llmc` alias — every command works with either binary name.
 
 ## Install
 
 ```bash
-go install github.com/kiliczsh/llamaconfig@latest
+go install github.com/kiliczsh/llmconfig@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/kiliczsh/llamaconfig
-cd llamaconfig
-go build -o llamaconfig .
+git clone https://github.com/kiliczsh/llmconfig
+cd llmconfig
+go build -o llmconfig .
 ```
 
 ## Quick Start
 
 ```bash
 # 1. Install the llama.cpp binary
-llamaconfig install llama
+llmconfig install llama
 
 # 2. Create a config (interactive wizard)
-llamaconfig init --template gemma
+llmconfig init --template gemma
 
 # 3. Start the model
-llamaconfig up gemma-4-e2b
+llmconfig up gemma-4-e2b
 
 # 4. Send a request (OpenAI-compatible)
 curl http://127.0.0.1:8080/v1/chat/completions \
@@ -41,7 +43,7 @@ curl http://127.0.0.1:8080/v1/chat/completions \
   -d '{"model":"gemma-4-e2b","messages":[{"role":"user","content":"Hello!"}]}'
 
 # 5. Stop (no name needed if only one model is running)
-llamaconfig down
+llmconfig down
 ```
 
 For image generation (stable-diffusion.cpp) or speech recognition
@@ -72,8 +74,8 @@ Commands marked with `*` show an interactive selector when no name is given and 
 | `bench <name>` | Benchmark inference throughput |
 | `compat` | Show which configs fit on detected hardware |
 | `hardware` | Show detected hardware |
-| `archive [name...]` `*` | Bundle config + cached model into a `.llamapkg` file (interactive selector with no args) |
-| `import <file.llamapkg>` | Extract a `.llamapkg` bundle back into configs + cache |
+| `archive [name...]` `*` | Bundle config + cached model into a `.llmcpkg` file (interactive selector with no args) |
+| `import <file.llmcpkg>` | Extract a `.llmcpkg` bundle back into configs + cache |
 | `config list` | List all configs |
 | `config show <name>` | Print a config with defaults applied |
 | `config edit <name>` | Edit a config in `$EDITOR` |
@@ -81,14 +83,14 @@ Commands marked with `*` show an interactive selector when no name is given and 
 | `cache list` \| `cache clean` \| `cache path` | Manage the downloaded-model cache |
 | `install llama` \| `install sd` \| `install whisper` | Install a backend binary |
 | `llama` \| `sd` \| `whisper` | Show backend status (supports `--version`, `--path`) |
-| `version` | Show the llamaconfig CLI version |
+| `version` | Show the llmconfig CLI version |
 
 ## Config File
 
-Configs live in the llamaconfig directory under your home folder
-(`$HOME/.llamaconfig/configs/<name>.yaml` on macOS/Linux,
-`%USERPROFILE%\.llamaconfig\configs\<name>.yaml` on Windows). Set
-`LLAMACONFIG_CONFIG_DIR` to override.
+Configs live in the llmconfig directory under your home folder
+(`$HOME/.llmconfig/configs/<name>.yaml` on macOS/Linux,
+`%USERPROFILE%\.llmconfig\configs\<name>.yaml` on Windows). Set
+`LLMCONFIG_CONFIG_DIR` to override.
 
 ```yaml
 version: 1
@@ -139,7 +141,7 @@ Hardware profile is selected automatically at runtime. See [DOCS.md](DOCS.md) fo
 ## Requirements
 
 - Go 1.26+
-- A backend binary — `llamaconfig install llama` (or `install sd` /
+- A backend binary — `llmconfig install llama` (or `install sd` /
   `install whisper`) downloads and installs the right build for your
   hardware.
 

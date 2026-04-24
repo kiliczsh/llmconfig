@@ -10,7 +10,7 @@ import (
 )
 
 // Load finds and loads a named config. Searches:
-//  1. ./llamaconfig/<name>.yaml (current dir)
+//  1. ./llmconfig/<name>.yaml (current dir)
 //  2. configDir/<name>.yaml
 //  3. <name> treated as a direct file path
 func Load(name, configDir string) (*Config, error) {
@@ -47,7 +47,7 @@ func LoadFile(path string) (*Config, error) {
 
 func findConfig(name, configDir string) (string, error) {
 	candidates := []string{
-		filepath.Join("llamaconfig", name+".yaml"),
+		filepath.Join("llmconfig", name+".yaml"),
 		filepath.Join(configDir, name+".yaml"),
 		name,
 	}

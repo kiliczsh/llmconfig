@@ -6,7 +6,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/dustin/go-humanize"
-	"github.com/kiliczsh/llamaconfig/internal/hardware"
+	"github.com/kiliczsh/llmconfig/internal/hardware"
 	"github.com/spf13/cobra"
 )
 

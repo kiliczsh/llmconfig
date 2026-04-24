@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # --- config ---
-REPO_SLUG="kiliczsh/llamaconfig"
-BINARY_NAME="llamaconfig"
+REPO_SLUG="kiliczsh/llmconfig"
+BINARY_NAME="llmconfig"
 DEFAULT_PREFIX="/usr/local/bin"
 MIN_DISK_MB=200
 
@@ -32,7 +32,7 @@ Usage: install.sh [--prefix=PATH] [--version=vX.Y.Z] [--no-backends] [--update]
 The script downloads a prebuilt binary from GitHub Releases; no Go or
 git toolchain is required on the target machine.
 
-When run from inside an extracted release archive (i.e. the llamaconfig
+When run from inside an extracted release archive (i.e. the llmconfig
 binary sits next to this script), the download step is skipped and the
 adjacent binary is installed directly — useful for offline installs.
 USAGE
@@ -106,15 +106,15 @@ banner() {
   echo ""
   printf "${CYAN}${BOLD}"
   cat <<'EOF'
-  ██╗      ██╗      █████╗ ███╗   ███╗ █████╗  ██████╗ ██████╗ ███╗  ██╗███████╗██╗ ██████╗
-  ██║      ██║     ██╔══██╗████╗ ████║██╔══██╗██╔════╝██╔═══██╗████╗ ██║██╔════╝██║██╔════╝
-  ██║      ██║     ███████║██╔████╔██║███████║██║     ██║   ██║██╔██╗██║█████╗  ██║██║  ███╗
-  ██║      ██║     ██╔══██║██║╚██╔╝██║██╔══██║██║     ██║   ██║██║╚████║██╔══╝  ██║██║   ██║
-  ███████╗ ███████╗██║  ██║██║ ╚═╝ ██║██║  ██║╚██████╗╚██████╔╝██║ ╚███║██║     ██║╚██████╔╝
-  ╚══════╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚══╝╚═╝     ╚═╝ ╚═════╝
+  ██╗     ██╗     ███╗   ███╗ ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗
+  ██║     ██║     ████╗ ████║██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██╔════╝
+  ██║     ██║     ██╔████╔██║██║     ██║   ██║██╔██╗ ██║█████╗  ██║██║  ███╗
+  ██║     ██║     ██║╚██╔╝██║██║     ██║   ██║██║╚██╗██║██╔══╝  ██║██║   ██║
+  ███████╗███████╗██║ ╚═╝ ██║╚██████╗╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝
+  ╚══════╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝
 EOF
   printf "${RESET}"
-  printf "  %s\n\n" "Manage local LLM inference with llama.cpp"
+  printf "  %s\n\n" "Local Large Model Config — llama.cpp · sd.cpp · whisper.cpp"
 }
 
 STEP=0
@@ -226,7 +226,7 @@ else
     fi
   fi
 
-  ARCHIVE="llamaconfig-${VERSION_NO_V}-${OS}-${ARCH}.tar.gz"
+  ARCHIVE="llmconfig-${VERSION_NO_V}-${OS}-${ARCH}.tar.gz"
   ARCHIVE_URL="https://github.com/${REPO_SLUG}/releases/download/${VERSION}/${ARCHIVE}"
   CHECKSUM_URL="https://github.com/${REPO_SLUG}/releases/download/${VERSION}/checksums.txt"
 
@@ -339,7 +339,7 @@ step_ok "$INSTALLED_VERSION"
 # Copy bundled templates to configs dir (skip existing)
 TEMPLATES_DIR="$(dirname "$0")/templates"
 if [[ -d "$TEMPLATES_DIR" ]]; then
-    CONFIGS_DIR="$HOME/.llamaconfig/configs"
+    CONFIGS_DIR="$HOME/.llmconfig/configs"
     mkdir -p "$CONFIGS_DIR"
     for f in "$TEMPLATES_DIR"/*.yaml; do
         dest="$CONFIGS_DIR/$(basename "$f")"
@@ -362,7 +362,7 @@ if [[ "$NO_BACKENDS" == false ]]; then
   elif [[ "$LOCAL_MODE" == true && -x "$SRC_DIR/$BINARY_NAME" ]]; then
     LC_BIN="$SRC_DIR/$BINARY_NAME"
   else
-    step_warn "llamaconfig binary not runnable at $DEST — skipping backend installs"
+    step_warn "llmconfig binary not runnable at $DEST — skipping backend installs"
   fi
 
   if [[ -n "$LC_BIN" ]]; then

@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/httpx"
+	"github.com/kiliczsh/llmconfig/internal/httpx"
 )
 
 func clearQuarantine(path string) {

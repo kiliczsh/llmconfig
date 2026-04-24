@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
-	"github.com/kiliczsh/llamaconfig/internal/hardware"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/hardware"
 )
 
 // Resolve merges the detected hardware profile into a RunConfig.

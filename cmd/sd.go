@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kiliczsh/llamaconfig/pkg/stablediffusioncpp"
+	"github.com/kiliczsh/llmconfig/pkg/stablediffusioncpp"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +41,7 @@ func newSdCmd() *cobra.Command {
 
 			path, err := stablediffusioncpp.FindBinary()
 			if err != nil {
-				p.Warn("sd-cli not found — run: llamaconfig install sd")
+				p.Warn("sd-cli not found — run: llmconfig install sd")
 				return nil
 			}
 			ver, err := stablediffusioncpp.Version(path)

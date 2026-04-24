@@ -2,15 +2,15 @@
 set -euo pipefail
 
 # --- config ---
-BINARY_NAME="llamaconfig"
+BINARY_NAME="llmconfig"
 DEFAULT_PREFIX="/usr/local/bin"
 LOCAL_PREFIX="$HOME/.local/bin"
-SRC_DIR="$HOME/.llamaconfig/src"
-CONFIG_DIR="$HOME/.llamaconfig/configs"
-BIN_DIR="$HOME/.llamaconfig/bin"
-LOGS_DIR="$HOME/.llamaconfig/logs"
-CACHE_DIR="$HOME/.llamaconfig/cache"
-LLAMACONFIG_HOME="$HOME/.llamaconfig"
+SRC_DIR="$HOME/.llmconfig/src"
+CONFIG_DIR="$HOME/.llmconfig/configs"
+BIN_DIR="$HOME/.llmconfig/bin"
+LOGS_DIR="$HOME/.llmconfig/logs"
+CACHE_DIR="$HOME/.llmconfig/cache"
+LLMCONFIG_HOME="$HOME/.llmconfig"
 
 # --- colors ---
 RED='\033[0;31m'
@@ -127,7 +127,7 @@ printf "${RESET}\n"
 # ------------------------------------------------------------------ #
 _sz() { [[ -e "$1" ]] && du -sh "$1" 2>/dev/null | awk '{print $1}' || echo "-"; }
 
-label_binary="llamaconfig binary       ($PREFIX/$BINARY_NAME)"
+label_binary="llmconfig binary       ($PREFIX/$BINARY_NAME)"
 label_llama="llama.cpp binaries       ($(_sz "$BIN_DIR"))"
 label_src="Source code              ($(_sz "$SRC_DIR"))"
 label_configs="Model configs            ($(_sz "$CONFIG_DIR"))"
@@ -254,11 +254,11 @@ if has_selected 0; then
 fi
 
 # --- remove home dir if empty ---
-if [[ -d "$LLAMACONFIG_HOME" ]]; then
-  remaining=$(ls -A "$LLAMACONFIG_HOME" 2>/dev/null | wc -l | xargs)
+if [[ -d "$LLMCONFIG_HOME" ]]; then
+  remaining=$(ls -A "$LLMCONFIG_HOME" 2>/dev/null | wc -l | xargs)
   if (( remaining == 0 )); then
-    rmdir "$LLAMACONFIG_HOME"
-    step_ok "Removed ~/.llamaconfig"
+    rmdir "$LLMCONFIG_HOME"
+    step_ok "Removed ~/.llmconfig"
   fi
 fi
 

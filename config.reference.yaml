@@ -1,9 +1,9 @@
-# llamaconfig — Full Reference Config
+# llmconfig — Full Reference Config
 # Every supported field is listed with its default value and a description.
-# Copy this file into your llamaconfig configs directory as <name>.yaml and
-# remove what you don't need. Paths are shown as ~/.llamaconfig/... for
-# brevity; on Windows that resolves to %USERPROFILE%\.llamaconfig\...
-# Set LLAMACONFIG_CONFIG_DIR to override the base directory.
+# Copy this file into your llmconfig configs directory as <name>.yaml and
+# remove what you don't need. Paths are shown as ~/.llmconfig/... for
+# brevity; on Windows that resolves to %USERPROFILE%\.llmconfig\...
+# Set LLMCONFIG_CONFIG_DIR to override the base directory.
 #
 # Minimal required fields: version, name, model.source, model.repo + model.file (or model.path / model.url)
 # Backend-specific fields (whisper:, sd:) only apply when backend is set accordingly.
@@ -61,7 +61,7 @@ model:
     resume: true                  # resume interrupted downloads (default: true)
     connections: 4                # parallel download connections (default: 4)
     verify_checksum: true         # verify checksum after download (default: true; set to false to skip)
-    cache_dir: ""                 # override cache directory (default: ~/.llamaconfig/cache)
+    cache_dir: ""                 # override cache directory (default: ~/.llmconfig/cache)
 
   # --- Speculative decoding (optional) ---
   # Requires a smaller draft model from the same family.
@@ -119,8 +119,8 @@ server:
   # api_key_file: ""              # path to file containing API keys (one per line)
   parallel: 1                     # number of concurrent request slots (default: 1)
   cors_origins: []                # allowed CORS origins, e.g. ["https://myapp.com"]
-  read_timeout: 600s              # llamaconfig internal timeout (default: 600s)
-  write_timeout: 600s             # llamaconfig internal timeout (default: 600s)
+  read_timeout: 600s              # llmconfig internal timeout (default: 600s)
+  write_timeout: 600s             # llmconfig internal timeout (default: 600s)
   # timeout: 0                    # llama-server read/write timeout in seconds (0 = not set)
   # threads_http: -1              # HTTP request handler threads (-1 = auto)
   # reuse_port: false             # allow multiple sockets on same port (default: false)
@@ -189,8 +189,8 @@ server:
     props: false                  # enable POST /props for dynamic property changes (default: false)
 
 # ── Hardware Profiles ─────────────────────────────────────────────────────────
-# llamaconfig auto-selects the matching profile at runtime based on detected hardware.
-# Override at startup with: llamaconfig up <name> --profile cpu
+# llmconfig auto-selects the matching profile at runtime based on detected hardware.
+# Override at startup with: llmconfig up <name> --profile cpu
 #
 # Profile selection order:
 #   apple_silicon → macOS + ARM64
@@ -385,7 +385,7 @@ resources:
 
 logging:
   level: info                     # log level: debug | info | warn | error (default: info)
-  file: ""                        # log file path (default: ~/.llamaconfig/logs/<name>.log)
+  file: ""                        # log file path (default: ~/.llmconfig/logs/<name>.log)
   colors: auto                    # color output: auto | on | off (default: auto)
   # prefix: false                 # enable prefix in log messages (default: false)
   # timestamps: false             # enable timestamps in log messages (default: false)

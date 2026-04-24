@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$Prefix = "$env:LOCALAPPDATA\llamaconfig\bin",
+    [string]$Prefix = "$env:LOCALAPPDATA\llmconfig\bin",
     [string]$Version = "",
     [switch]$NoLlama,
     [switch]$NoBackends,
@@ -13,15 +13,15 @@ $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
-$RepoSlug   = "kiliczsh/llamaconfig"
-$BinaryName = "llamaconfig"
+$RepoSlug   = "kiliczsh/llmconfig"
+$BinaryName = "llmconfig"
 $MinDiskMB  = 200
 
 if ($Help) {
     @"
 Usage: install.ps1 [-Prefix PATH] [-Version vX.Y.Z] [-NoBackends] [-Update]
 
-  -Prefix PATH     Install directory (default: %LOCALAPPDATA%\llamaconfig\bin)
+  -Prefix PATH     Install directory (default: %LOCALAPPDATA%\llmconfig\bin)
   -Version TAG     Install a specific release tag (default: latest)
   -NoBackends      Skip backend downloads (llama.cpp, sd.cpp, whisper.cpp)
   -Update          Force reinstall even if already present
@@ -29,7 +29,7 @@ Usage: install.ps1 [-Prefix PATH] [-Version vX.Y.Z] [-NoBackends] [-Update]
 The script downloads a prebuilt binary from GitHub Releases; no Go or
 git toolchain is required on the target machine.
 
-When run from inside an extracted release archive (i.e. llamaconfig.exe
+When run from inside an extracted release archive (i.e. llmconfig.exe
 sits next to this script), the download step is skipped and the
 adjacent binary is installed directly - useful for offline installs.
 "@ | Write-Host
@@ -52,16 +52,14 @@ function step {
 # --- banner ---
 Write-Host ""
 Write-Host @"
-  _     _                                       __ _
- | |   | |                                     / _(_)
- | |   | | __ _ _ __ ___   __ _  ___ ___  _ _ | |_ _  __ _
- | |   | |/ _' | '_ ' _ \ / _' |/ __/ _ \| '_ \|  _| |/ _' |
- | |___| | (_| | | | | | | (_| | (_| (_) | | | | | | | (_| |
- |_____|_|\__,_|_| |_| |_|\__,_|\___\___/|_| |_|_| |_|\__, |
-                                                         __/ |
-                                                        |___/
+  ██╗     ██╗     ███╗   ███╗ ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗
+  ██║     ██║     ████╗ ████║██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██╔════╝
+  ██║     ██║     ██╔████╔██║██║     ██║   ██║██╔██╗ ██║█████╗  ██║██║  ███╗
+  ██║     ██║     ██║╚██╔╝██║██║     ██║   ██║██║╚██╗██║██╔══╝  ██║██║   ██║
+  ███████╗███████╗██║ ╚═╝ ██║╚██████╗╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝
+  ╚══════╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝
 "@ -ForegroundColor Cyan
-Write-Host "  Manage local LLM inference with llama.cpp`n"
+Write-Host "  Local Large Model Config - llama.cpp . sd.cpp . whisper.cpp`n"
 
 # Detect whether we're running from inside an already-extracted release
 # archive. $PSScriptRoot is empty when piped via `iex`.
@@ -125,7 +123,7 @@ try {
         $srcDir = $PSScriptRoot
         $bundledBin = Join-Path $srcDir "$BinaryName.exe"
         try {
-            $versionNoV = [string](& $bundledBin version) -replace "llamaconfig ","" -replace " .*",""
+            $versionNoV = [string](& $bundledBin version) -replace "llmconfig ","" -replace " .*",""
         } catch {
             $versionNoV = "bundled"
         }
@@ -135,7 +133,7 @@ try {
             $existing = Get-Command $BinaryName -ErrorAction SilentlyContinue
             if ($existing) {
                 try {
-                    $installed = [string](& $existing.Source version) -replace "llamaconfig ","" -replace " .*",""
+                    $installed = [string](& $existing.Source version) -replace "llmconfig ","" -replace " .*",""
                 } catch {
                     $installed = ""
                 }
@@ -167,7 +165,7 @@ try {
             $existing = Get-Command $BinaryName -ErrorAction SilentlyContinue
             if ($existing) {
                 try {
-                    $installed = [string](& $existing.Source version) -replace "llamaconfig ","" -replace " .*",""
+                    $installed = [string](& $existing.Source version) -replace "llmconfig ","" -replace " .*",""
                 } catch {
                     $installed = ""
                 }
@@ -178,7 +176,7 @@ try {
             }
         }
 
-        $archive     = "llamaconfig-$versionNoV-windows-$arch.zip"
+        $archive     = "llmconfig-$versionNoV-windows-$arch.zip"
         $archiveUrl  = "https://github.com/$RepoSlug/releases/download/$Version/$archive"
         $checksumUrl = "https://github.com/$RepoSlug/releases/download/$Version/checksums.txt"
 
@@ -187,7 +185,7 @@ try {
         # ============================================================
         step 3 $TotalSteps "Downloading binary"
 
-        $srcDir  = New-Item -ItemType Directory -Path ([System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "llamaconfig-install-$(Get-Random)")) -Force
+        $srcDir  = New-Item -ItemType Directory -Path ([System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "llmconfig-install-$(Get-Random)")) -Force
         $cleanup = $srcDir
 
         $archivePath = Join-Path $srcDir $archive
@@ -242,7 +240,7 @@ try {
     } else {
         $llmcCmd = Join-Path $Prefix "llmc.cmd"
         Set-Content -Path $llmcCmd -Value "@echo off`r`n`"$dest`" %*" -Encoding ASCII
-        ok "Alias: llmc -> llamaconfig  ($llmcCmd)"
+        ok "Alias: llmc -> llmconfig  ($llmcCmd)"
     }
 
     # PATH
@@ -262,7 +260,7 @@ try {
     # Copy bundled templates to configs dir (skip existing)
     $templatesDir = Join-Path $srcDir "templates"
     if (Test-Path $templatesDir) {
-        $configsDir = Join-Path $env:USERPROFILE ".llamaconfig\configs"
+        $configsDir = Join-Path $env:USERPROFILE ".llmconfig\configs"
         New-Item -ItemType Directory -Force -Path $configsDir | Out-Null
         Get-ChildItem $templatesDir -Filter "*.yaml" | ForEach-Object {
             $dest2 = Join-Path $configsDir $_.Name

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/kiliczsh/llamaconfig/internal/downloader"
+	"github.com/kiliczsh/llmconfig/internal/downloader"
 	"github.com/spf13/cobra"
 )
 
@@ -477,6 +477,6 @@ func writeConfig(outPath, content, name string, p interface {
 		return fmt.Errorf("init: write config: %w", err)
 	}
 	p.Success("config created: %s", outPath)
-	p.Info("next: llamaconfig validate %s && llamaconfig up %s", name, name)
+	p.Info("next: llmconfig validate %s && llmconfig up %s", name, name)
 	return nil
 }

@@ -30,7 +30,7 @@ func StateLockFile() string {
 }
 
 // ModelLockDir is the directory holding per-model lock files for serialising
-// concurrent operations (e.g. `llamaconfig up X`) against the same model.
+// concurrent operations (e.g. `llmconfig up X`) against the same model.
 func ModelLockDir() string {
 	return filepath.Join(BaseDir(), "locks")
 }
@@ -53,15 +53,15 @@ func EnsureDir(path string) error {
 	return os.MkdirAll(path, 0755)
 }
 
-// BaseDir returns the llamaconfig root directory (LLAMACONFIG_CONFIG_DIR or
-// the user's home dir joined with ".llamaconfig"). It is platform-independent:
+// BaseDir returns the llmconfig root directory (LLMCONFIG_CONFIG_DIR or
+// the user's home dir joined with ".llmconfig"). It is platform-independent:
 // os.UserHomeDir resolves to %USERPROFILE% on Windows and $HOME elsewhere.
 func BaseDir() string {
-	if v := os.Getenv("LLAMACONFIG_CONFIG_DIR"); v != "" {
+	if v := os.Getenv("LLMCONFIG_CONFIG_DIR"); v != "" {
 		return v
 	}
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".llamaconfig")
+	return filepath.Join(home, ".llmconfig")
 }
 
 // ExpandHome resolves leading "~" to the user's home directory. Handles

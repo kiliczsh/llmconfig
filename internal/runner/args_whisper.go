@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/config"
 )
 
 func buildWhisperArgs(rc *config.RunConfig) []string {

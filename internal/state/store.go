@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
-	"github.com/kiliczsh/llamaconfig/internal/process"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/process"
 )
 
 type Store struct {
@@ -55,8 +55,8 @@ func (s *Store) loadUnlocked() (*StateFile, error) {
 // Update atomically loads the state file, applies mutate, and writes the
 // result back while holding the state lock across the entire operation.
 // This prevents lost updates when multiple processes touch disjoint
-// entries concurrently (e.g. `llamaconfig rm foo` racing with
-// `llamaconfig up bar`).
+// entries concurrently (e.g. `llmconfig rm foo` racing with
+// `llmconfig up bar`).
 //
 // If mutate returns an error, the state file is left unchanged.
 func (s *Store) Update(mutate func(*StateFile) error) error {

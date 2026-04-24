@@ -9,7 +9,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/dustin/go-humanize"
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

@@ -1,5 +1,5 @@
-# llamaconfig reference — llama backend, server mode (llama-server)
-# Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
+# llmconfig reference — llama backend, server mode (llama-server)
+# Copy to ~/.llmconfig/configs/<name>.yaml and fill in required fields.
 # Required: version, name, model.source + repo/file/path/url
 
 version: 1

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/charmbracelet/huh"
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/runner"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/runner"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +39,7 @@ func newRmCmd() *cobra.Command {
 			// Check not running
 			ms, _ := appCtx.StateStore.Get(name)
 			if ms != nil && ms.Status == "running" && r.IsAlive(ms) {
-				return fmt.Errorf("model %q is running — stop it first with: llamaconfig down %s", name, name)
+				return fmt.Errorf("model %q is running — stop it first with: llmconfig down %s", name, name)
 			}
 
 			// Determine cached file path

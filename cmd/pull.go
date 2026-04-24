@@ -11,9 +11,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/dustin/go-humanize"
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
-	"github.com/kiliczsh/llamaconfig/internal/downloader"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/downloader"
 	"github.com/spf13/cobra"
 )
 
@@ -27,8 +27,8 @@ func newPullCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pull <repo>",
 		Short: "Download a model from HuggingFace",
-		Example: `  llamaconfig pull bartowski/google_gemma-4-E2B-it-GGUF --quant Q4_K_M
-  llamaconfig pull TheBloke/Mistral-7B-Instruct-v0.2-GGUF --file mistral-7b-instruct-v0.2.Q4_K_M.gguf`,
+		Example: `  llmconfig pull bartowski/google_gemma-4-E2B-it-GGUF --quant Q4_K_M
+  llmconfig pull TheBloke/Mistral-7B-Instruct-v0.2-GGUF --file mistral-7b-instruct-v0.2.Q4_K_M.gguf`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			repo := args[0]

@@ -7,7 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/kiliczsh/llamaconfig/internal/process"
+	"github.com/kiliczsh/llmconfig/internal/process"
 	"github.com/spf13/cobra"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/config"
 )
 
 func buildSDArgs(rc *config.RunConfig) []string {

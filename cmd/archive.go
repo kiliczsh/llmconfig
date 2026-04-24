@@ -10,8 +10,8 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/dustin/go-humanize"
-	"github.com/kiliczsh/llamaconfig/internal/archive"
-	"github.com/kiliczsh/llamaconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/archive"
+	"github.com/kiliczsh/llmconfig/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -22,18 +22,18 @@ func newArchiveCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "archive [name...]",
-		Short: "Bundle one or more models (config + cached GGUF) into a .llamapkg file",
-		Long: `Bundle one or more models into a .llamapkg file.
+		Short: "Bundle one or more models (config + cached GGUF) into a .llmcpkg file",
+		Long: `Bundle one or more models into a .llmcpkg file.
 
 With no names, an interactive multi-select is shown. Pass --all to
 skip the selector and include every model with a config.
 
-.llamapkg is an uncompressed POSIX tar; any tar-compatible tool can
-unpack it manually ("tar -xf foo.llamapkg").`,
-		Example: `  llamaconfig archive                       # interactive selector
-  llamaconfig archive gemma-4-e2b
-  llamaconfig archive gemma-4-e2b qwen-4b -o models.llamapkg
-  llamaconfig archive --all -o backup.llamapkg`,
+.llmcpkg is an uncompressed POSIX tar; any tar-compatible tool can
+unpack it manually ("tar -xf foo.llmcpkg").`,
+		Example: `  llmconfig archive                       # interactive selector
+  llmconfig archive gemma-4-e2b
+  llmconfig archive gemma-4-e2b qwen-4b -o models.llmcpkg
+  llmconfig archive --all -o backup.llmcpkg`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer
@@ -100,7 +100,7 @@ unpack it manually ("tar -xf foo.llamapkg").`,
 
 			p.Info("archiving %d model(s), approx %s → %s", len(entries), humanize.Bytes(uint64(totalBytes)), outPath)
 
-			exportedBy := fmt.Sprintf("llamaconfig %s", version)
+			exportedBy := fmt.Sprintf("llmconfig %s", version)
 			progress := newArchiveProgress()
 			if err := archive.Create(outPath, entries, exportedBy, progress.update); err != nil {
 				_ = os.Remove(outPath)
@@ -118,7 +118,7 @@ unpack it manually ("tar -xf foo.llamapkg").`,
 		},
 	}
 
-	cmd.Flags().StringVarP(&flagOutput, "output", "o", "", "output path (default: <name>.llamapkg in cwd)")
+	cmd.Flags().StringVarP(&flagOutput, "output", "o", "", "output path (default: <name>.llmcpkg in cwd)")
 	cmd.Flags().BoolVar(&flagAll, "all", false, "archive every configured model")
 	cmd.Flags().BoolVarP(&flagForce, "force", "f", false, "overwrite the output file if it exists")
 	return cmd
@@ -228,9 +228,9 @@ func buildCreateEntries(names []string, configDir, cacheDir string, p interface{
 func defaultArchivePath(names []string) string {
 	cwd, _ := os.Getwd()
 	if len(names) == 1 {
-		return filepath.Join(cwd, names[0]+".llamapkg")
+		return filepath.Join(cwd, names[0]+".llmcpkg")
 	}
-	return filepath.Join(cwd, fmt.Sprintf("llamaconfig-%s.llamapkg", time.Now().UTC().Format("20060102")))
+	return filepath.Join(cwd, fmt.Sprintf("llmconfig-%s.llmcpkg", time.Now().UTC().Format("20060102")))
 }
 
 // archiveProgress rate-limits carriage-returned progress lines so a 40GB

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/config"
 )
 
 // BuildArgs converts a RunConfig into the argv slice for the appropriate backend binary.

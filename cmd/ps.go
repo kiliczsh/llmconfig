@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/output"
-	"github.com/kiliczsh/llamaconfig/internal/runner"
-	"github.com/kiliczsh/llamaconfig/internal/state"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/output"
+	"github.com/kiliczsh/llmconfig/internal/runner"
+	"github.com/kiliczsh/llmconfig/internal/state"
 	"github.com/spf13/cobra"
 )
 

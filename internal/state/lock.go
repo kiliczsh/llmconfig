@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kiliczsh/llamaconfig/internal/process"
+	"github.com/kiliczsh/llmconfig/internal/process"
 )
 
 // ErrLockHeld is returned by tryAcquireLock when the lock file exists and

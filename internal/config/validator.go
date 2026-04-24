@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
 )
 
 func Validate(cfg *Config) error {

@@ -8,10 +8,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
 )
 
-// BinDir returns the directory where llamaconfig manages stable-diffusion.cpp binaries.
+// BinDir returns the directory where llmconfig manages stable-diffusion.cpp binaries.
 func BinDir() string {
 	return filepath.Join(dirs.BaseDir(), "bin", "sd")
 }
@@ -37,7 +37,7 @@ func FindServer() (string, error) {
 			return path, nil
 		}
 	}
-	return "", fmt.Errorf("sd-server not found — run: llamaconfig install sd")
+	return "", fmt.Errorf("sd-server not found — run: llmconfig install sd")
 }
 
 // FindBinary returns the path to the sd-cli binary, preferring the managed bin dir.
@@ -62,7 +62,7 @@ func FindBinary() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("sd-cli not found — run: llamaconfig install sd")
+	return "", fmt.Errorf("sd-cli not found — run: llmconfig install sd")
 }
 
 // Version runs sd --version and returns the version string.

@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
-	"github.com/kiliczsh/llamaconfig/internal/output"
-	"github.com/kiliczsh/llamaconfig/internal/state"
-	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/output"
+	"github.com/kiliczsh/llmconfig/internal/state"
+	"github.com/kiliczsh/llmconfig/pkg/llamacpp"
 	"github.com/spf13/cobra"
 )
 
@@ -40,11 +40,12 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "llamaconfig",
-	Short: "Config-driven CLI for managing llama.cpp model inference",
-	Long: `llamaconfig — manage local LLM inference with llama.cpp.
+	Use:   "llmconfig",
+	Short: "Local Large Model Config — manage llama.cpp, stable-diffusion.cpp, and whisper.cpp",
+	Long: `llmconfig — Local Large Model Config.
 
-Define your model once in a YAML file. llamaconfig handles
+Manage local inference with llama.cpp, stable-diffusion.cpp, and
+whisper.cpp. Define your model once in a YAML file; llmconfig handles
 downloading, starting, stopping, and monitoring.`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -63,20 +64,20 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&flagConfigDir, "config-dir", "", "override config directory (default: ~/.llamaconfig)")
+	rootCmd.PersistentFlags().StringVar(&flagConfigDir, "config-dir", "", "override config directory (default: ~/.llmconfig)")
 	rootCmd.PersistentFlags().StringVar(&flagLlamaBin, "llama-bin", "", "override llama.cpp binary path")
 	rootCmd.PersistentFlags().BoolVar(&flagNoColor, "no-color", false, "disable colored output")
 	rootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", false, "verbose output")
 
 	cobra.OnInitialize(func() {
 		if flagConfigDir != "" {
-			os.Setenv("LLAMACONFIG_CONFIG_DIR", flagConfigDir)
+			os.Setenv("LLMCONFIG_CONFIG_DIR", flagConfigDir)
 		}
 	})
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := dirs.EnsureAll(); err != nil {
-			return fmt.Errorf("failed to create llamaconfig directories: %w", err)
+			return fmt.Errorf("failed to create llmconfig directories: %w", err)
 		}
 
 		store := state.NewStore()

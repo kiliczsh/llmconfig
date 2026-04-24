@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kiliczsh/llamaconfig/pkg/whispercpp"
+	"github.com/kiliczsh/llmconfig/pkg/whispercpp"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +41,7 @@ func newWhisperCmd() *cobra.Command {
 
 			path, err := whispercpp.FindBinary()
 			if err != nil {
-				p.Warn("whisper-cli not found — run: llamaconfig install whisper")
+				p.Warn("whisper-cli not found — run: llmconfig install whisper")
 				return nil
 			}
 			ver, err := whispercpp.Version(path)

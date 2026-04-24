@@ -10,12 +10,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kiliczsh/llamaconfig/internal/bench"
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
-	"github.com/kiliczsh/llamaconfig/internal/hardware"
-	"github.com/kiliczsh/llamaconfig/internal/runner"
-	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
+	"github.com/kiliczsh/llmconfig/internal/bench"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/hardware"
+	"github.com/kiliczsh/llmconfig/internal/runner"
+	"github.com/kiliczsh/llmconfig/pkg/llamacpp"
 	"github.com/spf13/cobra"
 )
 
@@ -54,11 +54,11 @@ func newBenchCmd() *cobra.Command {
 			// Resolve server binary (which is what appCtx.LlamaBin points at
 			// when found) and derive the matching CLI. Fall back to
 			// exec.LookPath so a PATH-installed 'llama-server' works even if
-			// llamaconfig's managed bin dir doesn't have it.
+			// llmconfig's managed bin dir doesn't have it.
 			serverBin, err := llamacpp.FindServer()
 			if err != nil {
 				if _, lookErr := exec.LookPath("llama-server"); lookErr != nil {
-					return fmt.Errorf("llama-server not found — run: llamaconfig install llama")
+					return fmt.Errorf("llama-server not found — run: llmconfig install llama")
 				}
 				serverBin = "llama-server"
 			}

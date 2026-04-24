@@ -1,5 +1,5 @@
-# llamaconfig reference — sd backend, server mode (sd-server)
-# Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
+# llmconfig reference — sd backend, server mode (sd-server)
+# Copy to ~/.llmconfig/configs/<name>.yaml and fill in required fields.
 # Required: version, name, model.source + repo/file/path/url
 #
 # ── Two ways to supply the weights ───────────────────────────────────────────
@@ -7,13 +7,13 @@
 #    passed to sd-server as --model.
 # 2) Flux / SD3:   the diffusion weights are still the main `model.file`, but
 #    you MUST also provide the text encoders (clip_l, t5xxl) and VAE via the
-#    `sd.*` block. llamaconfig detects this layout and switches --model for
+#    `sd.*` block. llmconfig detects this layout and switches --model for
 #    --diffusion-model automatically.
 #
 # Auxiliary files (clip_l, t5xxl, vae, taesd, …) accept one of:
 #   - a local path (absolute or "~/…")
 #   - an hf:// URL of the form hf://<owner>/<repo>/<filepath-in-repo>
-# llamaconfig auto-downloads hf:// references into the cache on `up`.
+# llmconfig auto-downloads hf:// references into the cache on `up`.
 
 version: 1
 name: my-sd-server

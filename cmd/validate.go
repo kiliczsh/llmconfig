@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/kiliczsh/llamaconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/config"
 	"github.com/spf13/cobra"
 )
 

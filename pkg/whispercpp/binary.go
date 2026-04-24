@@ -8,10 +8,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
 )
 
-// BinDir returns the directory where llamaconfig manages whisper.cpp binaries.
+// BinDir returns the directory where llmconfig manages whisper.cpp binaries.
 func BinDir() string {
 	return filepath.Join(dirs.BaseDir(), "bin", "whisper")
 }
@@ -37,7 +37,7 @@ func FindServer() (string, error) {
 			return path, nil
 		}
 	}
-	return "", fmt.Errorf("whisper-server not found — run: llamaconfig install whisper")
+	return "", fmt.Errorf("whisper-server not found — run: llmconfig install whisper")
 }
 
 // FindBinary returns the path to the whisper-cli binary, preferring the managed bin dir.
@@ -62,7 +62,7 @@ func FindBinary() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("whisper-cli not found — run: llamaconfig install whisper")
+	return "", fmt.Errorf("whisper-cli not found — run: llmconfig install whisper")
 }
 
 // Version runs whisper-cli and tries to extract the version string.

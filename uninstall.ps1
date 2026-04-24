@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$Prefix = "$env:LOCALAPPDATA\llamaconfig\bin",
+    [string]$Prefix = "$env:LOCALAPPDATA\llmconfig\bin",
     [switch]$All,
     [switch]$KeepCache,
     [switch]$Help
@@ -11,8 +11,8 @@ $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
-$BinaryName    = "llamaconfig"
-$LlamaHome     = Join-Path $env:USERPROFILE ".llamaconfig"
+$BinaryName    = "llmconfig"
+$LlamaHome     = Join-Path $env:USERPROFILE ".llmconfig"
 $SrcDir        = Join-Path $LlamaHome "src"        # legacy (old source-install)
 $BinDir        = Join-Path $LlamaHome "bin"        # llama.cpp, sd, whisper binaries
 $ConfigDir     = Join-Path $LlamaHome "configs"
@@ -24,7 +24,7 @@ if ($Help) {
 Usage: uninstall.ps1 [-Prefix PATH] [-All] [-KeepCache]
 
   -Prefix PATH    Install directory to remove from
-                  (default: %LOCALAPPDATA%\llamaconfig\bin)
+                  (default: %LOCALAPPDATA%\llmconfig\bin)
   -All            Remove everything without prompting (binary, configs,
                   logs, llama.cpp, cache). Equivalent to answering "yes"
                   to every prompt.
@@ -94,7 +94,7 @@ if (Test-Path $binaryPath) {
 
 # --- Binary ---
 if (Test-Path $binaryPath) {
-    if (Ask -Label "llamaconfig binary" -Path $binaryPath) {
+    if (Ask -Label "llmconfig binary" -Path $binaryPath) {
         Remove-Item $binaryPath -Force
         ok "Removed $binaryPath"
         foreach ($p in @($llmcExe, $llmcCmd, $lcExe, $lcCmd)) {

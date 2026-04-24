@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kiliczsh/llamaconfig/internal/output"
-	"github.com/kiliczsh/llamaconfig/internal/runner"
+	"github.com/kiliczsh/llmconfig/internal/output"
+	"github.com/kiliczsh/llmconfig/internal/runner"
 	"github.com/spf13/cobra"
 )
 

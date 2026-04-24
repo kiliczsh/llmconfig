@@ -7,10 +7,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/dustin/go-humanize"
-	"github.com/kiliczsh/llamaconfig/internal/hardware"
-	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
-	"github.com/kiliczsh/llamaconfig/pkg/stablediffusioncpp"
-	"github.com/kiliczsh/llamaconfig/pkg/whispercpp"
+	"github.com/kiliczsh/llmconfig/internal/hardware"
+	"github.com/kiliczsh/llmconfig/pkg/llamacpp"
+	"github.com/kiliczsh/llmconfig/pkg/stablediffusioncpp"
+	"github.com/kiliczsh/llmconfig/pkg/whispercpp"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +46,7 @@ func newInstallLlamaCmd() *cobra.Command {
 					return err
 				}
 				p.Success("llama.cpp installed to %s", llamacpp.BinDir())
-				p.Success("run: llamaconfig llama --version")
+				p.Success("run: llmconfig llama --version")
 				return nil
 			}
 
@@ -76,7 +76,7 @@ func newInstallLlamaCmd() *cobra.Command {
 				return llamacpp.Install(asset, onProgress)
 			}, func() {
 				p.Success("llama.cpp installed to %s", llamacpp.BinDir())
-				p.Success("run: llamaconfig llama --version")
+				p.Success("run: llmconfig llama --version")
 			})
 		},
 	}
@@ -104,7 +104,7 @@ func newInstallSdCmd() *cobra.Command {
 					return err
 				}
 				p.Success("stable-diffusion.cpp installed to %s", stablediffusioncpp.BinDir())
-				p.Success("run: llamaconfig sd --version")
+				p.Success("run: llmconfig sd --version")
 				return nil
 			}
 
@@ -134,7 +134,7 @@ func newInstallSdCmd() *cobra.Command {
 				return stablediffusioncpp.Install(asset, onProgress)
 			}, func() {
 				p.Success("stable-diffusion.cpp installed to %s", stablediffusioncpp.BinDir())
-				p.Success("run: llamaconfig sd --version")
+				p.Success("run: llmconfig sd --version")
 			})
 		},
 	}
@@ -162,7 +162,7 @@ func newInstallWhisperCmd() *cobra.Command {
 					return err
 				}
 				p.Success("whisper.cpp installed to %s", whispercpp.BinDir())
-				p.Success("run: llamaconfig whisper --version")
+				p.Success("run: llmconfig whisper --version")
 				return nil
 			}
 
@@ -192,7 +192,7 @@ func newInstallWhisperCmd() *cobra.Command {
 				return whispercpp.Install(asset, onProgress)
 			}, func() {
 				p.Success("whisper.cpp installed to %s", whispercpp.BinDir())
-				p.Success("run: llamaconfig whisper --version")
+				p.Success("run: llmconfig whisper --version")
 			})
 		},
 	}

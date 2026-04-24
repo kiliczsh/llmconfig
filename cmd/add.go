@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +40,7 @@ func newAddCmd() *cobra.Command {
 			if flagCopy {
 				dest := filepath.Join(appCtx.CacheDir, filepath.Base(absPath))
 				if existing, err := os.Stat(dest); err == nil && !os.SameFile(existing, mustStat(absPath)) {
-					return fmt.Errorf("cache already contains %q — check: rename the source file or clear the cached entry (llamaconfig cache clean)", filepath.Base(absPath))
+					return fmt.Errorf("cache already contains %q — check: rename the source file or clear the cached entry (llmconfig cache clean)", filepath.Base(absPath))
 				}
 				if err := copyFile(absPath, dest); err != nil {
 					return fmt.Errorf("add: copy file: %w", err)
@@ -51,7 +51,7 @@ func newAddCmd() *cobra.Command {
 
 			configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
 			if _, err := os.Stat(configPath); err == nil {
-				return fmt.Errorf("config %q already exists at %q — check: choose a different name or run: llamaconfig rm %s", name, configPath, name)
+				return fmt.Errorf("config %q already exists at %q — check: choose a different name or run: llmconfig rm %s", name, configPath, name)
 			}
 
 			cfg := &config.Config{
@@ -77,7 +77,7 @@ func newAddCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&flagPath, "path", "", "path to the GGUF file (required)")
-	cmd.Flags().BoolVar(&flagCopy, "copy", false, "copy file to llamaconfig cache")
+	cmd.Flags().BoolVar(&flagCopy, "copy", false, "copy file to llmconfig cache")
 	return cmd
 }
 

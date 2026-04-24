@@ -1,4 +1,7 @@
-# llamaconfig — Documentation
+# llmconfig — Documentation
+
+**Local Large Model Config** — manage local inference with llama.cpp, stable-diffusion.cpp, and whisper.cpp.
+Every command is also available via the shorter `llmc` alias.
 
 ## Table of Contents
 
@@ -11,9 +14,9 @@
 - [Environment Variables](#environment-variables)
 - [OpenAI-Compatible API](#openai-compatible-api)
 
-> **A note on paths.** This document writes directories as `~/.llamaconfig/...`
-> for brevity. That resolves to `$HOME/.llamaconfig` on macOS and Linux and to
-> `%USERPROFILE%\.llamaconfig` on Windows. Set `LLAMACONFIG_CONFIG_DIR` to
+> **A note on paths.** This document writes directories as `~/.llmconfig/...`
+> for brevity. That resolves to `$HOME/.llmconfig` on macOS and Linux and to
+> `%USERPROFILE%\.llmconfig` on Windows. Set `LLMCONFIG_CONFIG_DIR` to
 > override the base directory.
 
 ---
@@ -21,13 +24,13 @@
 ## Directory Layout
 
 ```
-~/.llamaconfig/
+~/.llmconfig/
 ├── configs/          # YAML config files (<name>.yaml)
 ├── cache/            # Downloaded model files (GGUF, whisper GGML, SD weights)
 ├── logs/             # Per-model log files (<name>.log)
 ├── bench/            # Saved benchmark results
 ├── bin/
-│   ├── llama/        # llama.cpp binaries (managed by `llamaconfig install llama`)
+│   ├── llama/        # llama.cpp binaries (managed by `llmconfig install llama`)
 │   ├── sd/           # stable-diffusion.cpp binaries (`install sd`)
 │   └── whisper/      # whisper.cpp binaries (`install whisper`)
 └── state.json        # Running-model state
@@ -40,31 +43,31 @@
 ### 1. Install a backend binary
 
 ```bash
-llamaconfig install llama       # text generation (llama.cpp)
-llamaconfig install sd          # image generation (stable-diffusion.cpp)
-llamaconfig install whisper     # speech recognition (whisper.cpp)
+llmconfig install llama       # text generation (llama.cpp)
+llmconfig install sd          # image generation (stable-diffusion.cpp)
+llmconfig install whisper     # speech recognition (whisper.cpp)
 ```
 
 `install` auto-detects your hardware (CUDA, Metal, ROCm, CPU) and downloads
 the matching release from GitHub. Binaries are placed under
-`~/.llamaconfig/bin/<backend>/`.
+`~/.llmconfig/bin/<backend>/`.
 
 ```bash
-llamaconfig llama --version    # verify the installed build
-llamaconfig llama --path       # show the binary path
+llmconfig llama --version    # verify the installed build
+llmconfig llama --path       # show the binary path
 ```
 
-The same `--version` / `--path` flags work for `llamaconfig sd` and
-`llamaconfig whisper`.
+The same `--version` / `--path` flags work for `llmconfig sd` and
+`llmconfig whisper`.
 
 ### 2. Create a Config
 
 **Option A — Interactive wizard:**
 
 ```bash
-llamaconfig init
-llamaconfig init --template llama3    # pre-fill with a known model
-llamaconfig init --from bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+llmconfig init
+llmconfig init --template llama3    # pre-fill with a known model
+llmconfig init --from bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
 ```
 
 Built-in templates:
@@ -80,23 +83,23 @@ The wizard asks which backend to use; pass `--template` to skip the picker.
 **Option B — Pull and auto-generate (llama only):**
 
 ```bash
-llamaconfig pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --quant Q4_K_M
+llmconfig pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --quant Q4_K_M
 ```
 
 Downloads the model and creates a config in one step.
 
 **Option C — Write manually:**
 
-Create `<configs>/<name>.yaml` under your llamaconfig directory (see
+Create `<configs>/<name>.yaml` under your llmconfig directory (see
 [Config File Reference](#config-file-reference)).
 
 ### 3. Start a Model
 
 ```bash
-llamaconfig up gemma-4-e2b
+llmconfig up gemma-4-e2b
 ```
 
-llamaconfig will:
+llmconfig will:
 1. Load and validate the config
 2. Detect hardware and select the matching profile
 3. Download the model file if not cached
@@ -119,16 +122,16 @@ curl http://127.0.0.1:8080/v1/chat/completions \
 ### 5. Stop
 
 ```bash
-llamaconfig down                # interactive selector if multiple models running
-llamaconfig down gemma-4-e2b   # stop by name
-llamaconfig down --all         # stop all running models
+llmconfig down                # interactive selector if multiple models running
+llmconfig down gemma-4-e2b   # stop by name
+llmconfig down --all         # stop all running models
 ```
 
 ---
 
 ## Backends
 
-llamaconfig drives three inference backends. The `backend` field in a config
+llmconfig drives three inference backends. The `backend` field in a config
 picks which one runs:
 
 ```yaml
@@ -139,9 +142,9 @@ backend: llama      # default — text generation via llama.cpp
 
 | Backend | Binary used | Install command | Managed bin dir |
 |---------|-------------|-----------------|-----------------|
-| `llama` (default) | `llama-server` (server) / `llama-cli` (interactive) | `llamaconfig install llama` | `~/.llamaconfig/bin/llama/` |
-| `sd` | `sd-cli` (server build) | `llamaconfig install sd` | `~/.llamaconfig/bin/sd/` |
-| `whisper` | `whisper-server` / `whisper-cli` | `llamaconfig install whisper` | `~/.llamaconfig/bin/whisper/` |
+| `llama` (default) | `llama-server` (server) / `llama-cli` (interactive) | `llmconfig install llama` | `~/.llmconfig/bin/llama/` |
+| `sd` | `sd-cli` (server build) | `llmconfig install sd` | `~/.llmconfig/bin/sd/` |
+| `whisper` | `whisper-server` / `whisper-cli` | `llmconfig install whisper` | `~/.llmconfig/bin/whisper/` |
 
 Each backend reads a backend-specific config block in addition to the shared
 fields (`model`, `server`, `hardware_profiles`, etc.).
@@ -214,11 +217,11 @@ See [Config File Reference](#config-file-reference) for the shared fields
 Start a model server. If the model is already running, prints its URL and exits successfully.
 
 ```bash
-llamaconfig up gemma-4-e2b
-llamaconfig up gemma-4-e2b --port 9000          # override port
-llamaconfig up gemma-4-e2b --profile cpu        # force hardware profile
-llamaconfig up gemma-4-e2b --dry-run            # print command, do not run
-llamaconfig up gemma-4-e2b --no-download        # fail if model not cached
+llmconfig up gemma-4-e2b
+llmconfig up gemma-4-e2b --port 9000          # override port
+llmconfig up gemma-4-e2b --profile cpu        # force hardware profile
+llmconfig up gemma-4-e2b --dry-run            # print command, do not run
+llmconfig up gemma-4-e2b --no-download        # fail if model not cached
 ```
 
 Flags:
@@ -236,10 +239,10 @@ Flags:
 Stop a running model. Without a name, shows an interactive selector.
 
 ```bash
-llamaconfig down                         # interactive selector
-llamaconfig down gemma-4-e2b            # stop by name
-llamaconfig down --all                  # stop all running models
-llamaconfig down gemma-4-e2b --timeout 30s
+llmconfig down                         # interactive selector
+llmconfig down gemma-4-e2b            # stop by name
+llmconfig down --all                  # stop all running models
+llmconfig down gemma-4-e2b --timeout 30s
 ```
 
 ---
@@ -249,8 +252,8 @@ llamaconfig down gemma-4-e2b --timeout 30s
 List running models.
 
 ```bash
-llamaconfig ps
-llamaconfig ps --all            # include stopped models
+llmconfig ps
+llmconfig ps --all            # include stopped models
 ```
 
 Output columns: `NAME`, `STATUS`, `PORT`, `PROFILE`, `UPTIME`, `PID`
@@ -262,10 +265,10 @@ Output columns: `NAME`, `STATUS`, `PORT`, `PROFILE`, `UPTIME`, `PID`
 Show model logs. Without a name, shows an interactive selector.
 
 ```bash
-llamaconfig logs                         # interactive selector
-llamaconfig logs gemma-4-e2b
-llamaconfig logs gemma-4-e2b -n 100
-llamaconfig logs gemma-4-e2b --follow
+llmconfig logs                         # interactive selector
+llmconfig logs gemma-4-e2b
+llmconfig logs gemma-4-e2b -n 100
+llmconfig logs gemma-4-e2b --follow
 ```
 
 Flags:
@@ -281,10 +284,10 @@ Flags:
 Show CPU and memory usage of running models.
 
 ```bash
-llamaconfig stats
-llamaconfig stats gemma-4-e2b
-llamaconfig stats --watch
-llamaconfig stats --watch --interval 5s
+llmconfig stats
+llmconfig stats gemma-4-e2b
+llmconfig stats --watch
+llmconfig stats --watch --interval 5s
 ```
 
 ---
@@ -294,8 +297,8 @@ llamaconfig stats --watch --interval 5s
 Detailed info for a single model. Without a name, shows an interactive selector.
 
 ```bash
-llamaconfig status                       # interactive selector
-llamaconfig status gemma-4-e2b
+llmconfig status                       # interactive selector
+llmconfig status gemma-4-e2b
 ```
 
 Shows: PID, port, profile, uptime, config path, log file path, status.
@@ -307,9 +310,9 @@ Shows: PID, port, profile, uptime, config path, log file path, status.
 Stop and start a model, reloading config. Without a name, shows an interactive selector.
 
 ```bash
-llamaconfig restart                      # interactive selector
-llamaconfig restart gemma-4-e2b
-llamaconfig restart --all
+llmconfig restart                      # interactive selector
+llmconfig restart gemma-4-e2b
+llmconfig restart --all
 ```
 
 ---
@@ -319,11 +322,11 @@ llamaconfig restart --all
 Download a GGUF model from HuggingFace and create a config.
 
 ```bash
-llamaconfig pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --quant Q4_K_M
-llamaconfig pull TheBloke/Mistral-7B-v0.1-GGUF --file mistral-7b-v0.1.Q4_K_M.gguf
-llamaconfig pull <repo> --token hf_xxx        # private repo
-llamaconfig pull <repo> --no-config           # download only, skip config creation
-llamaconfig pull <repo> --name my-custom-name
+llmconfig pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --quant Q4_K_M
+llmconfig pull TheBloke/Mistral-7B-v0.1-GGUF --file mistral-7b-v0.1.Q4_K_M.gguf
+llmconfig pull <repo> --token hf_xxx        # private repo
+llmconfig pull <repo> --no-config           # download only, skip config creation
+llmconfig pull <repo> --name my-custom-name
 ```
 
 ---
@@ -333,12 +336,12 @@ llamaconfig pull <repo> --name my-custom-name
 Interactive config wizard.
 
 ```bash
-llamaconfig init
-llamaconfig init gemma-4-e2b
-llamaconfig init --template llama3
-llamaconfig init --from bartowski/google_gemma-4-E2B-it-GGUF
-llamaconfig init --from https://huggingface.co/.../model.gguf   # direct URL
-llamaconfig init --output ./gemma-4-e2b.yaml
+llmconfig init
+llmconfig init gemma-4-e2b
+llmconfig init --template llama3
+llmconfig init --from bartowski/google_gemma-4-E2B-it-GGUF
+llmconfig init --from https://huggingface.co/.../model.gguf   # direct URL
+llmconfig init --output ./gemma-4-e2b.yaml
 ```
 
 The wizard first asks which backend to use (`llama`, `sd`, `whisper`), then
@@ -353,9 +356,9 @@ lists available GGUF files from the repo for selection.
 List all known models (running, stopped, cached).
 
 ```bash
-llamaconfig models
-llamaconfig models --running
-llamaconfig models --cached
+llmconfig models
+llmconfig models --running
+llmconfig models --cached
 ```
 
 ---
@@ -365,9 +368,9 @@ llamaconfig models --cached
 Validate a config without starting anything. Without a name, shows an interactive selector.
 
 ```bash
-llamaconfig validate                     # interactive selector
-llamaconfig validate gemma-4-e2b
-llamaconfig validate --file ./path/to/config.yaml
+llmconfig validate                     # interactive selector
+llmconfig validate gemma-4-e2b
+llmconfig validate --file ./path/to/config.yaml
 ```
 
 ---
@@ -377,9 +380,9 @@ llamaconfig validate --file ./path/to/config.yaml
 Show the exact llama.cpp command that would be run. Without a name, shows an interactive selector.
 
 ```bash
-llamaconfig inspect                      # interactive selector
-llamaconfig inspect gemma-4-e2b
-llamaconfig inspect gemma-4-e2b --profile cpu    # inspect for a specific profile
+llmconfig inspect                      # interactive selector
+llmconfig inspect gemma-4-e2b
+llmconfig inspect gemma-4-e2b --profile cpu    # inspect for a specific profile
 ```
 
 Useful for debugging or running the command manually.
@@ -391,8 +394,8 @@ Useful for debugging or running the command manually.
 Register a local GGUF file as a named model.
 
 ```bash
-llamaconfig add gemma-4-e2b --path /path/to/model.gguf
-llamaconfig add gemma-4-e2b --path /path/to/model.gguf --copy   # copy to cache dir
+llmconfig add gemma-4-e2b --path /path/to/model.gguf
+llmconfig add gemma-4-e2b --path /path/to/model.gguf --copy   # copy to cache dir
 ```
 
 ---
@@ -402,9 +405,9 @@ llamaconfig add gemma-4-e2b --path /path/to/model.gguf --copy   # copy to cache 
 Remove a model config (and optionally its cached file).
 
 ```bash
-llamaconfig rm gemma-4-e2b
-llamaconfig rm gemma-4-e2b --keep-file    # remove config, keep GGUF
-llamaconfig rm gemma-4-e2b --force        # skip confirmation prompt
+llmconfig rm gemma-4-e2b
+llmconfig rm gemma-4-e2b --keep-file    # remove config, keep GGUF
+llmconfig rm gemma-4-e2b --force        # skip confirmation prompt
 ```
 
 ---
@@ -414,11 +417,11 @@ llamaconfig rm gemma-4-e2b --force        # skip confirmation prompt
 Manage config files.
 
 ```bash
-llamaconfig config list                 # list all configs
-llamaconfig config show gemma-4-e2b        # print resolved config (with defaults)
-llamaconfig config show gemma-4-e2b --raw  # print raw YAML without defaults
-llamaconfig config edit gemma-4-e2b        # open in $EDITOR
-llamaconfig config path gemma-4-e2b        # print file path
+llmconfig config list                 # list all configs
+llmconfig config show gemma-4-e2b        # print resolved config (with defaults)
+llmconfig config show gemma-4-e2b --raw  # print raw YAML without defaults
+llmconfig config edit gemma-4-e2b        # open in $EDITOR
+llmconfig config path gemma-4-e2b        # print file path
 ```
 
 ---
@@ -428,7 +431,7 @@ llamaconfig config path gemma-4-e2b        # print file path
 Show detected hardware and the profile that would be selected.
 
 ```bash
-llamaconfig hardware
+llmconfig hardware
 ```
 
 ---
@@ -439,16 +442,16 @@ Install a backend binary. Auto-detects your hardware and downloads the
 matching release from GitHub.
 
 ```bash
-llamaconfig install llama               # text generation (llama.cpp)
-llamaconfig install sd                  # image generation (stable-diffusion.cpp)
-llamaconfig install whisper             # speech recognition (whisper.cpp)
+llmconfig install llama               # text generation (llama.cpp)
+llmconfig install sd                  # image generation (stable-diffusion.cpp)
+llmconfig install whisper             # speech recognition (whisper.cpp)
 
-llamaconfig install llama --backend cuda  # force a specific build
-llamaconfig install llama --force         # reinstall even if already present
+llmconfig install llama --backend cuda  # force a specific build
+llmconfig install llama --force         # reinstall even if already present
 ```
 
 Each backend is installed into its own directory under
-`~/.llamaconfig/bin/<backend>/`, so they never collide. To update to the
+`~/.llmconfig/bin/<backend>/`, so they never collide. To update to the
 latest release, run `install` again with `--force`.
 
 Available `--backend` values depend on the backend and platform; common ones
@@ -461,16 +464,16 @@ are `cuda`, `metal`, `rocm`, and `cpu`.
 Show status for an installed backend binary.
 
 ```bash
-llamaconfig llama                       # show path + version
-llamaconfig llama --version             # print only the version line
-llamaconfig llama --path                # print the binary path
+llmconfig llama                       # show path + version
+llmconfig llama --version             # print only the version line
+llmconfig llama --path                # print the binary path
 
-llamaconfig sd --version
-llamaconfig whisper --path
+llmconfig sd --version
+llmconfig whisper --path
 ```
 
 If the binary is missing, these commands tell you to run
-`llamaconfig install <backend>`.
+`llmconfig install <backend>`.
 
 ---
 
@@ -479,12 +482,12 @@ If the binary is missing, these commands tell you to run
 Benchmark inference throughput for a model.
 
 ```bash
-llamaconfig bench gemma-4-e2b
-llamaconfig bench gemma-4-e2b --runs 3
-llamaconfig bench gemma-4-e2b --tokens 256
+llmconfig bench gemma-4-e2b
+llmconfig bench gemma-4-e2b --runs 3
+llmconfig bench gemma-4-e2b --tokens 256
 ```
 
-Results are written to `~/.llamaconfig/bench/` for later comparison.
+Results are written to `~/.llmconfig/bench/` for later comparison.
 
 ---
 
@@ -493,7 +496,7 @@ Results are written to `~/.llamaconfig/bench/` for later comparison.
 Show which configs fit on the detected hardware and estimate inference speed.
 
 ```bash
-llamaconfig compat
+llmconfig compat
 ```
 
 Analyses every config against detected RAM, VRAM, and bandwidth, so you can
@@ -503,23 +506,23 @@ see at a glance which models will actually run well on this machine.
 
 ### `version`
 
-Print the llamaconfig CLI version.
+Print the llmconfig CLI version.
 
 ```bash
-llamaconfig version
+llmconfig version
 ```
 
 ---
 
 ### `cache`
 
-Manage the model file cache (`~/.llamaconfig/cache/`).
+Manage the model file cache (`~/.llmconfig/cache/`).
 
 ```bash
-llamaconfig cache list             # list cached files with sizes (alias: ls)
-llamaconfig cache clean            # remove files not referenced by any config
-llamaconfig cache clean --all      # remove all cached files
-llamaconfig cache path             # print cache directory
+llmconfig cache list             # list cached files with sizes (alias: ls)
+llmconfig cache clean            # remove files not referenced by any config
+llmconfig cache clean --all      # remove all cached files
+llmconfig cache path             # print cache directory
 ```
 
 ---
@@ -552,7 +555,7 @@ model:
     resume: true            # default: true — resume interrupted downloads
     connections: 4          # parallel download connections (default: 4)
     verify_checksum: true   # default: true — set to false to skip checksum verification
-    cache_dir: ""           # defaults to ~/.llamaconfig/cache
+    cache_dir: ""           # defaults to ~/.llmconfig/cache
 
   # Speculative decoding (optional)
   draft:
@@ -584,7 +587,7 @@ server:
 
 # ── Hardware Profiles ──────────────────────────────────────────────────────
 # The matching profile is selected automatically at runtime.
-# Override with: llamaconfig up <name> --profile cpu
+# Override with: llmconfig up <name> --profile cpu
 
 hardware_profiles:
   apple_silicon:
@@ -653,14 +656,14 @@ rope:
 
 logging:
   level: info
-  file: ""          # defaults to ~/.llamaconfig/logs/<name>.log
+  file: ""          # defaults to ~/.llmconfig/logs/<name>.log
 ```
 
 ---
 
 ## Hardware Profiles
 
-llamaconfig auto-selects the hardware profile based on the detected system:
+llmconfig auto-selects the hardware profile based on the detected system:
 
 | Profile | Condition |
 |---------|-----------|
@@ -673,14 +676,14 @@ llamaconfig auto-selects the hardware profile based on the detected system:
 To see what was detected:
 
 ```bash
-llamaconfig hardware
+llmconfig hardware
 ```
 
 To force a profile:
 
 ```bash
-llamaconfig up gemma-4-e2b --profile cpu
-llamaconfig inspect gemma-4-e2b --profile nvidia
+llmconfig up gemma-4-e2b --profile cpu
+llmconfig inspect gemma-4-e2b --profile nvidia
 ```
 
 ---
@@ -689,17 +692,17 @@ llamaconfig inspect gemma-4-e2b --profile nvidia
 
 | Variable | Description |
 |----------|-------------|
-| `LLAMACONFIG_CONFIG_DIR` | Override the base directory (default: `~/.llamaconfig`) |
+| `LLMCONFIG_CONFIG_DIR` | Override the base directory (default: `~/.llmconfig`) |
 | `HUGGINGFACE_TOKEN` | HuggingFace token for private repos (checked first) |
 | `HF_TOKEN` | HuggingFace token, used when `HUGGINGFACE_TOKEN` is unset |
-| `EDITOR` | Editor for `llamaconfig config edit` |
+| `EDITOR` | Editor for `llmconfig config edit` |
 | `VISUAL` | Fallback editor when `$EDITOR` is not set |
 
 ---
 
 ## OpenAI-Compatible API
 
-When running in `server` mode, llamaconfig exposes a standard OpenAI-compatible API:
+When running in `server` mode, llmconfig exposes a standard OpenAI-compatible API:
 
 ```
 POST /v1/chat/completions

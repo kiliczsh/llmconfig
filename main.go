@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kiliczsh/llamaconfig/cmd"
+	"github.com/kiliczsh/llmconfig/cmd"
 )
 
 // These are set at link time via -ldflags:

@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/state"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/state"
 )
 
 type interactiveRunner struct{}

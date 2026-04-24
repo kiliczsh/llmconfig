@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/hardware"
-	"github.com/kiliczsh/llamaconfig/internal/runner"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/hardware"
+	"github.com/kiliczsh/llmconfig/internal/runner"
 	"github.com/spf13/cobra"
 )
 

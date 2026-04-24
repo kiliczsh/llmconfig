@@ -3,7 +3,7 @@ package cmd
 import (
 	"time"
 
-	"github.com/kiliczsh/llamaconfig/internal/runner"
+	"github.com/kiliczsh/llmconfig/internal/runner"
 	"github.com/spf13/cobra"
 )
 

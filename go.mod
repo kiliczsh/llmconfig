@@ -1,4 +1,4 @@
-module github.com/kiliczsh/llamaconfig
+module github.com/kiliczsh/llmconfig
 
 go 1.26.2
 

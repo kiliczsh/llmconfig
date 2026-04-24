@@ -7,7 +7,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/dustin/go-humanize"
-	"github.com/kiliczsh/llamaconfig/internal/archive"
+	"github.com/kiliczsh/llmconfig/internal/archive"
 	"github.com/spf13/cobra"
 )
 
@@ -16,12 +16,12 @@ func newImportCmd() *cobra.Command {
 	var flagYes bool
 
 	cmd := &cobra.Command{
-		Use:     "import <file.llamapkg>",
+		Use:     "import <file.llmcpkg>",
 		Aliases: []string{"restore"},
-		Short:   "Extract a .llamapkg bundle into the config and cache directories",
+		Short:   "Extract a .llmcpkg bundle into the config and cache directories",
 		Args:    cobra.ExactArgs(1),
-		Example: `  llamaconfig import gemma-4-e2b.llamapkg
-  llamaconfig import backup.llamapkg --overwrite`,
+		Example: `  llmconfig import gemma-4-e2b.llmcpkg
+  llmconfig import backup.llmcpkg --overwrite`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer

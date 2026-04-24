@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/kiliczsh/llamaconfig/internal/state"
+	"github.com/kiliczsh/llmconfig/internal/state"
 )
 
 // pickRunningModel returns a model name to operate on.

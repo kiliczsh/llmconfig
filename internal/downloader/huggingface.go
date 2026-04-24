@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kiliczsh/llamaconfig/internal/httpx"
+	"github.com/kiliczsh/llmconfig/internal/httpx"
 )
 
 const hfBaseURL = "https://huggingface.co"

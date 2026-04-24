@@ -1,14 +1,14 @@
 version: 2
 
-project_name: llamaconfig
+project_name: llmconfig
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - id: llamaconfig
-    binary: llamaconfig
+  - id: llmconfig
+    binary: llmconfig
     env:
       - CGO_ENABLED=0
     goos:
@@ -53,7 +53,7 @@ builds:
 
 archives:
   - ids:
-      - llamaconfig
+      - llmconfig
       - llmc
     formats:
       - tar.gz
@@ -88,7 +88,7 @@ changelog:
 release:
   github:
     owner: kiliczsh
-    name: llamaconfig
+    name: llmconfig
   draft: false
   prerelease: auto
   name_template: "v{{.Version}}"

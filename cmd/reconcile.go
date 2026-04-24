@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/kiliczsh/llamaconfig/internal/output"
-	"github.com/kiliczsh/llamaconfig/internal/runner"
-	"github.com/kiliczsh/llamaconfig/internal/state"
+	"github.com/kiliczsh/llmconfig/internal/output"
+	"github.com/kiliczsh/llmconfig/internal/runner"
+	"github.com/kiliczsh/llmconfig/internal/state"
 )
 
 // reconcileLiveness loads the state file, marks any "running" entry whose

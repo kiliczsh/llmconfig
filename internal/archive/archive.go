@@ -1,4 +1,4 @@
-// Package archive reads and writes llamaconfig model bundles (.llamapkg).
+// Package archive reads and writes llmconfig model bundles (.llmcpkg).
 //
 // A bundle is an uncompressed POSIX tar containing:
 //
@@ -8,7 +8,7 @@
 //
 // Compression is intentionally omitted: GGUF files are already quantised,
 // so gzip spends minutes of CPU for <1% savings on large models. `tar -xf
-// foo.llamapkg` works on any POSIX system without llamaconfig.
+// foo.llmcpkg` works on any POSIX system without llmconfig.
 package archive
 
 import (

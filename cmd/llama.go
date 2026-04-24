@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
+	"github.com/kiliczsh/llmconfig/pkg/llamacpp"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +41,7 @@ func newLlamaCmd() *cobra.Command {
 
 			path, err := llamacpp.FindServer()
 			if err != nil {
-				p.Warn("llama-server not found — run: llamaconfig install llama")
+				p.Warn("llama-server not found — run: llmconfig install llama")
 				return nil
 			}
 			ver, err := llamacpp.Version(path)

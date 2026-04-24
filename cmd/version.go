@@ -41,7 +41,7 @@ func newVersionCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: "Print llamaconfig version",
+		Short: "Print llmconfig version",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, d := commit, date
 			if c == "" || d == "" {
@@ -59,7 +59,7 @@ func newVersionCmd() *cobra.Command {
 			if len(c) > 12 {
 				c = c[:12]
 			}
-			fmt.Printf("llamaconfig %s", version)
+			fmt.Printf("llmconfig %s", version)
 			if c != "" {
 				fmt.Printf(" (%s", c)
 				if d != "" {
@@ -81,8 +81,8 @@ func newVersionCmd() *cobra.Command {
 					fmt.Printf("  you are up to date (%s)\n", latest)
 				} else {
 					fmt.Printf("  new version available: %s\n", latest)
-					fmt.Printf("  update: irm https://raw.githubusercontent.com/kiliczsh/llamaconfig/main/install.ps1 | iex\n")
-					fmt.Printf("     or:  curl -fsSL https://raw.githubusercontent.com/kiliczsh/llamaconfig/main/install.sh | bash\n")
+					fmt.Printf("  update: irm https://raw.githubusercontent.com/kiliczsh/llmconfig/main/install.ps1 | iex\n")
+					fmt.Printf("     or:  curl -fsSL https://raw.githubusercontent.com/kiliczsh/llmconfig/main/install.sh | bash\n")
 				}
 			}
 			return nil
@@ -95,7 +95,7 @@ func newVersionCmd() *cobra.Command {
 
 func fetchLatestVersion() (string, error) {
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get("https://api.github.com/repos/kiliczsh/llamaconfig/releases/latest")
+	resp, err := client.Get("https://api.github.com/repos/kiliczsh/llmconfig/releases/latest")
 	if err != nil {
 		return "", err
 	}

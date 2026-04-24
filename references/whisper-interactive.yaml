@@ -1,5 +1,5 @@
-# llamaconfig reference — whisper backend, interactive/cli mode (whisper-cli)
-# Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
+# llmconfig reference — whisper backend, interactive/cli mode (whisper-cli)
+# Copy to ~/.llmconfig/configs/<name>.yaml and fill in required fields.
 # Required: version, name, model.source + repo/file/path/url
 
 version: 1

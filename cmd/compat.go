@@ -7,10 +7,10 @@ import (
 	"sort"
 
 	"github.com/dustin/go-humanize"
-	"github.com/kiliczsh/llamaconfig/internal/bench"
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/dirs"
-	"github.com/kiliczsh/llamaconfig/internal/hardware"
+	"github.com/kiliczsh/llmconfig/internal/bench"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
+	"github.com/kiliczsh/llmconfig/internal/hardware"
 	"github.com/spf13/cobra"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/kiliczsh/llamaconfig/internal/config"
-	"github.com/kiliczsh/llamaconfig/internal/state"
+	"github.com/kiliczsh/llmconfig/internal/config"
+	"github.com/kiliczsh/llmconfig/internal/state"
 )
 
 // Runner manages the llama-server process lifecycle.
