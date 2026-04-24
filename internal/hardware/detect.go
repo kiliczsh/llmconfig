@@ -101,8 +101,12 @@ func detectWindows(r *DetectionResult) {
 		return
 	}
 
-	// Check via wmic
-	out, err = exec.Command("wmic", "path", "win32_VideoController", "get", "name").Output()
+	out, err = exec.Command(
+		"powershell",
+		"-NoProfile",
+		"-Command",
+		"Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name",
+	).Output()
 	if err == nil {
 		s := strings.ToLower(string(out))
 		if strings.Contains(s, "nvidia") {

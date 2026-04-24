@@ -26,28 +26,33 @@ func GetStats(pid int) (*ProcessStats, error) {
 }
 
 func getStatsWindows(pid int) (*ProcessStats, error) {
+	stats := &ProcessStats{PID: pid}
 	out, err := exec.Command(
-		"wmic", "process", "where", fmt.Sprintf("ProcessId=%d", pid),
-		"get", "WorkingSetSize,PercentProcessorTime", "/format:csv",
+		"powershell",
+		"-NoProfile",
+		"-Command",
+		fmt.Sprintf(`$p=Get-CimInstance Win32_Process -Filter 'ProcessId=%d'; $c=Get-CimInstance Win32_PerfFormattedData_PerfProc_Process -Filter 'IDProcess=%d'; Write-Output (""+($c.PercentProcessorTime)+','+($p.WorkingSetSize))`, pid, pid),
 	).Output()
 	if err != nil {
-		return nil, fmt.Errorf("stats: wmic: %w", err)
+		return stats, nil
 	}
 
-	stats := &ProcessStats{PID: pid}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "Node") {
-			continue
-		}
-		fields := strings.Split(line, ",")
-		if len(fields) >= 3 {
-			if mem, err := strconv.ParseFloat(strings.TrimSpace(fields[2]), 64); err == nil {
-				stats.MemoryMB = mem / 1024 / 1024
-			}
-		}
+	fields := strings.Split(strings.TrimSpace(string(out)), ",")
+	if len(fields) != 2 {
+		return stats, nil
 	}
+
+	cpu, err := strconv.ParseFloat(strings.TrimSpace(fields[0]), 64)
+	if err != nil {
+		return stats, nil
+	}
+	memBytes, err := strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
+	if err != nil {
+		return stats, nil
+	}
+
+	stats.CPUPercent = cpu
+	stats.MemoryMB = memBytes / 1024 / 1024
 	return stats, nil
 }
 

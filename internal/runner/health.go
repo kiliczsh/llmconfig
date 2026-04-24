@@ -53,7 +53,7 @@ func WaitHealthy(ctx context.Context, host string, port int, backend string) err
 			resp, err := client.Get(url)
 			if err == nil {
 				resp.Body.Close()
-				if resp.StatusCode < 500 {
+				if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 					return nil
 				}
 			}
