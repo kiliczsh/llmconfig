@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/kiliczsh/llamaconfig/internal/bench"
@@ -16,6 +15,7 @@ import (
 	"github.com/kiliczsh/llamaconfig/internal/dirs"
 	"github.com/kiliczsh/llamaconfig/internal/hardware"
 	"github.com/kiliczsh/llamaconfig/internal/runner"
+	"github.com/kiliczsh/llamaconfig/pkg/llamacpp"
 	"github.com/spf13/cobra"
 )
 
@@ -45,18 +45,28 @@ func newBenchCmd() *cobra.Command {
 				return err
 			}
 
+			// bench runs llama-cli with timing-parse output; sd/whisper
+			// don't speak that protocol, so reject them up front.
+			if cfg.Backend != "" && cfg.Backend != "llama" {
+				return fmt.Errorf("bench only supports the llama backend (config backend: %q)", cfg.Backend)
+			}
+
+			// Resolve server binary (which is what appCtx.LlamaBin points at
+			// when found) and derive the matching CLI. Fall back to
+			// exec.LookPath so a PATH-installed 'llama-server' works even if
+			// llamaconfig's managed bin dir doesn't have it.
+			serverBin, err := llamacpp.FindServer()
+			if err != nil {
+				if _, lookErr := exec.LookPath("llama-server"); lookErr != nil {
+					return fmt.Errorf("llama-server not found — run: llamaconfig install llama")
+				}
+				serverBin = "llama-server"
+			}
+
 			hw := hardware.Detect()
-			rc, err := config.Resolve(cfg, hw, appCtx.LlamaBin)
+			rc, err := config.Resolve(cfg, hw, serverBin)
 			if err != nil {
 				return err
-			}
-
-			if _, err := os.Stat(appCtx.LlamaBin); err != nil {
-				return fmt.Errorf("llama-server binary not found at %q — run: llamaconfig llama --install", appCtx.LlamaBin)
-			}
-
-			if pids := runningLlamaPIDs(); len(pids) > 0 {
-				return fmt.Errorf("llama-cli/llama-server already running (PIDs: %v) — stop them first with: llamaconfig down", pids)
 			}
 
 			if _, statErr := os.Stat(rc.ModelPath); os.IsNotExist(statErr) {
@@ -70,7 +80,7 @@ func newBenchCmd() *cobra.Command {
 				}
 			}
 
-			cliBin := runner.DeriveCLIBinary(appCtx.LlamaBin, "llama")
+			cliBin := runner.DeriveCLIBinary(serverBin, "llama")
 			baseArgs := buildBenchArgs(rc, flagTokens)
 
 			p.Info("benchmarking %s (%d runs)...", name, flagRuns)
@@ -156,21 +166,6 @@ func runBenchOnce(cliBin string, args []string) (promptTPS, genTPS float64, err 
 	_ = cmd.Process.Kill()
 	_ = cmd.Wait()
 	return promptTPS, genTPS, nil
-}
-
-func runningLlamaPIDs() []string {
-	out, err := exec.Command("pgrep", "-f", "llama-cli").Output()
-	if err != nil {
-		return nil
-	}
-	var pids []string
-	scanner := bufio.NewScanner(strings.NewReader(string(out)))
-	for scanner.Scan() {
-		if pid := strings.TrimSpace(scanner.Text()); pid != "" {
-			pids = append(pids, pid)
-		}
-	}
-	return pids
 }
 
 func parseTimingLine(line string) (promptTPS, genTPS float64, ok bool) {
