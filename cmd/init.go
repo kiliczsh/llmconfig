@@ -34,6 +34,28 @@ func newInitCmd() *cobra.Command {
 				return initFromTemplate(flagTemplate, name, flagOutput, appCtx.ConfigDir, p)
 			}
 
+			// Ask whether to start from a template or configure manually.
+			mode := "template"
+			if err := runForm(huh.NewForm(huh.NewGroup(
+				huh.NewSelect[string]().
+					Title("How do you want to create the config?").
+					Options(
+						huh.NewOption("Start from a template  (recommended)", "template"),
+						huh.NewOption("Configure manually", "manual"),
+					).
+					Value(&mode),
+			))); err != nil {
+				return err
+			}
+
+			if mode == "template" {
+				tmplName, err := pickTemplateName()
+				if err != nil {
+					return err
+				}
+				return initFromTemplate(tmplName, name, flagOutput, appCtx.ConfigDir, p)
+			}
+
 			token := resolveToken("")
 
 			backend := "llama"
@@ -66,6 +88,30 @@ func newInitCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&flagOutput, "output", "o", "", "write config to a specific path")
 	_ = cmd.RegisterFlagCompletionFunc("template", completeTemplateNames)
 	return cmd
+}
+
+func pickTemplateName() (string, error) {
+	entries, err := templates.FS.ReadDir(".")
+	if err != nil {
+		return "", err
+	}
+	var opts []huh.Option[string]
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".yaml") {
+			name := strings.TrimSuffix(e.Name(), ".yaml")
+			opts = append(opts, huh.NewOption(name, name))
+		}
+	}
+	var selected string
+	if err := runForm(huh.NewForm(huh.NewGroup(
+		huh.NewSelect[string]().
+			Title("Select a template").
+			Options(opts...).
+			Value(&selected),
+	))); err != nil {
+		return "", err
+	}
+	return selected, nil
 }
 
 func completeTemplateNames(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
