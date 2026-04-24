@@ -141,6 +141,6 @@ func validateExistingPath(errs *[]string, yamlPath, path string) {
 			*errs = append(*errs, fmt.Sprintf("%s %q does not exist", yamlPath, path))
 			return
 		}
-		*errs = append(*errs, fmt.Sprintf("%s %q does not exist", yamlPath, path))
+		*errs = append(*errs, fmt.Sprintf("%s %q: %v", yamlPath, path, err))
 	}
 }

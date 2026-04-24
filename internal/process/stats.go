@@ -26,7 +26,6 @@ func GetStats(pid int) (*ProcessStats, error) {
 }
 
 func getStatsWindows(pid int) (*ProcessStats, error) {
-	stats := &ProcessStats{PID: pid}
 	out, err := exec.Command(
 		"powershell",
 		"-NoProfile",
@@ -34,25 +33,23 @@ func getStatsWindows(pid int) (*ProcessStats, error) {
 		fmt.Sprintf(`$p=Get-CimInstance Win32_Process -Filter 'ProcessId=%d'; $c=Get-CimInstance Win32_PerfFormattedData_PerfProc_Process -Filter 'IDProcess=%d'; Write-Output (""+($c.PercentProcessorTime)+','+($p.WorkingSetSize))`, pid, pid),
 	).Output()
 	if err != nil {
-		return stats, nil
+		return nil, fmt.Errorf("stats: powershell: %w", err)
 	}
 
+	// Parse failures (empty output, missing process) fall through to zero
+	// stats with no error — same contract as the Unix branch when ps returns
+	// fewer columns than expected.
+	stats := &ProcessStats{PID: pid}
 	fields := strings.Split(strings.TrimSpace(string(out)), ",")
 	if len(fields) != 2 {
 		return stats, nil
 	}
-
-	cpu, err := strconv.ParseFloat(strings.TrimSpace(fields[0]), 64)
-	if err != nil {
-		return stats, nil
+	if cpu, err := strconv.ParseFloat(strings.TrimSpace(fields[0]), 64); err == nil {
+		stats.CPUPercent = cpu
 	}
-	memBytes, err := strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
-	if err != nil {
-		return stats, nil
+	if memBytes, err := strconv.ParseFloat(strings.TrimSpace(fields[1]), 64); err == nil {
+		stats.MemoryMB = memBytes / 1024 / 1024
 	}
-
-	stats.CPUPercent = cpu
-	stats.MemoryMB = memBytes / 1024 / 1024
 	return stats, nil
 }
 

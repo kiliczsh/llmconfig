@@ -75,7 +75,6 @@ func newInstallLlamaCmd() *cobra.Command {
 			return runBinInstallWithProgress(asset.Name, asset.Size, func(onProgress func(int64, int64)) error {
 				return llamacpp.Install(asset, onProgress)
 			}, func() {
-				p.Info("checksum verification: skipped (no published digest)")
 				p.Success("llama.cpp installed to %s", llamacpp.BinDir())
 				p.Success("run: llamaconfig llama --version")
 			})
@@ -134,7 +133,6 @@ func newInstallSdCmd() *cobra.Command {
 			return runBinInstallWithProgress(asset.Name, asset.Size, func(onProgress func(int64, int64)) error {
 				return stablediffusioncpp.Install(asset, onProgress)
 			}, func() {
-				p.Info("checksum verification: skipped (no published digest)")
 				p.Success("stable-diffusion.cpp installed to %s", stablediffusioncpp.BinDir())
 				p.Success("run: llamaconfig sd --version")
 			})
@@ -193,7 +191,6 @@ func newInstallWhisperCmd() *cobra.Command {
 			return runBinInstallWithProgress(asset.Name, asset.Size, func(onProgress func(int64, int64)) error {
 				return whispercpp.Install(asset, onProgress)
 			}, func() {
-				p.Info("checksum verification: skipped (no published digest)")
 				p.Success("whisper.cpp installed to %s", whispercpp.BinDir())
 				p.Success("run: llamaconfig whisper --version")
 			})
