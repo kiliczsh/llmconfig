@@ -6,11 +6,19 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/huh"
 	"github.com/kiliczsh/llmconfig/internal/dirs"
 	"github.com/kiliczsh/llmconfig/internal/state"
 	"github.com/spf13/cobra"
 )
+
+// escKeyMap returns a huh KeyMap that maps both ctrl+c and esc to quit.
+func escKeyMap() *huh.KeyMap {
+	km := huh.NewDefaultKeyMap()
+	km.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc"))
+	return km
+}
 
 // ErrAborted is returned when the user presses ESC or Ctrl+C to cancel a
 // picker or confirmation prompt. main.go treats this as a clean exit (no
@@ -64,7 +72,7 @@ func pickRunningModel(name string, sf *state.StateFile) (string, error) {
 			Title("Select a running model").
 			Options(opts...).
 			Value(&selected),
-	)).Run()
+	)).WithKeyMap(escKeyMap()).Run()
 	if err := abortOnEsc(err); err != nil {
 		return "", err
 	}
@@ -110,7 +118,7 @@ func pickConfig(name, configDir string) (string, error) {
 			Title("Select a model config").
 			Options(opts...).
 			Value(&selected),
-	)).Run()
+	)).WithKeyMap(escKeyMap()).Run()
 	if err := abortOnEsc(err); err != nil {
 		return "", err
 	}

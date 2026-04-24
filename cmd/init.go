@@ -26,16 +26,16 @@ func (t templateDef) full() bool {
 
 var builtinTemplates = map[string]templateDef{
 	// llama — unsloth Dynamic 2.0 GGUFs, optimised for 16GB VRAM (RTX 5070 Ti / 4080 / 4090)
-	"gpt-oss":       {backend: "llama", repo: "unsloth/gpt-oss-20b-GGUF"},
-	"qwen36":        {backend: "llama", repo: "unsloth/Qwen3.6-27B-GGUF"},
-	"qwen3-vl":      {backend: "llama", repo: "unsloth/Qwen3-VL-8B-Instruct-GGUF"},
-	"qwen3-coder":   {backend: "llama", repo: "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"},
-	"gemma":         {backend: "llama", repo: "unsloth/gemma-4-E4B-it-GGUF"},
-	"mistral-small": {backend: "llama", repo: "unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF"},
-	"phi4-reasoning": {backend: "llama", repo: "unsloth/Phi-4-reasoning-plus-GGUF"},
-	"granite4":      {backend: "llama", repo: "unsloth/granite-4.0-h-tiny-GGUF"},
-	"deepseek":      {backend: "llama", repo: "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF"},
-	"llama3":        {backend: "llama", repo: "unsloth/Llama-3.1-8B-Instruct-GGUF"},
+	"gpt-oss":         {backend: "llama", repo: "unsloth/gpt-oss-20b-GGUF"},
+	"qwen36":          {backend: "llama", repo: "unsloth/Qwen3.6-27B-GGUF"},
+	"qwen3-vl":        {backend: "llama", repo: "unsloth/Qwen3-VL-8B-Instruct-GGUF"},
+	"qwen3-coder":     {backend: "llama", repo: "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"},
+	"gemma":           {backend: "llama", repo: "unsloth/gemma-4-E4B-it-GGUF"},
+	"mistral-small":   {backend: "llama", repo: "unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF"},
+	"phi4-reasoning":  {backend: "llama", repo: "unsloth/Phi-4-reasoning-plus-GGUF"},
+	"granite4":        {backend: "llama", repo: "unsloth/granite-4.0-h-tiny-GGUF"},
+	"deepseek":        {backend: "llama", repo: "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF"},
+	"llama3":          {backend: "llama", repo: "unsloth/Llama-3.1-8B-Instruct-GGUF"},
 	// legacy llama — kept for backwards compatibility
 	"codellama": {backend: "llama", repo: "TheBloke/CodeLlama-13B-Instruct-GGUF"},
 	"mistral":   {backend: "llama", repo: "TheBloke/Mistral-7B-Instruct-v0.2-GGUF"},
@@ -86,7 +86,7 @@ func newInitCmd() *cobra.Command {
 			backend := tmpl.backend
 			if backend == "" {
 				backend = "llama"
-				if err := huh.NewForm(huh.NewGroup(
+				if err := abortOnEsc(huh.NewForm(huh.NewGroup(
 					huh.NewSelect[string]().
 						Title("Backend").
 						Options(
@@ -95,7 +95,7 @@ func newInitCmd() *cobra.Command {
 							huh.NewOption("whisper — speech recognition (whisper.cpp)", "whisper"),
 						).
 						Value(&backend),
-				)).Run(); err != nil {
+				)).WithKeyMap(escKeyMap()).Run()); err != nil {
 					return err
 				}
 			}
@@ -184,7 +184,7 @@ func initLlama(name string, tmpl templateDef, flagFrom, flagOutput, configDir, t
 			Value(&systemPrompt),
 	)
 
-	if err := huh.NewForm(huh.NewGroup(fields...)).Run(); err != nil {
+	if err := abortOnEsc(huh.NewForm(huh.NewGroup(fields...)).WithKeyMap(escKeyMap()).Run()); err != nil {
 		return err
 	}
 
@@ -210,9 +210,9 @@ func initLlama(name string, tmpl templateDef, flagFrom, flagOutput, configDir, t
 				}
 			}
 			if len(opts) > 0 {
-				if err := huh.NewForm(huh.NewGroup(
+				if err := abortOnEsc(huh.NewForm(huh.NewGroup(
 					huh.NewSelect[string]().Title("Select GGUF file").Options(opts...).Value(&file),
-				)).Run(); err != nil {
+				)).WithKeyMap(escKeyMap()).Run()); err != nil {
 					return err
 				}
 			}
@@ -322,7 +322,7 @@ func initSD(name, flagFrom, flagTemplate, flagOutput, configDir string, p interf
 			Value(&samplingMethod),
 	)
 
-	if err := huh.NewForm(huh.NewGroup(fields...)).Run(); err != nil {
+	if err := abortOnEsc(huh.NewForm(huh.NewGroup(fields...)).WithKeyMap(escKeyMap()).Run()); err != nil {
 		return err
 	}
 
@@ -420,7 +420,7 @@ func initWhisper(name, flagFrom, flagTemplate, flagOutput, configDir string, p i
 			Value(&task),
 	)
 
-	if err := huh.NewForm(huh.NewGroup(fields...)).Run(); err != nil {
+	if err := abortOnEsc(huh.NewForm(huh.NewGroup(fields...)).WithKeyMap(escKeyMap()).Run()); err != nil {
 		return err
 	}
 
@@ -455,11 +455,11 @@ func confirmOverwrite(outPath string, p interface{ Info(string, ...any) }) (canc
 		return false, nil
 	}
 	var overwrite bool
-	if err := huh.NewForm(huh.NewGroup(
+	if err := abortOnEsc(huh.NewForm(huh.NewGroup(
 		huh.NewConfirm().
 			Title(fmt.Sprintf("Config %q already exists. Overwrite?", outPath)).
 			Value(&overwrite),
-	)).Run(); err != nil {
+	)).WithKeyMap(escKeyMap()).Run()); err != nil {
 		return false, err
 	}
 	if !overwrite {

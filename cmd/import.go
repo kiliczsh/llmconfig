@@ -49,7 +49,7 @@ func newImportCmd() *cobra.Command {
 					huh.NewConfirm().
 						Title(fmt.Sprintf("Import %d entry(ies)?", len(manifest.Entries))).
 						Value(&confirm),
-				)).Run()); err != nil {
+				)).WithKeyMap(escKeyMap()).Run()); err != nil {
 					return err
 				}
 				if !confirm {

@@ -78,7 +78,7 @@ unpack it manually ("tar -xf foo.llmcpkg").`,
 						huh.NewInput().
 							Title("Output path").
 							Value(&outPath),
-					)).Run()); err != nil {
+					)).WithKeyMap(escKeyMap()).Run()); err != nil {
 						return err
 					}
 				}
@@ -172,7 +172,7 @@ func pickModelsToArchive(available []string, configDir string) ([]string, error)
 			Options(opts...).
 			Value(&selected).
 			Filterable(true),
-	)).Run())
+	)).WithKeyMap(escKeyMap()).Run())
 	if err != nil {
 		return nil, err
 	}

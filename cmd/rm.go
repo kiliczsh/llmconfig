@@ -72,7 +72,7 @@ func newRmCmd() *cobra.Command {
 							Title(msg).
 							Value(&confirm),
 					),
-				)
+				).WithKeyMap(escKeyMap())
 				if err := abortOnEsc(form.Run()); err != nil {
 					return err
 				}
