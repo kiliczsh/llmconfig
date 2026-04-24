@@ -132,7 +132,10 @@ func newUpCmd() *cobra.Command {
 			if rc.ModelPath != "" {
 				if _, statErr := os.Stat(rc.ModelPath); os.IsNotExist(statErr) {
 					if flagNoDownload {
-						return fmt.Errorf("model file not found at %s (--no-download is set)", rc.ModelPath)
+						if cfg.Model.Source == "huggingface" && cfg.Model.Repo != "" {
+							return fmt.Errorf("model file not found at %q (--no-download is set) — run: llamaconfig pull %s", rc.ModelPath, cfg.Model.Repo)
+						}
+						return fmt.Errorf("model file not found at %q (--no-download is set) — check: download the model or remove --no-download", rc.ModelPath)
 					}
 					if err := downloadModel(cmd.Context(), cfg, rc, p); err != nil {
 						return err

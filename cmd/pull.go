@@ -40,7 +40,7 @@ func newPullCmd() *cobra.Command {
 			// Resolve filename
 			file := flagFile
 			if file == "" && flagQuant == "" {
-				return fmt.Errorf("provide --file <filename> or --quant <Q4_K_M|Q5_K_M|...>")
+				return fmt.Errorf("download target not specified — check: pass --file <filename> or --quant <Q4_K_M|Q5_K_M|...>")
 			}
 			if file == "" {
 				p.Info("searching %s for %s...", repo, flagQuant)

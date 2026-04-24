@@ -24,7 +24,7 @@ func newAddCmd() *cobra.Command {
 			p := appCtx.Printer
 
 			if flagPath == "" {
-				return fmt.Errorf("--path is required")
+				return fmt.Errorf("model path not provided — check: pass --path <gguf-file>")
 			}
 
 			absPath, err := filepath.Abs(flagPath)
@@ -33,7 +33,7 @@ func newAddCmd() *cobra.Command {
 			}
 
 			if _, err := os.Stat(absPath); err != nil {
-				return fmt.Errorf("add: file not found: %s", absPath)
+				return fmt.Errorf("model file not found at %q — check: verify --path points to an existing GGUF file", absPath)
 			}
 
 			modelPath := absPath
@@ -48,7 +48,7 @@ func newAddCmd() *cobra.Command {
 
 			configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
 			if _, err := os.Stat(configPath); err == nil {
-				return fmt.Errorf("config %q already exists at %s", name, configPath)
+				return fmt.Errorf("config %q already exists at %q — check: choose a different name or run: llamaconfig rm %s", name, configPath, name)
 			}
 
 			cfg := &config.Config{
