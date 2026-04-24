@@ -74,11 +74,11 @@ unpack it manually ("tar -xf foo.llmcpkg").`,
 			if outPath == "" {
 				outPath = defaultArchivePath(selected)
 				if len(args) == 0 && !flagAll {
-					if err := abortOnEsc(huh.NewForm(huh.NewGroup(
+					if err := runForm(huh.NewForm(huh.NewGroup(
 						huh.NewInput().
 							Title("Output path").
 							Value(&outPath),
-					)).WithKeyMap(escKeyMap()).Run()); err != nil {
+					))); err != nil {
 						return err
 					}
 				}
@@ -165,14 +165,14 @@ func pickModelsToArchive(available []string, configDir string) ([]string, error)
 	}
 
 	var selected []string
-	err := abortOnEsc(huh.NewForm(huh.NewGroup(
+	err := runForm(huh.NewForm(huh.NewGroup(
 		huh.NewMultiSelect[string]().
 			Title("Select models to archive").
 			Description("Space to toggle, enter to confirm").
 			Options(opts...).
 			Value(&selected).
 			Filterable(true),
-	)).WithKeyMap(escKeyMap()).Run())
+	)))
 	if err != nil {
 		return nil, err
 	}

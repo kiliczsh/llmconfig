@@ -37,6 +37,13 @@ func abortOnEsc(err error) error {
 	return err
 }
 
+// runForm runs a huh form with ESC bound to quit and converts user-abort
+// into ErrAborted. All interactive forms should use this instead of
+// form.Run() directly.
+func runForm(form *huh.Form) error {
+	return abortOnEsc(form.WithKeyMap(escKeyMap()).Run())
+}
+
 // pickRunningModel returns a model name to operate on.
 // If name is non-empty it is returned as-is.
 // If there is exactly one running model it is returned automatically.
@@ -67,13 +74,12 @@ func pickRunningModel(name string, sf *state.StateFile) (string, error) {
 		opts[i] = huh.NewOption(fmt.Sprintf("%s  (port %d, PID %d)", n, ms.Port, ms.PID), n)
 	}
 
-	err := huh.NewForm(huh.NewGroup(
+	if err := runForm(huh.NewForm(huh.NewGroup(
 		huh.NewSelect[string]().
 			Title("Select a running model").
 			Options(opts...).
 			Value(&selected),
-	)).WithKeyMap(escKeyMap()).Run()
-	if err := abortOnEsc(err); err != nil {
+	))); err != nil {
 		return "", err
 	}
 	return selected, nil
@@ -113,13 +119,12 @@ func pickConfig(name, configDir string) (string, error) {
 		opts[i] = huh.NewOption(n, n)
 	}
 
-	err = huh.NewForm(huh.NewGroup(
+	if err := runForm(huh.NewForm(huh.NewGroup(
 		huh.NewSelect[string]().
 			Title("Select a model config").
 			Options(opts...).
 			Value(&selected),
-	)).WithKeyMap(escKeyMap()).Run()
-	if err := abortOnEsc(err); err != nil {
+	))); err != nil {
 		return "", err
 	}
 	return selected, nil

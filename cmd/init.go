@@ -86,7 +86,7 @@ func newInitCmd() *cobra.Command {
 			backend := tmpl.backend
 			if backend == "" {
 				backend = "llama"
-				if err := abortOnEsc(huh.NewForm(huh.NewGroup(
+				if err := runForm(huh.NewForm(huh.NewGroup(
 					huh.NewSelect[string]().
 						Title("Backend").
 						Options(
@@ -95,7 +95,7 @@ func newInitCmd() *cobra.Command {
 							huh.NewOption("whisper — speech recognition (whisper.cpp)", "whisper"),
 						).
 						Value(&backend),
-				)).WithKeyMap(escKeyMap()).Run()); err != nil {
+				))); err != nil {
 					return err
 				}
 			}
@@ -184,7 +184,7 @@ func initLlama(name string, tmpl templateDef, flagFrom, flagOutput, configDir, t
 			Value(&systemPrompt),
 	)
 
-	if err := abortOnEsc(huh.NewForm(huh.NewGroup(fields...)).WithKeyMap(escKeyMap()).Run()); err != nil {
+	if err := runForm(huh.NewForm(huh.NewGroup(fields...))); err != nil {
 		return err
 	}
 
@@ -210,9 +210,9 @@ func initLlama(name string, tmpl templateDef, flagFrom, flagOutput, configDir, t
 				}
 			}
 			if len(opts) > 0 {
-				if err := abortOnEsc(huh.NewForm(huh.NewGroup(
+				if err := runForm(huh.NewForm(huh.NewGroup(
 					huh.NewSelect[string]().Title("Select GGUF file").Options(opts...).Value(&file),
-				)).WithKeyMap(escKeyMap()).Run()); err != nil {
+				))); err != nil {
 					return err
 				}
 			}
@@ -322,7 +322,7 @@ func initSD(name, flagFrom, flagTemplate, flagOutput, configDir string, p interf
 			Value(&samplingMethod),
 	)
 
-	if err := abortOnEsc(huh.NewForm(huh.NewGroup(fields...)).WithKeyMap(escKeyMap()).Run()); err != nil {
+	if err := runForm(huh.NewForm(huh.NewGroup(fields...))); err != nil {
 		return err
 	}
 
@@ -420,7 +420,7 @@ func initWhisper(name, flagFrom, flagTemplate, flagOutput, configDir string, p i
 			Value(&task),
 	)
 
-	if err := abortOnEsc(huh.NewForm(huh.NewGroup(fields...)).WithKeyMap(escKeyMap()).Run()); err != nil {
+	if err := runForm(huh.NewForm(huh.NewGroup(fields...))); err != nil {
 		return err
 	}
 
@@ -455,11 +455,11 @@ func confirmOverwrite(outPath string, p interface{ Info(string, ...any) }) (canc
 		return false, nil
 	}
 	var overwrite bool
-	if err := abortOnEsc(huh.NewForm(huh.NewGroup(
+	if err := runForm(huh.NewForm(huh.NewGroup(
 		huh.NewConfirm().
 			Title(fmt.Sprintf("Config %q already exists. Overwrite?", outPath)).
 			Value(&overwrite),
-	)).WithKeyMap(escKeyMap()).Run()); err != nil {
+	))); err != nil {
 		return false, err
 	}
 	if !overwrite {

@@ -66,14 +66,11 @@ func newRmCmd() *cobra.Command {
 					msg = fmt.Sprintf("Remove model %q and its cached GGUF file?", name)
 				}
 				var confirm bool
-				form := huh.NewForm(
-					huh.NewGroup(
-						huh.NewConfirm().
-							Title(msg).
-							Value(&confirm),
-					),
-				).WithKeyMap(escKeyMap())
-				if err := abortOnEsc(form.Run()); err != nil {
+				if err := runForm(huh.NewForm(huh.NewGroup(
+					huh.NewConfirm().
+						Title(msg).
+						Value(&confirm),
+				))); err != nil {
 					return err
 				}
 				if !confirm {

@@ -154,12 +154,11 @@ func newFilesCleanCmd() *cobra.Command {
 			fmt.Printf("\n  Will free %s\n\n", humanize.Bytes(uint64(totalSize)))
 
 			var confirm bool
-			form := huh.NewForm(huh.NewGroup(
+			if err := runForm(huh.NewForm(huh.NewGroup(
 				huh.NewConfirm().
 					Title(fmt.Sprintf("Remove %d file(s)?", len(toRemove))).
 					Value(&confirm),
-			)).WithKeyMap(escKeyMap())
-			if err := abortOnEsc(form.Run()); err != nil {
+			))); err != nil {
 				return err
 			}
 			if !confirm {
