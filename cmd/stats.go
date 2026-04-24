@@ -18,9 +18,10 @@ func newStatsCmd() *cobra.Command {
 	var flagInterval string
 
 	cmd := &cobra.Command{
-		Use:   "stats [name]",
-		Short: "Show resource usage of running models",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "stats [name]",
+		Short:             "Show resource usage of running models",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeRunningModels,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 

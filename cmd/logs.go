@@ -16,9 +16,10 @@ func newLogsCmd() *cobra.Command {
 	var flagLines int
 
 	cmd := &cobra.Command{
-		Use:   "logs [name]",
-		Short: "Show model logs",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "logs [name]",
+		Short:             "Show model logs",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeRunningModels,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			sf, err := appCtx.StateStore.Load()

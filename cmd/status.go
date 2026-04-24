@@ -10,9 +10,10 @@ import (
 
 func newStatusCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "status [name]",
-		Short: "Show detailed status of a model",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "status [name]",
+		Short:             "Show detailed status of a model",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeRunningModels,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer

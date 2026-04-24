@@ -16,12 +16,20 @@ func newRmCmd() *cobra.Command {
 	var flagForce bool
 
 	cmd := &cobra.Command{
-		Use:   "rm <name>",
-		Short: "Remove a model config and optionally its cached file",
-		Args:  cobra.ExactArgs(1),
+		Use:               "rm [name]",
+		Short:             "Remove a model config and optionally its downloaded file",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeConfigNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
 			appCtx := appCtxFrom(cmd.Context())
+			var nameArg string
+			if len(args) > 0 {
+				nameArg = args[0]
+			}
+			name, err := pickConfig(nameArg, appCtx.ConfigDir)
+			if err != nil {
+				return err
+			}
 			p := appCtx.Printer
 			r := runner.New()
 

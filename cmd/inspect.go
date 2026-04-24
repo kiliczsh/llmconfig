@@ -13,9 +13,10 @@ func newInspectCmd() *cobra.Command {
 	var flagProfile string
 
 	cmd := &cobra.Command{
-		Use:   "inspect [name]",
-		Short: "Show the llama.cpp command that would be run",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "inspect [name]",
+		Short:             "Show the llama.cpp command that would be run",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeConfigNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			var arg string

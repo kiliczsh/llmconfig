@@ -28,13 +28,21 @@ func newBenchCmd() *cobra.Command {
 	var flagTokens int
 
 	cmd := &cobra.Command{
-		Use:   "bench <name>",
-		Short: "Benchmark a model's inference speed",
-		Args:  cobra.ExactArgs(1),
+		Use:               "bench [name]",
+		Short:             "Benchmark a model's inference speed",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeConfigNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer
-			name := args[0]
+			var nameArg string
+			if len(args) > 0 {
+				nameArg = args[0]
+			}
+			name, err := pickConfig(nameArg, appCtx.ConfigDir)
+			if err != nil {
+				return err
+			}
 
 			cfg, err := config.Load(name, appCtx.ConfigDir)
 			if err != nil {

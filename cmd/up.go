@@ -26,9 +26,10 @@ func newUpCmd() *cobra.Command {
 	var flagNoDownload bool
 
 	cmd := &cobra.Command{
-		Use:   "up [name]",
-		Short: "Start a model from its config file",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "up [name]",
+		Short:             "Start a model from its config file",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeConfigNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			var nameArg string
@@ -193,6 +194,9 @@ func newUpCmd() *cobra.Command {
 	cmd.Flags().StringVar(&flagProfile, "profile", "", "force hardware profile (apple_silicon | nvidia | amd | cpu)")
 	cmd.Flags().BoolVar(&flagDryRun, "dry-run", false, "print llama.cpp command without running")
 	cmd.Flags().BoolVar(&flagNoDownload, "no-download", false, "fail if model is not cached")
+	_ = cmd.RegisterFlagCompletionFunc("profile", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{"apple_silicon", "nvidia", "amd", "intel_gpu", "cpu"}, cobra.ShellCompDirectiveNoFileComp
+	})
 	return cmd
 }
 

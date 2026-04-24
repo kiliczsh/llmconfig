@@ -9,9 +9,10 @@ func newValidateCmd() *cobra.Command {
 	var flagFile string
 
 	cmd := &cobra.Command{
-		Use:   "validate [name]",
-		Short: "Validate a config file without running it",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "validate [name]",
+		Short:             "Validate a config file without running it",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeConfigNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer

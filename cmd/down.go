@@ -12,9 +12,10 @@ func newDownCmd() *cobra.Command {
 	var flagTimeout time.Duration
 
 	cmd := &cobra.Command{
-		Use:   "down [name]",
-		Short: "Stop a running model",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "down [name]",
+		Short:             "Stop a running model",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeRunningModels,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer

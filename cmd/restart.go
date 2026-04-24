@@ -15,9 +15,10 @@ func newRestartCmd() *cobra.Command {
 	var flagTimeout time.Duration
 
 	cmd := &cobra.Command{
-		Use:   "restart [name]",
-		Short: "Stop and start a model",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "restart [name]",
+		Short:             "Stop and start a model",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeRunningModels,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer

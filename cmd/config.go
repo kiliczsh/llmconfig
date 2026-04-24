@@ -88,12 +88,20 @@ func newConfigShowCmd() *cobra.Command {
 	var flagRaw bool
 
 	cmd := &cobra.Command{
-		Use:   "show <name>",
-		Short: "Print the resolved config (with defaults applied)",
-		Args:  cobra.ExactArgs(1),
+		Use:               "show [name]",
+		Short:             "Print the resolved config (with defaults applied)",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeConfigNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
 			appCtx := appCtxFrom(cmd.Context())
+			var nameArg string
+			if len(args) > 0 {
+				nameArg = args[0]
+			}
+			name, err := pickConfig(nameArg, appCtx.ConfigDir)
+			if err != nil {
+				return err
+			}
 			p := appCtx.Printer
 
 			cfg, err := config.Load(name, appCtx.ConfigDir)
@@ -120,12 +128,20 @@ func newConfigShowCmd() *cobra.Command {
 
 func newConfigEditCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "edit <name>",
-		Short: "Open config in $EDITOR",
-		Args:  cobra.ExactArgs(1),
+		Use:               "edit [name]",
+		Short:             "Open config in $EDITOR",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeConfigNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
 			appCtx := appCtxFrom(cmd.Context())
+			var nameArg string
+			if len(args) > 0 {
+				nameArg = args[0]
+			}
+			name, err := pickConfig(nameArg, appCtx.ConfigDir)
+			if err != nil {
+				return err
+			}
 
 			configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
 			if _, err := os.Stat(configPath); os.IsNotExist(err) {
@@ -162,12 +178,20 @@ func newConfigEditCmd() *cobra.Command {
 
 func newConfigPathCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "path <name>",
-		Short: "Print the config file path",
-		Args:  cobra.ExactArgs(1),
+		Use:               "path [name]",
+		Short:             "Print the config file path",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeConfigNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
 			appCtx := appCtxFrom(cmd.Context())
+			var nameArg string
+			if len(args) > 0 {
+				nameArg = args[0]
+			}
+			name, err := pickConfig(nameArg, appCtx.ConfigDir)
+			if err != nil {
+				return err
+			}
 			configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
 			fmt.Println(configPath)
 			return nil

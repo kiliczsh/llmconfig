@@ -3,11 +3,12 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/kiliczsh/llmconfig/internal/dirs"
 	"github.com/kiliczsh/llmconfig/internal/state"
+	"github.com/spf13/cobra"
 )
 
 // pickRunningModel returns a model name to operate on.
@@ -95,7 +96,43 @@ func pickConfig(name, configDir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	_ = filepath.Join // keep import
 	return selected, nil
+}
+
+// completeConfigNames is a cobra ValidArgsFunction that completes model config
+// names from the default config directory.
+func completeConfigNames(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	entries, err := os.ReadDir(dirs.ConfigDir())
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	var names []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".yaml") {
+			names = append(names, strings.TrimSuffix(e.Name(), ".yaml"))
+		}
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
+}
+
+// completeRunningModels is a cobra ValidArgsFunction that completes names of
+// currently running models from the state store.
+func completeRunningModels(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	sf, err := state.NewStore().Load()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	var names []string
+	for name, ms := range sf.Models {
+		if ms.Status == "running" {
+			names = append(names, name)
+		}
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
 }

@@ -92,6 +92,15 @@ func newPullCmd() *cobra.Command {
 	cmd.Flags().StringVar(&flagName, "name", "", "model name (default: derived from repo)")
 	cmd.Flags().BoolVar(&flagNoConfig, "no-config", false, "download only, do not create config file")
 	cmd.Flags().StringVar(&flagToken, "token", "", "HuggingFace token for private repos")
+	_ = cmd.RegisterFlagCompletionFunc("quant", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{
+			"Q2_K", "Q3_K_S", "Q3_K_M", "Q3_K_L",
+			"Q4_0", "Q4_K_S", "Q4_K_M",
+			"Q5_0", "Q5_K_S", "Q5_K_M",
+			"Q6_K", "Q8_0",
+			"IQ2_XXS", "IQ2_XS", "IQ3_XXS", "IQ4_XS", "IQ4_NL",
+		}, cobra.ShellCompDirectiveNoFileComp
+	})
 	return cmd
 }
 
