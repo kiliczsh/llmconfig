@@ -1,0 +1,32 @@
+version: 1
+name: flux-dev
+backend: sd
+mode: server
+model:
+  source: huggingface
+  repo: city96/FLUX.1-dev-gguf
+  file: flux1-dev-Q4_0.gguf         # 8.1GB — recommended for 16GB VRAM
+  # file: flux1-dev-Q8_0.gguf       # 16.0GB — full precision, very tight on 16GB VRAM
+  download:
+    resume: true
+    connections: 4
+server:
+  host: 127.0.0.1
+  port: 8091
+sd:
+  diffusion_model: "hf://city96/FLUX.1-dev-gguf/flux1-dev-Q4_0.gguf"
+  width: 1024
+  height: 1024
+  steps: 20
+  cfg_scale: 3.5        # dev uses guidance; schnell does not
+  sampling_method: euler
+  seed: -1
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0

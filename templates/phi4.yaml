@@ -1,0 +1,24 @@
+version: 1
+name: phi4
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: bartowski/phi-4-GGUF
+  file: phi-4-Q4_K_M.gguf           # 8.4GB — recommended for 16GB VRAM
+  # file: phi-4-Q6_K.gguf           # 11.1GB — higher quality
+  # file: phi-4-Q8_0.gguf           # 14.4GB — near full precision, tight on 16GB VRAM
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0
