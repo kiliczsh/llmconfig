@@ -54,14 +54,24 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 	headResp.Body.Close()
 
 	if headResp.StatusCode == 401 || headResp.StatusCode == 403 {
-		// 401/403 here usually means one of:
-		//   - no/invalid token — set HUGGINGFACE_TOKEN or `hf auth login`
+		// 401/403 usually means one of:
+		//   - no/invalid token — `hf auth login` or set HUGGINGFACE_TOKEN
 		//   - gated repo whose license you haven't accepted yet — visit
 		//     the repo on huggingface.co once and click "Agree and access"
-		return "", fmt.Errorf("downloader: %s returned HTTP %d — "+
-			"ensure you have a valid HF token (hf auth login or HUGGINGFACE_TOKEN) "+
-			"and have accepted the repo license at https://huggingface.co/ if it is gated",
-			rawURL, headResp.StatusCode)
+		// Point the user at the exact repo page when the URL shape
+		// allows us to derive it.
+		hint := "https://huggingface.co/"
+		if repoURL := hfRepoPageFromAsset(rawURL); repoURL != "" {
+			hint = repoURL
+		}
+		action := "ensure you have a valid HF token (hf auth login or HUGGINGFACE_TOKEN)"
+		if headResp.StatusCode == 403 {
+			action = "accept the repo license at " + hint + " (click \"Agree and access repository\"), then retry"
+		} else {
+			action += "; if the repo is gated, also accept the license at " + hint
+		}
+		return "", fmt.Errorf("downloader: %s returned HTTP %d — %s",
+			rawURL, headResp.StatusCode, action)
 	}
 	if headResp.StatusCode >= 400 {
 		return "", fmt.Errorf("downloader: HEAD %s: HTTP %d", rawURL, headResp.StatusCode)
@@ -177,4 +187,24 @@ func addAuthHeader(req *http.Request, token string) {
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
+}
+
+// hfRepoPageFromAsset extracts the repo landing page from an HF asset URL.
+// huggingface.co/<owner>/<repo>/resolve/<ref>/<path> → huggingface.co/<owner>/<repo>.
+// Returns "" for URLs that don't match the expected shape (non-HF hosts,
+// malformed, etc.) so the caller can fall back to a generic hint.
+func hfRepoPageFromAsset(rawURL string) string {
+	const host = "https://huggingface.co/"
+	rest, found := strings.CutPrefix(rawURL, host)
+	if !found {
+		return ""
+	}
+	idx := strings.Index(rest, "/resolve/")
+	if idx < 0 {
+		idx = strings.Index(rest, "/blob/")
+	}
+	if idx <= 0 {
+		return ""
+	}
+	return host + rest[:idx]
 }
