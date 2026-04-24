@@ -31,6 +31,7 @@ func newInstallCmd() *cobra.Command {
 func newInstallLlamaCmd() *cobra.Command {
 	var flagBackend string
 	var flagFile string
+	var flagVersion string
 
 	cmd := &cobra.Command{
 		Use:   "llama",
@@ -50,8 +51,16 @@ func newInstallLlamaCmd() *cobra.Command {
 			}
 
 			backend := resolvedBackend(flagBackend, true)
-			p.Info("fetching latest llama.cpp release info...")
-			rel, err := llamacpp.LatestRelease()
+			p.Info("fetching llama.cpp release info...")
+			var (
+				rel *llamacpp.GithubRelease
+				err error
+			)
+			if flagVersion != "" {
+				rel, err = llamacpp.ReleaseByTag(flagVersion)
+			} else {
+				rel, err = llamacpp.LatestRelease()
+			}
 			if err != nil {
 				return err
 			}
@@ -66,6 +75,7 @@ func newInstallLlamaCmd() *cobra.Command {
 			return runBinInstallWithProgress(asset.Name, asset.Size, func(onProgress func(int64, int64)) error {
 				return llamacpp.Install(asset, onProgress)
 			}, func() {
+				p.Info("checksum verification: skipped (no published digest)")
 				p.Success("llama.cpp installed to %s", llamacpp.BinDir())
 				p.Success("run: llamaconfig llama --version")
 			})
@@ -73,12 +83,14 @@ func newInstallLlamaCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&flagBackend, "backend", "", "backend: cuda | metal | cpu (default: auto-detect)")
 	cmd.Flags().StringVar(&flagFile, "file", "", "install from local zip instead of downloading")
+	cmd.Flags().StringVar(&flagVersion, "version", "", "install a specific release tag (default: latest)")
 	return cmd
 }
 
 func newInstallSdCmd() *cobra.Command {
 	var flagBackend string
 	var flagFile string
+	var flagVersion string
 
 	cmd := &cobra.Command{
 		Use:   "sd",
@@ -98,8 +110,16 @@ func newInstallSdCmd() *cobra.Command {
 			}
 
 			backend := resolvedBackend(flagBackend, false)
-			p.Info("fetching latest stable-diffusion.cpp release info...")
-			rel, err := stablediffusioncpp.LatestRelease()
+			p.Info("fetching stable-diffusion.cpp release info...")
+			var (
+				rel *stablediffusioncpp.GithubRelease
+				err error
+			)
+			if flagVersion != "" {
+				rel, err = stablediffusioncpp.ReleaseByTag(flagVersion)
+			} else {
+				rel, err = stablediffusioncpp.LatestRelease()
+			}
 			if err != nil {
 				return err
 			}
@@ -114,6 +134,7 @@ func newInstallSdCmd() *cobra.Command {
 			return runBinInstallWithProgress(asset.Name, asset.Size, func(onProgress func(int64, int64)) error {
 				return stablediffusioncpp.Install(asset, onProgress)
 			}, func() {
+				p.Info("checksum verification: skipped (no published digest)")
 				p.Success("stable-diffusion.cpp installed to %s", stablediffusioncpp.BinDir())
 				p.Success("run: llamaconfig sd --version")
 			})
@@ -121,12 +142,14 @@ func newInstallSdCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&flagBackend, "backend", "", "backend: cuda | metal | cpu (default: auto-detect)")
 	cmd.Flags().StringVar(&flagFile, "file", "", "install from local zip instead of downloading")
+	cmd.Flags().StringVar(&flagVersion, "version", "", "install a specific release tag (default: latest)")
 	return cmd
 }
 
 func newInstallWhisperCmd() *cobra.Command {
 	var flagBackend string
 	var flagFile string
+	var flagVersion string
 
 	cmd := &cobra.Command{
 		Use:   "whisper",
@@ -146,8 +169,16 @@ func newInstallWhisperCmd() *cobra.Command {
 			}
 
 			backend := resolvedBackend(flagBackend, false)
-			p.Info("fetching latest whisper.cpp release info...")
-			rel, err := whispercpp.LatestRelease()
+			p.Info("fetching whisper.cpp release info...")
+			var (
+				rel *whispercpp.GithubRelease
+				err error
+			)
+			if flagVersion != "" {
+				rel, err = whispercpp.ReleaseByTag(flagVersion)
+			} else {
+				rel, err = whispercpp.LatestRelease()
+			}
 			if err != nil {
 				return err
 			}
@@ -162,6 +193,7 @@ func newInstallWhisperCmd() *cobra.Command {
 			return runBinInstallWithProgress(asset.Name, asset.Size, func(onProgress func(int64, int64)) error {
 				return whispercpp.Install(asset, onProgress)
 			}, func() {
+				p.Info("checksum verification: skipped (no published digest)")
 				p.Success("whisper.cpp installed to %s", whispercpp.BinDir())
 				p.Success("run: llamaconfig whisper --version")
 			})
@@ -169,6 +201,7 @@ func newInstallWhisperCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&flagBackend, "backend", "", "backend: cuda | cpu (default: auto-detect)")
 	cmd.Flags().StringVar(&flagFile, "file", "", "install from local zip instead of downloading")
+	cmd.Flags().StringVar(&flagVersion, "version", "", "install a specific release tag (default: latest)")
 	return cmd
 }
 

@@ -20,9 +20,9 @@ func clearQuarantine(path string) {
 	}
 }
 
-const githubReleasesURL = "https://api.github.com/repos/ggml-org/whisper.cpp/releases/latest"
+const githubReleasesURL = "https://api.github.com/repos/ggml-org/whisper.cpp/releases"
 
-type githubRelease struct {
+type GithubRelease struct {
 	TagName string        `json:"tag_name"`
 	Assets  []GithubAsset `json:"assets"`
 }
@@ -34,8 +34,8 @@ type GithubAsset struct {
 }
 
 // LatestRelease fetches the latest whisper.cpp release metadata from GitHub.
-func LatestRelease() (*githubRelease, error) {
-	resp, err := httpx.API.Get(githubReleasesURL)
+func LatestRelease() (*GithubRelease, error) {
+	resp, err := httpx.API.Get(githubReleasesURL + "/latest")
 	if err != nil {
 		return nil, fmt.Errorf("install: fetch release info: %w", err)
 	}
@@ -45,7 +45,26 @@ func LatestRelease() (*githubRelease, error) {
 		return nil, fmt.Errorf("install: GitHub API returned HTTP %d", resp.StatusCode)
 	}
 
-	var rel githubRelease
+	var rel GithubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
+		return nil, fmt.Errorf("install: parse release: %w", err)
+	}
+	return &rel, nil
+}
+
+// ReleaseByTag fetches release metadata for a specific whisper.cpp tag from GitHub.
+func ReleaseByTag(tag string) (*GithubRelease, error) {
+	resp, err := httpx.API.Get(githubReleasesURL + "/tags/" + tag)
+	if err != nil {
+		return nil, fmt.Errorf("install: fetch release info: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("install: GitHub API returned HTTP %d", resp.StatusCode)
+	}
+
+	var rel GithubRelease
 	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
 		return nil, fmt.Errorf("install: parse release: %w", err)
 	}
@@ -55,7 +74,7 @@ func LatestRelease() (*githubRelease, error) {
 // PickAsset selects the best release asset for the current OS/arch/backend.
 // backend: "cuda", "cpu", "" (auto-detect)
 // Note: Linux and macOS do not have pre-built CLI binaries — returns an error.
-func PickAsset(rel *githubRelease, backend string) (*GithubAsset, error) {
+func PickAsset(rel *GithubRelease, backend string) (*GithubAsset, error) {
 	goos := runtime.GOOS
 
 	if goos != "windows" {
@@ -89,7 +108,7 @@ func PickAsset(rel *githubRelease, backend string) (*GithubAsset, error) {
 		goos, backend, listAssets(rel))
 }
 
-func listAssets(rel *githubRelease) string {
+func listAssets(rel *GithubRelease) string {
 	var sb strings.Builder
 	for _, a := range rel.Assets {
 		if strings.HasSuffix(a.Name, ".zip") {
