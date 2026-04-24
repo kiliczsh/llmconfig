@@ -60,8 +60,13 @@ func newBenchCmd() *cobra.Command {
 			}
 
 			if _, statErr := os.Stat(rc.ModelPath); os.IsNotExist(statErr) {
-				if err := downloadModel(cmd.Context(), cfg, rc, p); err != nil {
-					return err
+				for _, art := range neededArtifacts(cfg, rc) {
+					if art.kind != "model" {
+						continue
+					}
+					if err := downloadArtifact(cmd.Context(), cfg, art, p); err != nil {
+						return err
+					}
 				}
 			}
 

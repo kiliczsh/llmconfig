@@ -77,10 +77,15 @@ func newUpCmd() *cobra.Command {
 				hw = hardware.Detect()
 			}
 
-			// Select binary based on backend
+			// Select binary based on backend. In dry-run we fall back to a
+			// placeholder name so `up --dry-run` still prints a usable
+			// command even on machines where the backend isn't installed.
 			binaryPath, err := resolveBackendBinary(cfg.Backend)
 			if err != nil {
-				return err
+				if !flagDryRun {
+					return err
+				}
+				binaryPath = placeholderBinaryName(cfg.Backend)
 			}
 
 			// Resolve config → RunConfig
@@ -128,18 +133,24 @@ func newUpCmd() *cobra.Command {
 					filepath.Base(binaryPath), binaryPath, cfg.Backend)
 			}
 
-			// Download model if needed
-			if rc.ModelPath != "" {
-				if _, statErr := os.Stat(rc.ModelPath); os.IsNotExist(statErr) {
-					if flagNoDownload {
-						if cfg.Model.Source == "huggingface" && cfg.Model.Repo != "" {
-							return fmt.Errorf("model file not found at %q (--no-download is set) — run: llamaconfig pull %s", rc.ModelPath, cfg.Model.Repo)
-						}
-						return fmt.Errorf("model file not found at %q (--no-download is set) — check: download the model or remove --no-download", rc.ModelPath)
+			// Download main model + any configured draft / mmproj artifacts
+			// that are not already cached.
+			for _, art := range neededArtifacts(cfg, rc) {
+				if _, statErr := os.Stat(art.destPath); !os.IsNotExist(statErr) {
+					continue
+				}
+				if flagNoDownload {
+					hint := "download the model or remove --no-download"
+					if art.source == "huggingface" && art.repo != "" {
+						hint = fmt.Sprintf("run: llamaconfig pull %s", art.repo)
 					}
-					if err := downloadModel(cmd.Context(), cfg, rc, p); err != nil {
-						return err
-					}
+					return fmt.Errorf("%s file not found at %q (--no-download is set) — %s", art.kind, art.destPath, hint)
+				}
+				if art.source != "huggingface" && art.source != "url" {
+					return fmt.Errorf("%s file not found at %q", art.kind, art.destPath)
+				}
+				if err := downloadArtifact(cmd.Context(), cfg, art, p); err != nil {
+					return err
 				}
 			}
 
@@ -211,30 +222,83 @@ func profileOverride(name string) *hardware.DetectionResult {
 	}
 }
 
-func downloadModel(ctx context.Context, cfg *config.Config, rc *config.RunConfig, p interface{ Info(string, ...any) }) error {
-	if cfg.Model.Source != "huggingface" && cfg.Model.Source != "url" {
-		return fmt.Errorf("model file not found at %s", rc.ModelPath)
+func placeholderBinaryName(backend string) string {
+	switch backend {
+	case "sd":
+		return "sd-server"
+	case "whisper":
+		return "whisper-server"
+	default:
+		return "llama-server"
 	}
+}
 
-	p.Info("model not cached — downloading %s...", cfg.Model.File)
+// artifact describes one downloadable file (main model, draft, or mmproj).
+type artifact struct {
+	kind     string // "model" | "draft" | "mmproj"
+	source   string // huggingface | url | local | ""
+	repo     string
+	file     string
+	url      string
+	destPath string
+	checksum string
+}
 
-	token := resolveToken("")
+// neededArtifacts returns every resolvable artifact for the run. Callers
+// still must stat each destPath to decide whether to fetch it.
+func neededArtifacts(cfg *config.Config, rc *config.RunConfig) []artifact {
+	var out []artifact
+	if rc.ModelPath != "" {
+		out = append(out, artifact{
+			kind:     "model",
+			source:   cfg.Model.Source,
+			repo:     cfg.Model.Repo,
+			file:     cfg.Model.File,
+			url:      cfg.Model.URL,
+			destPath: rc.ModelPath,
+			checksum: cfg.Model.Checksum,
+		})
+	}
+	if d := cfg.Model.Draft; d != nil && rc.DraftModelPath != "" {
+		out = append(out, artifact{
+			kind:     "draft",
+			source:   d.Source,
+			repo:     d.Repo,
+			file:     d.File,
+			destPath: rc.DraftModelPath,
+		})
+	}
+	if m := cfg.Model.MMProj; m != nil && rc.MMProjPath != "" {
+		out = append(out, artifact{
+			kind:     "mmproj",
+			source:   m.Source,
+			repo:     m.Repo,
+			file:     m.File,
+			destPath: rc.MMProjPath,
+		})
+	}
+	return out
+}
+
+func downloadArtifact(ctx context.Context, cfg *config.Config, art artifact, p interface{ Info(string, ...any) }) error {
+	p.Info("%s not cached — downloading %s...", art.kind, art.file)
+
 	cacheDir := dirs.ExpandHome(cfg.Model.Download.CacheDir)
 	if cacheDir == "" {
 		cacheDir = dirs.CacheDir()
 	}
 
 	req := &downloader.Request{
-		Repo:           cfg.Model.Repo,
-		File:           cfg.Model.File,
-		URL:            cfg.Model.URL,
-		Token:          token,
+		Repo:           art.repo,
+		File:           art.file,
+		URL:            art.url,
+		Token:          resolveToken(""),
 		CacheDir:       cacheDir,
 		Resume:         *cfg.Model.Download.Resume,
 		Connections:    cfg.Model.Download.Connections,
-		Checksum:       cfg.Model.Checksum,
-		VerifyChecksum: *cfg.Model.Download.VerifyChecksum,
+		Checksum:       art.checksum,
+		VerifyChecksum: *cfg.Model.Download.VerifyChecksum && art.checksum != "",
 	}
 
-	return runDownloadWithProgress(ctx, req, cfg.Model.File)
+	return runDownloadWithProgress(ctx, req, art.file)
 }

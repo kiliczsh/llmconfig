@@ -100,6 +100,12 @@ func newRestartCmd() *cobra.Command {
 
 				if err := runner.WaitHealthy(cmd.Context(), cfg.Server.Host, cfg.Server.Port, cfg.Backend); err != nil {
 					p.Error("%s health check failed: %v", name, err)
+					// Mirror `up`: don't leave the entry marked "running" when
+					// startup failed. `ps` would otherwise show a ghost.
+					newMS.Status = "error"
+					if putErr := appCtx.StateStore.Put(newMS); putErr != nil {
+						p.Warn("could not save error state for %q: %v", name, putErr)
+					}
 					continue
 				}
 

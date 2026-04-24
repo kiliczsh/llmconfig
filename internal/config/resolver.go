@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/kiliczsh/llamaconfig/internal/dirs"
@@ -52,21 +51,17 @@ func Resolve(cfg *Config, hw *hardware.DetectionResult, binaryPath string) (*Run
 	return rc, nil
 }
 
+// resolveModelPath returns the path where the main model file should live.
+// It does not check existence: validator is responsible for that when
+// source=local, and the downloader fetches it when source=huggingface|url.
+// Keeping the resolver lenient lets `up --dry-run` and `inspect` work
+// before the file is on disk.
 func resolveModelPath(cfg *Config) (string, error) {
 	switch cfg.Model.Source {
 	case "local":
-		p := dirs.ExpandHome(cfg.Model.Path)
-		if _, err := os.Stat(p); err != nil {
-			return "", fmt.Errorf("model file not found: %s", p)
-		}
-		return p, nil
+		return dirs.ExpandHome(cfg.Model.Path), nil
 	case "huggingface", "url":
-		cacheDir := modelCacheDir(cfg)
-		p := filepath.Join(cacheDir, cfg.Model.File)
-		if _, err := os.Stat(p); err != nil {
-			return p, nil // may not exist yet; downloader will fetch
-		}
-		return p, nil
+		return filepath.Join(modelCacheDir(cfg), cfg.Model.File), nil
 	default:
 		return "", fmt.Errorf("unknown model source: %s", cfg.Model.Source)
 	}
@@ -76,36 +71,20 @@ func resolveDraftPath(cfg *Config) (string, error) {
 	if cfg.Model.Draft == nil || cfg.Model.Draft.File == "" {
 		return "", nil
 	}
-
-	switch cfg.Model.Draft.Source {
-	case "local":
-		p := dirs.ExpandHome(cfg.Model.Draft.File)
-		if _, err := os.Stat(p); err != nil {
-			return "", fmt.Errorf("draft model file not found: %s", p)
-		}
-		return p, nil
-	default:
-		return filepath.Join(modelCacheDir(cfg), cfg.Model.Draft.File), nil
+	if cfg.Model.Draft.Source == "local" {
+		return dirs.ExpandHome(cfg.Model.Draft.File), nil
 	}
+	return filepath.Join(modelCacheDir(cfg), cfg.Model.Draft.File), nil
 }
 
 func resolveMMProjPath(cfg *Config) (string, error) {
 	if cfg.Model.MMProj == nil || cfg.Model.MMProj.File == "" {
 		return "", nil
 	}
-
-	switch cfg.Model.MMProj.Source {
-	case "local":
-		p := dirs.ExpandHome(cfg.Model.MMProj.File)
-		if _, err := os.Stat(p); err != nil {
-			return "", fmt.Errorf("mmproj file not found: %s", p)
-		}
-		return p, nil
-	case "huggingface", "url", "":
-		return filepath.Join(modelCacheDir(cfg), cfg.Model.MMProj.File), nil
-	default:
-		return filepath.Join(modelCacheDir(cfg), cfg.Model.MMProj.File), nil
+	if cfg.Model.MMProj.Source == "local" {
+		return dirs.ExpandHome(cfg.Model.MMProj.File), nil
 	}
+	return filepath.Join(modelCacheDir(cfg), cfg.Model.MMProj.File), nil
 }
 
 func modelCacheDir(cfg *Config) string {
