@@ -16,11 +16,14 @@ func BinDir() string {
 	return filepath.Join(dirs.BaseDir(), "bin", "whisper")
 }
 
-// FindServer returns the path to the whisper-server binary, preferring the managed bin dir.
+// FindServer returns the path to the whisper-server binary, preferring
+// the managed bin dir. It deliberately does NOT fall back to whisper-cli:
+// `up` launches this path with server-only flags, and starting the CLI
+// with those flags just fails confusingly.
 func FindServer() (string, error) {
-	candidates := []string{"whisper-server", "whisper-cli"}
+	candidates := []string{"whisper-server"}
 	if runtime.GOOS == "windows" {
-		candidates = []string{"whisper-server.exe", "whisper-cli.exe"}
+		candidates = []string{"whisper-server.exe"}
 	}
 
 	for _, name := range candidates {

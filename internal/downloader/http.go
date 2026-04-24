@@ -20,6 +20,11 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 	}
 
 	destPath := filepath.Join(req.CacheDir, req.File)
+	// req.File can include a subdirectory (HF repos expose files like
+	// `subdir/model.gguf`); make sure the parent exists before we open it.
+	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+		return "", fmt.Errorf("downloader: create dest dir: %w", err)
+	}
 
 	// Resolve URL
 	rawURL := req.URL

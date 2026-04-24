@@ -16,11 +16,14 @@ func BinDir() string {
 	return filepath.Join(dirs.BaseDir(), "bin", "sd")
 }
 
-// FindServer returns the path to the sd-server binary, preferring the managed bin dir.
+// FindServer returns the path to the sd-server binary, preferring the
+// managed bin dir. It deliberately does NOT fall back to sd-cli: `up`
+// launches this path with server-only flags, and starting sd-cli with
+// those flags just fails confusingly.
 func FindServer() (string, error) {
-	candidates := []string{"sd-server", "sd-cli", "sd"}
+	candidates := []string{"sd-server"}
 	if runtime.GOOS == "windows" {
-		candidates = []string{"sd-server.exe", "sd-cli.exe", "sd.exe"}
+		candidates = []string{"sd-server.exe"}
 	}
 
 	for _, name := range candidates {

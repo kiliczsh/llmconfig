@@ -137,6 +137,9 @@ func Install(asset *GithubAsset, onProgress func(downloaded, total int64)) error
 		return fmt.Errorf("install: download: %w", err)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("install: download %s: HTTP %d", asset.Name, resp.StatusCode)
+	}
 
 	total := asset.Size
 	var downloaded int64
