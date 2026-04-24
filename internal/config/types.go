@@ -244,12 +244,12 @@ type ContextSpec struct {
 }
 
 type SamplingSpec struct {
-	Temperature         float64  `yaml:"temperature"`
-	TopK                int      `yaml:"top_k"`
-	TopP                float64  `yaml:"top_p"`
-	MinP                float64  `yaml:"min_p"`
-	RepeatPenalty       float64  `yaml:"repeat_penalty"`
-	RepeatLastN         int      `yaml:"repeat_last_n"`
+	Temperature         *float64 `yaml:"temperature"`
+	TopK                *int     `yaml:"top_k"`
+	TopP                *float64 `yaml:"top_p"`
+	MinP                *float64 `yaml:"min_p"`
+	RepeatPenalty       *float64 `yaml:"repeat_penalty"`
+	RepeatLastN         *int     `yaml:"repeat_last_n"`
 	PresencePenalty     float64  `yaml:"presence_penalty"`  // presence penalty (0.0 = disabled)
 	FrequencyPenalty    float64  `yaml:"frequency_penalty"` // frequency penalty (0.0 = disabled)
 	DryMultiplier       float64  `yaml:"dry_multiplier"`
@@ -261,8 +261,8 @@ type SamplingSpec struct {
 	XTCProbability      float64  `yaml:"xtc_probability"` // XTC probability (0.0 = disabled)
 	XTCThreshold        float64  `yaml:"xtc_threshold"`   // XTC threshold
 	Mirostat            int      `yaml:"mirostat"`
-	MirostatTau         float64  `yaml:"mirostat_tau"`
-	MirostatEta         float64  `yaml:"mirostat_eta"`
+	MirostatTau         *float64 `yaml:"mirostat_tau"`
+	MirostatEta         *float64 `yaml:"mirostat_eta"`
 	Samplers            string   `yaml:"samplers"`
 	Seed                int64    `yaml:"seed"`                  // RNG seed (0 = not set, use random)
 	Typical             float64  `yaml:"typical"`               // locally typical sampling (0 = not set, 1.0 = disabled)

@@ -318,13 +318,23 @@ func appendSharedArgs(args []string, rc *config.RunConfig, interactive bool) []s
 
 	// Sampling
 	s := cfg.Sampling
-	args = add("--temp", fmt.Sprintf("%.4f", s.Temperature))
-	args = add("--top-k", strconv.Itoa(s.TopK))
-	args = add("--top-p", fmt.Sprintf("%.4f", s.TopP))
-	args = add("--min-p", fmt.Sprintf("%.4f", s.MinP))
-	if s.RepeatPenalty != 1.0 {
-		args = add("--repeat-penalty", fmt.Sprintf("%.4f", s.RepeatPenalty))
-		args = add("--repeat-last-n", strconv.Itoa(s.RepeatLastN))
+	if s.Temperature != nil {
+		args = add("--temp", fmt.Sprintf("%.4f", *s.Temperature))
+	}
+	if s.TopK != nil {
+		args = add("--top-k", strconv.Itoa(*s.TopK))
+	}
+	if s.TopP != nil {
+		args = add("--top-p", fmt.Sprintf("%.4f", *s.TopP))
+	}
+	if s.MinP != nil {
+		args = add("--min-p", fmt.Sprintf("%.4f", *s.MinP))
+	}
+	if s.RepeatPenalty != nil {
+		args = add("--repeat-penalty", fmt.Sprintf("%.4f", *s.RepeatPenalty))
+	}
+	if s.RepeatLastN != nil {
+		args = add("--repeat-last-n", strconv.Itoa(*s.RepeatLastN))
 	}
 	if s.PresencePenalty != 0 {
 		args = add("--presence-penalty", fmt.Sprintf("%.4f", s.PresencePenalty))
@@ -363,8 +373,12 @@ func appendSharedArgs(args []string, rc *config.RunConfig, interactive bool) []s
 	}
 	if s.Mirostat > 0 {
 		args = add("--mirostat", strconv.Itoa(s.Mirostat))
-		args = add("--mirostat-ent", fmt.Sprintf("%.4f", s.MirostatTau))
-		args = add("--mirostat-lr", fmt.Sprintf("%.4f", s.MirostatEta))
+		if s.MirostatTau != nil {
+			args = add("--mirostat-ent", fmt.Sprintf("%.4f", *s.MirostatTau))
+		}
+		if s.MirostatEta != nil {
+			args = add("--mirostat-lr", fmt.Sprintf("%.4f", *s.MirostatEta))
+		}
 	}
 	if s.Samplers != "" {
 		args = add("--samplers", s.Samplers)

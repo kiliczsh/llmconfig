@@ -2,7 +2,10 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
+
+	"github.com/kiliczsh/llamaconfig/internal/dirs"
 )
 
 func Validate(cfg *Config) error {
@@ -67,8 +70,77 @@ func Validate(cfg *Config) error {
 		errs = append(errs, "server.parallel must be >= 0")
 	}
 
+	validateExistingPath(&errs, "sampling.grammar_file", cfg.Sampling.GrammarFile)
+	validateExistingPath(&errs, "sampling.json_schema_file", cfg.Sampling.JSONSchemaFile)
+	validateExistingPath(&errs, "server.api_key_file", cfg.Server.APIKeyFile)
+	validateExistingPath(&errs, "server.ssl_cert_file", cfg.Server.SSLCertFile)
+	validateExistingPath(&errs, "server.ssl_key_file", cfg.Server.SSLKeyFile)
+	validateExistingPath(&errs, "chat.template_file", cfg.Chat.TemplateFile)
+	if cfg.Model.Source == "local" {
+		validateExistingPath(&errs, "model.path", cfg.Model.Path)
+	}
+	if cfg.Model.Draft != nil && cfg.Model.Draft.Source == "local" {
+		validateExistingPath(&errs, "model.draft.file", cfg.Model.Draft.File)
+	}
+	if cfg.Model.MMProj != nil && cfg.Model.MMProj.Source == "local" {
+		validateExistingPath(&errs, "model.mmproj.file", cfg.Model.MMProj.File)
+	}
+
+	switch cfg.Backend {
+	case "llama", "":
+		validateLlama(cfg, &errs)
+	case "sd":
+		validateSD(cfg, &errs)
+	case "whisper":
+		validateWhisper(cfg, &errs)
+	}
+
 	if len(errs) > 0 {
 		return fmt.Errorf("config validation failed:\n  - %s", strings.Join(errs, "\n  - "))
 	}
 	return nil
+}
+
+func validateLlama(cfg *Config, errs *[]string) {
+}
+
+func validateSD(cfg *Config, errs *[]string) {
+	if cfg.SD.Mode == "" {
+		return
+	}
+
+	validModes := map[string]bool{
+		"img_gen":  true,
+		"vid_gen":  true,
+		"upscale":  true,
+		"convert":  true,
+		"metadata": true,
+	}
+	if !validModes[cfg.SD.Mode] {
+		*errs = append(*errs, fmt.Sprintf("sd.mode %q is invalid (img_gen | vid_gen | upscale | convert | metadata)", cfg.SD.Mode))
+	}
+}
+
+func validateWhisper(cfg *Config, errs *[]string) {
+	if cfg.Whisper.Task != "" && cfg.Whisper.Task != "transcribe" && cfg.Whisper.Task != "translate" {
+		*errs = append(*errs, fmt.Sprintf("whisper.task %q is invalid (transcribe | translate)", cfg.Whisper.Task))
+	}
+	if cfg.Whisper.Language != "" && cfg.Whisper.Language != "auto" && len(cfg.Whisper.Language) < 2 {
+		*errs = append(*errs, fmt.Sprintf("whisper.language %q is invalid (expected 2-char code or auto)", cfg.Whisper.Language))
+	}
+}
+
+func validateExistingPath(errs *[]string, yamlPath, path string) {
+	if path == "" {
+		return
+	}
+
+	expanded := dirs.ExpandHome(path)
+	if _, err := os.Stat(expanded); err != nil {
+		if os.IsNotExist(err) {
+			*errs = append(*errs, fmt.Sprintf("%s %q does not exist", yamlPath, path))
+			return
+		}
+		*errs = append(*errs, fmt.Sprintf("%s %q does not exist", yamlPath, path))
+	}
 }

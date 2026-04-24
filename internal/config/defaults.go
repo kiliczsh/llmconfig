@@ -1,6 +1,8 @@
 package config
 
-func boolPtr(b bool) *bool { return &b }
+func boolPtr(b bool) *bool        { return &b }
+func floatPtr(v float64) *float64 { return &v }
+func intPtr(v int) *int           { return &v }
 
 func ApplyDefaults(cfg *Config) {
 	if cfg.Backend == "" {
@@ -130,23 +132,23 @@ func ApplyDefaults(cfg *Config) {
 	}
 
 	// Sampling defaults
-	if cfg.Sampling.Temperature == 0 {
-		cfg.Sampling.Temperature = 0.8
+	if cfg.Sampling.Temperature == nil {
+		cfg.Sampling.Temperature = floatPtr(0.8)
 	}
-	if cfg.Sampling.TopK == 0 {
-		cfg.Sampling.TopK = 40
+	if cfg.Sampling.TopK == nil {
+		cfg.Sampling.TopK = intPtr(40)
 	}
-	if cfg.Sampling.TopP == 0 {
-		cfg.Sampling.TopP = 0.95
+	if cfg.Sampling.TopP == nil {
+		cfg.Sampling.TopP = floatPtr(0.95)
 	}
-	if cfg.Sampling.MinP == 0 {
-		cfg.Sampling.MinP = 0.05
+	if cfg.Sampling.MinP == nil {
+		cfg.Sampling.MinP = floatPtr(0.05)
 	}
-	if cfg.Sampling.RepeatPenalty == 0 {
-		cfg.Sampling.RepeatPenalty = 1.0
+	if cfg.Sampling.RepeatPenalty == nil {
+		cfg.Sampling.RepeatPenalty = floatPtr(1.0)
 	}
-	if cfg.Sampling.RepeatLastN == 0 {
-		cfg.Sampling.RepeatLastN = 64
+	if cfg.Sampling.RepeatLastN == nil {
+		cfg.Sampling.RepeatLastN = intPtr(64)
 	}
 	if cfg.Sampling.DryBase == 0 {
 		cfg.Sampling.DryBase = 1.75
@@ -157,11 +159,11 @@ func ApplyDefaults(cfg *Config) {
 	if cfg.Sampling.DryPenaltyLastN == 0 {
 		cfg.Sampling.DryPenaltyLastN = -1
 	}
-	if cfg.Sampling.MirostatTau == 0 {
-		cfg.Sampling.MirostatTau = 5.0
+	if cfg.Sampling.MirostatTau == nil {
+		cfg.Sampling.MirostatTau = floatPtr(5.0)
 	}
-	if cfg.Sampling.MirostatEta == 0 {
-		cfg.Sampling.MirostatEta = 0.1
+	if cfg.Sampling.MirostatEta == nil {
+		cfg.Sampling.MirostatEta = floatPtr(0.1)
 	}
 
 	// RoPE defaults
