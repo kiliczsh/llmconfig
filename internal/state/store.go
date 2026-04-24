@@ -116,6 +116,19 @@ func (s *Store) Put(ms *ModelState) error {
 	})
 }
 
+func (s *Store) PruneStale() (changed []string, err error) {
+	err = s.Update(func(sf *StateFile) error {
+		for name, ms := range sf.Models {
+			if ms.Status == "running" && ms.PID > 0 && !process.PidAlive(ms.PID) {
+				ms.Status = "stopped"
+				changed = append(changed, name)
+			}
+		}
+		return nil
+	})
+	return
+}
+
 // Remove atomically deletes a single model entry.
 func (s *Store) Remove(name string) error {
 	return s.Update(func(sf *StateFile) error {

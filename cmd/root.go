@@ -114,6 +114,7 @@ func init() {
 		newUpCmd(),
 		newDownCmd(),
 		newRestartCmd(),
+		newStateCmd(),
 		newPsCmd(),
 		newLogsCmd(),
 		newStatsCmd(),

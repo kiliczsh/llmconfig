@@ -94,6 +94,7 @@ func newConfigShowCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 			appCtx := appCtxFrom(cmd.Context())
+			p := appCtx.Printer
 
 			cfg, err := config.Load(name, appCtx.ConfigDir)
 			if err != nil {
@@ -102,6 +103,7 @@ func newConfigShowCmd() *cobra.Command {
 
 			if !flagRaw {
 				config.ApplyDefaults(cfg)
+				warnDeprecated(cfg, p)
 			}
 
 			data, err := yaml.Marshal(cfg)
@@ -171,4 +173,10 @@ func newConfigPathCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func warnDeprecated(cfg *config.Config, p *output.Printer) {
+	// No fields are currently deprecated. When a field is renamed or
+	// removed, emit p.Warn("<yaml.path> is deprecated: use <replacement>")
+	// here so that `config show` surfaces migration hints.
 }
