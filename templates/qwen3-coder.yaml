@@ -1,0 +1,23 @@
+version: 1
+name: qwen3-coder
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF
+  file: Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf  # MoE: ~3B active params, offload experts to CPU
+  # file: Qwen3-Coder-30B-A3B-Instruct-UD-Q3_K_XL.gguf  # lighter, use if RAM < 32GB
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0

@@ -1,0 +1,24 @@
+version: 1
+name: phi4-reasoning
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: unsloth/Phi-4-reasoning-plus-GGUF
+  file: Phi-4-reasoning-plus-UD-Q6_K_XL.gguf    # 11.7GB — recommended for 16GB VRAM
+  # file: Phi-4-reasoning-plus-UD-Q4_K_XL.gguf  # 8.4GB — faster, slightly lower quality
+  # file: Phi-4-reasoning-plus-Q4_K_M.gguf       # 8.3GB — standard Q4 alternative
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0

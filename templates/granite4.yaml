@@ -1,0 +1,24 @@
+version: 1
+name: granite4
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: unsloth/granite-4.0-h-tiny-GGUF
+  file: granite-4.0-h-tiny-UD-Q6_K_XL.gguf    # 5.9GB — recommended for 16GB VRAM
+  # file: granite-4.0-h-tiny-UD-Q8_K_XL.gguf  # 7.7GB — higher quality
+  # file: granite-4.0-h-tiny-Q4_K_M.gguf       # 4.2GB — standard Q4 alternative
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0

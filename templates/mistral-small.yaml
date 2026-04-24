@@ -1,0 +1,24 @@
+version: 1
+name: mistral-small
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF
+  file: Mistral-Small-3.2-24B-Instruct-2506-UD-Q3_K_XL.gguf  # 11.4GB — recommended for 16GB VRAM
+  # file: Mistral-Small-3.2-24B-Instruct-2506-UD-Q4_K_XL.gguf  # 14.7GB — tight, context 4096 max
+  # file: Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf       # 14.4GB — standard Q4 alternative
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0

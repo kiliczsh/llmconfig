@@ -1,22 +1,24 @@
 version: 1
 name: llama
 backend: llama
-mode: interactive
+mode: server
 model:
   source: huggingface
-  repo: bartowski/Llama-3.2-1B-Instruct-GGUF
-  file: Llama-3.2-1B-Instruct-Q4_K_M.gguf         # 0.8GB
-  # file: Llama-3.2-3B-Instruct-Q4_K_M.gguf       # 2.0GB — better quality
-  # repo: bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
-  # file: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf  # 4.9GB — optimum for 16GB VRAM
+  repo: unsloth/Llama-3.1-8B-Instruct-GGUF
+  file: Llama-3.1-8B-Instruct-UD-Q8_K_XL.gguf     # 8.7GB — recommended for 16GB VRAM
+  # file: Llama-3.1-8B-Instruct-UD-Q6_K_XL.gguf   # 6.7GB — faster inference
+  # file: Llama-3.1-8B-Instruct-Q4_K_M.gguf        # 4.9GB — lightest option
   download:
     resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
 hardware_profiles:
-  apple_silicon:
-    n_gpu_layers: 99
-    metal: true
   nvidia:
     n_gpu_layers: 99
     cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
   cpu:
     n_gpu_layers: 0

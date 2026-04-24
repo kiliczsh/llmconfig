@@ -25,21 +25,21 @@ func (t templateDef) full() bool {
 }
 
 var builtinTemplates = map[string]templateDef{
-	// llama — interactive prompts for file/mode unless overridden
+	// llama — unsloth Dynamic 2.0 GGUFs, optimised for 16GB VRAM (RTX 5070 Ti / 4080 / 4090)
+	"gpt-oss":       {backend: "llama", repo: "unsloth/gpt-oss-20b-GGUF"},
+	"qwen36":        {backend: "llama", repo: "unsloth/Qwen3.6-27B-GGUF"},
+	"qwen3-vl":      {backend: "llama", repo: "unsloth/Qwen3-VL-8B-Instruct-GGUF"},
+	"qwen3-coder":   {backend: "llama", repo: "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"},
+	"gemma":         {backend: "llama", repo: "unsloth/gemma-4-E4B-it-GGUF"},
+	"mistral-small": {backend: "llama", repo: "unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF"},
+	"phi4-reasoning": {backend: "llama", repo: "unsloth/Phi-4-reasoning-plus-GGUF"},
+	"granite4":      {backend: "llama", repo: "unsloth/granite-4.0-h-tiny-GGUF"},
+	"deepseek":      {backend: "llama", repo: "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF"},
+	"llama3":        {backend: "llama", repo: "unsloth/Llama-3.1-8B-Instruct-GGUF"},
+	// legacy llama — kept for backwards compatibility
 	"codellama": {backend: "llama", repo: "TheBloke/CodeLlama-13B-Instruct-GGUF"},
 	"mistral":   {backend: "llama", repo: "TheBloke/Mistral-7B-Instruct-v0.2-GGUF"},
-	"llama3":    {backend: "llama", repo: "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"},
-	"deepseek":  {backend: "llama", repo: "bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF"},
 	"phi4":      {backend: "llama", repo: "bartowski/phi-4-GGUF"},
-	"gemma":     {backend: "llama", repo: "bartowski/google_gemma-4-E2B-it-GGUF"},
-	// fully-specified templates — zero prompts
-	"gemma4": {
-		backend: "llama",
-		repo:    "bartowski/google_gemma-4-E2B-it-GGUF",
-		file:    "google_gemma-4-E2B-it-Q4_K_M.gguf",
-		mode:    "interactive",
-		port:    "8080",
-	},
 	// sd
 	"sd15":         {backend: "sd", repo: "runwayml/stable-diffusion-v1-5"},
 	"flux-schnell": {backend: "sd", repo: "city96/FLUX.1-schnell-gguf"},
@@ -112,7 +112,7 @@ func newInitCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&flagFrom, "from", "", "pre-fill from a HuggingFace repo or URL")
-	cmd.Flags().StringVar(&flagTemplate, "template", "", "built-in template: codellama|mistral|llama3|deepseek|phi4|gemma|sd15|flux-schnell|whisper-base|whisper-turbo")
+	cmd.Flags().StringVar(&flagTemplate, "template", "", "built-in template: gpt-oss|qwen36|qwen3-vl|qwen3-coder|gemma|mistral-small|phi4-reasoning|granite4|deepseek|llama3|sd15|flux-schnell|whisper-base|whisper-turbo")
 	cmd.Flags().StringVarP(&flagOutput, "output", "o", "", "write config to a specific path")
 	return cmd
 }

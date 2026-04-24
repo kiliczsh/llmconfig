@@ -1,0 +1,28 @@
+version: 1
+name: qwen3-vl
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: unsloth/Qwen3-VL-8B-Instruct-GGUF
+  file: Qwen3-VL-8B-Instruct-UD-Q6_K_XL.gguf  # 6.7GB — recommended for 16GB VRAM
+  # file: Qwen3-VL-8B-Instruct-Q8_0.gguf       # 8.5GB — full precision Q8
+  # file: Qwen3-VL-8B-Instruct-UD-Q4_K_XL.gguf # 4.9GB — lighter, still good quality
+  mmproj:
+    source: huggingface
+    repo: unsloth/Qwen3-VL-8B-Instruct-GGUF
+    file: mmproj-F16.gguf
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0

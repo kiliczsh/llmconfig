@@ -1,0 +1,24 @@
+version: 1
+name: qwen36
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: unsloth/Qwen3.6-27B-GGUF
+  file: Qwen3.6-27B-UD-Q3_K_XL.gguf          # 12.8GB — recommended for 16GB VRAM
+  # file: Qwen3.6-27B-Q4_K_M.gguf            # 16.2GB — very tight, context 2048 max
+  # file: Qwen3.6-27B-UD-Q2_K_XL.gguf        # 10.1GB — lower quality, more headroom
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0

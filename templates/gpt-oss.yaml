@@ -1,0 +1,24 @@
+version: 1
+name: gpt-oss
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: unsloth/gpt-oss-20b-GGUF
+  file: gpt-oss-20b-UD-Q4_K_XL.gguf          # 12.3GB — recommended for 16GB VRAM
+  # file: gpt-oss-20b-UD-Q6_K_XL.gguf        # 16.5GB — tight, reduce context to 4096
+  # file: gpt-oss-20b-Q4_K_M.gguf            # 12.0GB — standard Q4 alternative
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0
