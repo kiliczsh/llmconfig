@@ -88,7 +88,33 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
+	if resumeFrom > 0 && acceptsRange {
+		// Prevent corruption when a server ignores Range and sends the full body with 200.
+		if resp.StatusCode == http.StatusOK {
+			resp.Body.Close()
+			if err := os.Remove(destPath); err != nil && !os.IsNotExist(err) {
+				return "", fmt.Errorf("downloader: remove partial file: %w", err)
+			}
+
+			resumeFrom = 0
+			getReq, err = http.NewRequestWithContext(ctx, "GET", rawURL, nil)
+			if err != nil {
+				return "", err
+			}
+			addAuthHeader(getReq, req.Token)
+
+			resp, err = httpx.Download.Do(getReq)
+			if err != nil {
+				return "", fmt.Errorf("downloader: GET %s: %w", rawURL, err)
+			}
+			defer resp.Body.Close()
+			openFlag = os.O_CREATE | os.O_WRONLY | os.O_TRUNC
+		} else if resp.StatusCode != http.StatusPartialContent {
+			return "", fmt.Errorf("download: unexpected status %d", resp.StatusCode)
+		}
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return "", fmt.Errorf("downloader: GET %s: HTTP %d", rawURL, resp.StatusCode)
 	}
 

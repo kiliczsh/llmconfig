@@ -76,7 +76,12 @@ func newRestartCmd() *cobra.Command {
 				config.ApplyDefaults(cfg)
 
 				hw := hardware.Detect()
-				rc, err := config.Resolve(cfg, hw, appCtx.LlamaBin)
+				binaryPath, err := resolveBackendBinary(cfg.Backend)
+				if err != nil {
+					p.Error("resolve binary %q: %v", name, err)
+					continue
+				}
+				rc, err := config.Resolve(cfg, hw, binaryPath)
 				if err != nil {
 					p.Error("resolve %q: %v", name, err)
 					continue

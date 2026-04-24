@@ -26,9 +26,15 @@ func Resolve(cfg *Config, hw *hardware.DetectionResult, binaryPath string) (*Run
 		logFile = dirs.ExpandHome(logFile)
 	}
 
+	mmprojPath, err := resolveMMProjPath(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	rc := &RunConfig{
 		Config:      cfg,
 		ModelPath:   modelPath,
+		MMProjPath:  mmprojPath,
 		Profile:     profile,
 		ProfileName: profileName,
 		LogFile:     logFile,
@@ -55,15 +61,10 @@ func resolveModelPath(cfg *Config) (string, error) {
 		}
 		return p, nil
 	case "huggingface", "url":
-		cacheDir := cfg.Model.Download.CacheDir
-		if cacheDir == "" {
-			cacheDir = dirs.CacheDir()
-		} else {
-			cacheDir = dirs.ExpandHome(cacheDir)
-		}
+		cacheDir := modelCacheDir(cfg)
 		p := filepath.Join(cacheDir, cfg.Model.File)
 		if _, err := os.Stat(p); err != nil {
-			return p, nil // may not exist yet — downloader will fetch
+			return p, nil // may not exist yet; downloader will fetch
 		}
 		return p, nil
 	default:
@@ -72,11 +73,47 @@ func resolveModelPath(cfg *Config) (string, error) {
 }
 
 func resolveDraftPath(cfg *Config) (string, error) {
-	if cfg.Model.Draft == nil {
+	if cfg.Model.Draft == nil || cfg.Model.Draft.File == "" {
 		return "", nil
 	}
-	cacheDir := dirs.CacheDir()
-	return filepath.Join(cacheDir, cfg.Model.Draft.File), nil
+
+	switch cfg.Model.Draft.Source {
+	case "local":
+		p := dirs.ExpandHome(cfg.Model.Draft.File)
+		if _, err := os.Stat(p); err != nil {
+			return "", fmt.Errorf("draft model file not found: %s", p)
+		}
+		return p, nil
+	default:
+		return filepath.Join(modelCacheDir(cfg), cfg.Model.Draft.File), nil
+	}
+}
+
+func resolveMMProjPath(cfg *Config) (string, error) {
+	if cfg.Model.MMProj == nil || cfg.Model.MMProj.File == "" {
+		return "", nil
+	}
+
+	switch cfg.Model.MMProj.Source {
+	case "local":
+		p := dirs.ExpandHome(cfg.Model.MMProj.File)
+		if _, err := os.Stat(p); err != nil {
+			return "", fmt.Errorf("mmproj file not found: %s", p)
+		}
+		return p, nil
+	case "huggingface", "url", "":
+		return filepath.Join(modelCacheDir(cfg), cfg.Model.MMProj.File), nil
+	default:
+		return filepath.Join(modelCacheDir(cfg), cfg.Model.MMProj.File), nil
+	}
+}
+
+func modelCacheDir(cfg *Config) string {
+	cacheDir := cfg.Model.Download.CacheDir
+	if cacheDir == "" {
+		return dirs.CacheDir()
+	}
+	return dirs.ExpandHome(cacheDir)
 }
 
 // selectProfile picks the best HardwareProfile from the config.

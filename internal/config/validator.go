@@ -37,6 +37,9 @@ func Validate(cfg *Config) error {
 		if cfg.Model.URL == "" {
 			errs = append(errs, "model.url is required for source=url")
 		}
+		if cfg.Model.File == "" {
+			errs = append(errs, "model.file is required for source=url (filename to store in cache)")
+		}
 	case "":
 		errs = append(errs, "model.source is required (huggingface | local | url)")
 	default:
