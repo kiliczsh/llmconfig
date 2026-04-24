@@ -1,6 +1,19 @@
 # llamaconfig reference — sd backend, server mode (sd-server)
 # Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
 # Required: version, name, model.source + repo/file/path/url
+#
+# ── Two ways to supply the weights ───────────────────────────────────────────
+# 1) SD1.x / SDXL: a single unified checkpoint goes in `model.file`. It is
+#    passed to sd-server as --model.
+# 2) Flux / SD3:   the diffusion weights are still the main `model.file`, but
+#    you MUST also provide the text encoders (clip_l, t5xxl) and VAE via the
+#    `sd.*` block. llamaconfig detects this layout and switches --model for
+#    --diffusion-model automatically.
+#
+# Auxiliary files (clip_l, t5xxl, vae, taesd, …) accept one of:
+#   - a local path (absolute or "~/…")
+#   - an hf:// URL of the form hf://<owner>/<repo>/<filepath-in-repo>
+# llamaconfig auto-downloads hf:// references into the cache on `up`.
 
 version: 1
 name: my-sd-server
@@ -8,10 +21,16 @@ description: ""
 tags: []
 
 backend: sd
-mode: server                      # server → sd-server (HTTP API)
+mode: server                        # server → sd-server (HTTP API)
 
 # ── Model ─────────────────────────────────────────────────────────────────────
+# Example A — SD1.5 unified checkpoint (single file)
+# model:
+#   source: url
+#   url: https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors
+#   file: v1-5-pruned-emaonly.safetensors
 
+# Example B — Flux.1-schnell (diffusion weights + separate encoders)
 model:
   source: huggingface
   repo: city96/FLUX.1-schnell-gguf
@@ -24,7 +43,7 @@ model:
 
 server:
   host: 127.0.0.1
-  port: 8091                      # sd-server default port differs from llama-server
+  port: 8091                        # sd-server default port differs from llama-server
 
 # ── Hardware Profiles ─────────────────────────────────────────────────────────
 
@@ -45,33 +64,39 @@ hardware_profiles:
 
 sd:
   # --- Server-specific ---
-  # serve_html_path: ""           # path to HTML file to serve at root
+  # serve_html_path: ""             # path to HTML file to serve at root
 
-  # --- Split model components (optional) ---
-  # diffusion_model: ""
-  # vae: ""
-  # clip_l: ""
-  # clip_g: ""
-  # t5xxl: ""
-  # taesd: ""
-  # lora_model_dir: ""
+  # --- Auxiliary model components (required for Flux / SD3) ---
+  # Use hf://<repo>/<file> for auto-download, or a local path. For Flux.1
+  # these three unlock the pipeline; `model.file` is the main GGUF above.
+  vae:    hf://black-forest-labs/FLUX.1-schnell/ae.safetensors
+  clip_l: hf://comfyanonymous/flux_text_encoders/clip_l.safetensors
+  t5xxl:  hf://comfyanonymous/flux_text_encoders/t5xxl_fp16.safetensors
+  # t5xxl:  hf://comfyanonymous/flux_text_encoders/t5xxl_fp8_e4m3fn.safetensors  # ~5 GB, tight VRAM
+  # clip_g:   ""                    # SDXL/SD3 only
+  # taesd:    ""                    # optional tiny autoencoder for previews
   # control_net: ""
+  # photo_maker: ""
+  # upscale_model: ""
+  # lora_model_dir: ""
+  # embd_dir: ""
+  # diffusion_model: ""             # set this to override the auto-routing
 
   # --- Hardware ---
-  # type: ""                      # f32 | f16 | q4_0 | q8_0 | ...
+  # type: ""                        # f32 | f16 | q4_0 | q8_0 | ...
   # offload_to_cpu: false
   # vae_on_cpu: false
   # clip_on_cpu: false
-  flash_attention: false          # true = --fa
+  flash_attention: false            # true = --fa
 
   # --- Generation defaults (applied to all requests unless overridden) ---
-  width: 512
-  height: 512
-  steps: 20
-  cfg_scale: 7.0
-  # guidance: 3.5                 # Flux/SD3
+  width: 1024                       # Flux handles 1024² comfortably
+  height: 1024
+  steps: 4                          # schnell finishes in ~4 steps
+  cfg_scale: 1.0                    # Flux guidance-distilled; cfg≈1.0
+  guidance: 3.5                     # Flux/SD3 distilled guidance scale
   # negative_prompt: ""
-  sampling_method: euler_a
+  sampling_method: euler
   # scheduler: discrete
   seed: -1
 

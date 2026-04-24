@@ -277,6 +277,15 @@ func neededArtifacts(cfg *config.Config, rc *config.RunConfig) []artifact {
 			destPath: rc.MMProjPath,
 		})
 	}
+	for _, d := range rc.ExtraDownloads {
+		out = append(out, artifact{
+			kind:     d.Kind,
+			source:   "huggingface",
+			repo:     d.Repo,
+			file:     d.File,
+			destPath: d.DestPath,
+		})
+	}
 	return out
 }
 

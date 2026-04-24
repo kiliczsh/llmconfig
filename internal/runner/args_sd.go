@@ -20,8 +20,20 @@ func buildSDArgs(rc *config.RunConfig) []string {
 		}
 	}
 
-	// Model
-	add("--model", rc.ModelPath)
+	// Main weights. sd.cpp takes a unified checkpoint via --model for
+	// SD1.x/SDXL, but Flux and SD3 need the diffusion weights routed
+	// through --diffusion-model so the encoders (clip_l/t5xxl/vae) can
+	// be loaded separately. Signal: user set an explicit diffusion_model,
+	// or supplied a separate text encoder (clip_l or t5xxl).
+	switch {
+	case sd.DiffusionModel != "":
+		// Explicit diffusion_model wins; skip --model to avoid sd.cpp
+		// trying to detect an SD version from the main gguf.
+	case sd.ClipL != "" || sd.T5XXL != "":
+		add("--diffusion-model", rc.ModelPath)
+	default:
+		add("--model", rc.ModelPath)
+	}
 
 	// Server vs CLI mode
 	if cfg.Mode == "server" {

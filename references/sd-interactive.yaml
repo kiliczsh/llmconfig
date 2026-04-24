@@ -1,6 +1,19 @@
 # llamaconfig reference — sd backend, interactive/cli mode (sd-cli)
 # Copy to ~/.llamaconfig/configs/<name>.yaml and fill in required fields.
 # Required: version, name, model.source + repo/file/path/url
+#
+# ── Two ways to supply the weights ───────────────────────────────────────────
+# 1) SD1.x / SDXL: a single unified checkpoint goes in `model.file`. It is
+#    passed to sd-cli as --model.
+# 2) Flux / SD3:   the diffusion weights are still the main `model.file`, but
+#    you MUST also provide the text encoders (clip_l, t5xxl) and VAE via the
+#    `sd.*` block. llamaconfig detects this layout and switches --model for
+#    --diffusion-model automatically.
+#
+# Auxiliary files (clip_l, t5xxl, vae, taesd, …) accept one of:
+#   - a local path (absolute or "~/…")
+#   - an hf:// URL of the form hf://<owner>/<repo>/<filepath-in-repo>
+# llamaconfig auto-downloads hf:// references into the cache on `up`.
 
 version: 1
 name: my-sd-model
@@ -11,13 +24,17 @@ backend: sd
 mode: interactive                 # interactive → sd-cli (generates to file)
 
 # ── Model ─────────────────────────────────────────────────────────────────────
+# Example A — SD1.5 unified checkpoint (single file)
+# model:
+#   source: url
+#   url: https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors
+#   file: v1-5-pruned-emaonly.safetensors
 
+# Example B — Flux.1-schnell (diffusion weights + separate encoders below)
 model:
   source: huggingface
   repo: city96/FLUX.1-schnell-gguf
   file: flux1-schnell-Q4_0.gguf
-  # source: url
-  # url: https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors
   download:
     resume: true
     verify_checksum: false
@@ -46,15 +63,21 @@ sd:
   # preview_path: ./preview.png
   # mode: img_gen                 # img_gen | vid_gen | upscale | convert | metadata
 
-  # --- Split model components (optional, for models distributed as separate files) ---
-  # diffusion_model: ""           # standalone diffusion model (e.g. Flux unet)
-  # vae: ""                       # standalone VAE
-  # clip_l: ""                    # CLIP-L text encoder (SDXL/Flux)
-  # clip_g: ""                    # CLIP-G text encoder (SDXL)
-  # t5xxl: ""                     # T5-XXL text encoder (SD3/Flux)
+  # --- Auxiliary model components (required for Flux / SD3) ---
+  # Use hf://<repo>/<file> for auto-download, or a local path. For Flux.1
+  # these three unlock the pipeline; `model.file` is the main GGUF above.
+  vae:    hf://black-forest-labs/FLUX.1-schnell/ae.safetensors
+  clip_l: hf://comfyanonymous/flux_text_encoders/clip_l.safetensors
+  t5xxl:  hf://comfyanonymous/flux_text_encoders/t5xxl_fp16.safetensors
+  # t5xxl:  hf://comfyanonymous/flux_text_encoders/t5xxl_fp8_e4m3fn.safetensors  # ~5 GB, tight VRAM
+  # clip_g: ""                    # SDXL/SD3 only
   # taesd: ""                     # Tiny AutoEncoder (fast preview decode)
-  # lora_model_dir: ""            # LoRA directory
-  # control_net: ""               # ControlNet model
+  # control_net: ""
+  # photo_maker: ""
+  # upscale_model: ""
+  # lora_model_dir: ""
+  # embd_dir: ""
+  # diffusion_model: ""           # set this to override the auto-routing
 
   # --- Hardware ---
   # type: ""                      # weight type: f32 | f16 | q4_0 | q8_0 | ...
@@ -63,16 +86,16 @@ sd:
   # clip_on_cpu: false
   flash_attention: false          # true = --fa (enable flash attention)
 
-  # --- Generation defaults ---
-  width: 512
-  height: 512
-  steps: 20
-  cfg_scale: 7.0                  # classifier-free guidance scale
-  # guidance: 3.5                 # distilled guidance (Flux/SD3)
+  # --- Generation defaults (Flux defaults shown; for SD1.5 use 512² / steps:20 / cfg:7 / euler_a) ---
+  width: 1024
+  height: 1024
+  steps: 4                        # schnell finishes in ~4 steps
+  cfg_scale: 1.0                  # Flux guidance-distilled; cfg≈1.0
+  guidance: 3.5                   # distilled guidance (Flux/SD3)
   # strength: 0.75                # img2img noise strength
   # negative_prompt: ""
   # batch_count: 1
-  sampling_method: euler_a        # euler | euler_a | heun | dpm++2m | dpm++2s_a | lcm | tcd | ...
+  sampling_method: euler          # euler | euler_a | heun | dpm++2m | dpm++2s_a | lcm | tcd | ...
   # scheduler: discrete           # discrete | karras | exponential | ays | gits | ...
   seed: -1                        # -1 = random
 

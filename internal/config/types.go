@@ -337,6 +337,21 @@ type RunConfig struct {
 	LogFile        string
 	BinaryPath     string
 	Backend        string // "llama" | "sd" | "whisper"
+
+	// ExtraDownloads lists auxiliary artifacts that must exist on disk
+	// before the backend starts — e.g. Flux's separate CLIP/T5/VAE
+	// encoders referenced via hf:// in sd.* fields.
+	ExtraDownloads []ExtraDownload
+}
+
+// ExtraDownload is a single file the launcher must ensure is cached
+// before spawning the backend. Populated by the resolver when it sees
+// hf:// references in SD auxiliary fields.
+type ExtraDownload struct {
+	Kind     string // "vae", "clip_l", "t5xxl", … (for log/error messages)
+	Repo     string // HuggingFace repo id "owner/name"
+	File     string // path within the repo
+	DestPath string // absolute local path where the file should live
 }
 
 type WhisperSpec struct {

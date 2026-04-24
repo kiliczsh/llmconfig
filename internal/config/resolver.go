@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/kiliczsh/llamaconfig/internal/dirs"
 	"github.com/kiliczsh/llamaconfig/internal/hardware"
@@ -48,7 +49,74 @@ func Resolve(cfg *Config, hw *hardware.DetectionResult, binaryPath string) (*Run
 		}
 	}
 
+	rc.ExtraDownloads = resolveSDAux(cfg)
+
 	return rc, nil
+}
+
+// resolveSDAux expands `hf://<owner>/<repo>/<file>` references in every
+// sd.* auxiliary path field: the string is rewritten in-place to the
+// local cache path, and an ExtraDownload entry is emitted so `up` can
+// fetch the file before starting sd-server. Tilde prefixes on plain
+// filesystem paths are also expanded here so args_sd.go can forward them
+// verbatim.
+func resolveSDAux(cfg *Config) []ExtraDownload {
+	if cfg.Backend != "sd" {
+		return nil
+	}
+	cache := modelCacheDir(cfg)
+	var extras []ExtraDownload
+
+	resolveOne := func(kind string, val *string) {
+		if *val == "" {
+			return
+		}
+		if repo, file, ok := parseHFRef(*val); ok {
+			dest := filepath.Join(cache, file)
+			extras = append(extras, ExtraDownload{
+				Kind:     kind,
+				Repo:     repo,
+				File:     file,
+				DestPath: dest,
+			})
+			*val = dest
+			return
+		}
+		*val = dirs.ExpandHome(*val)
+	}
+
+	resolveOne("vae", &cfg.SD.VAE)
+	resolveOne("taesd", &cfg.SD.TAESD)
+	resolveOne("clip_l", &cfg.SD.ClipL)
+	resolveOne("clip_g", &cfg.SD.ClipG)
+	resolveOne("clip_vision", &cfg.SD.ClipVision)
+	resolveOne("t5xxl", &cfg.SD.T5XXL)
+	resolveOne("llm", &cfg.SD.LLM)
+	resolveOne("llm_vision", &cfg.SD.LLMVision)
+	resolveOne("diffusion_model", &cfg.SD.DiffusionModel)
+	resolveOne("high_noise_diffusion_model", &cfg.SD.HighNoiseDiffusionModel)
+	resolveOne("control_net", &cfg.SD.ControlNet)
+	resolveOne("photo_maker", &cfg.SD.PhotoMaker)
+	resolveOne("upscale_model", &cfg.SD.UpscaleModel)
+	resolveOne("embd_dir", &cfg.SD.EmbedDir)
+	resolveOne("lora_model_dir", &cfg.SD.LoRAModelDir)
+
+	return extras
+}
+
+// parseHFRef parses an "hf://owner/name/path/to/file" string. Anything
+// missing the full three-segment shape is returned as not-an-hf-ref so
+// the caller falls back to treating the value as a filesystem path.
+func parseHFRef(s string) (repo, file string, ok bool) {
+	rest, found := strings.CutPrefix(s, "hf://")
+	if !found {
+		return "", "", false
+	}
+	parts := strings.SplitN(rest, "/", 3)
+	if len(parts) < 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+		return "", "", false
+	}
+	return parts[0] + "/" + parts[1], parts[2], true
 }
 
 // resolveModelPath returns the path where the main model file should live.
