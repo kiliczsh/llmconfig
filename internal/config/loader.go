@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -30,8 +31,13 @@ func LoadFile(path string) (*Config, error) {
 	// Expand ${ENV_VAR} references before unmarshalling.
 	expanded := os.ExpandEnv(string(raw))
 
+	// KnownFields(true) surfaces typos (e.g. `parral: 2` instead of
+	// `parallel: 2`) at load time instead of letting them silently do
+	// nothing.
+	dec := yaml.NewDecoder(bytes.NewReader([]byte(expanded)))
+	dec.KnownFields(true)
 	var cfg Config
-	if err := yaml.Unmarshal([]byte(expanded), &cfg); err != nil {
+	if err := dec.Decode(&cfg); err != nil {
 		return nil, fmt.Errorf("config: parse %s: %w", path, err)
 	}
 

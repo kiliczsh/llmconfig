@@ -64,8 +64,15 @@ func BaseDir() string {
 	return filepath.Join(home, ".llamaconfig")
 }
 
+// ExpandHome resolves leading "~" to the user's home directory. Handles
+// bare "~", "~/<rest>", and "~\<rest>" (the last form is what Windows
+// users typically type when editing YAML by hand).
 func ExpandHome(path string) string {
-	if len(path) >= 2 && path[:2] == "~/" {
+	if path == "~" {
+		home, _ := os.UserHomeDir()
+		return home
+	}
+	if len(path) >= 2 && (path[:2] == "~/" || path[:2] == `~\`) {
 		home, _ := os.UserHomeDir()
 		return filepath.Join(home, path[2:])
 	}

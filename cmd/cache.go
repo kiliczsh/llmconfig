@@ -11,6 +11,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/kiliczsh/llamaconfig/internal/dirs"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 func newCacheCmd() *cobra.Command {
@@ -41,7 +42,7 @@ func newCacheLsCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
-		Short:   "List all cached GGUF files with sizes",
+		Short:   "List all cached model files with sizes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer
@@ -89,7 +90,10 @@ func listCachedFiles(cacheDir string) ([]cacheEntry, int64, error) {
 		if e.IsDir() {
 			continue
 		}
-		if !strings.HasSuffix(e.Name(), ".gguf") {
+		// Skip in-progress download temp files so they don't confuse
+		// listing/clean output.
+		name := e.Name()
+		if strings.HasSuffix(name, ".tmp") || strings.HasSuffix(name, ".part") {
 			continue
 		}
 		info, err := e.Info()
@@ -97,8 +101,8 @@ func listCachedFiles(cacheDir string) ([]cacheEntry, int64, error) {
 			continue
 		}
 		files = append(files, cacheEntry{
-			name: e.Name(),
-			path: filepath.Join(cacheDir, e.Name()),
+			name: name,
+			path: filepath.Join(cacheDir, name),
 			size: info.Size(),
 		})
 		total += info.Size()
@@ -181,25 +185,42 @@ func newCacheCleanCmd() *cobra.Command {
 	return cmd
 }
 
-// referencedFiles returns a set of GGUF filenames mentioned in any config.
+// referencedFiles returns the set of cached filenames that at least one
+// config points at — main model, draft model, and multimodal projector
+// file. The YAML is parsed (not scanned line-by-line) so nested structs
+// and non-gguf backends (whisper .bin, SD weights) are picked up.
 func referencedFiles(configDir string) map[string]bool {
+	type fileRef struct {
+		File string `yaml:"file"`
+	}
+	type modelRef struct {
+		File   string   `yaml:"file"`
+		Draft  *fileRef `yaml:"draft,omitempty"`
+		MMProj *fileRef `yaml:"mmproj,omitempty"`
+	}
+	type minimal struct {
+		Model modelRef `yaml:"model"`
+	}
+
 	refs := map[string]bool{}
-	pattern := filepath.Join(configDir, "*.yaml")
-	matches, _ := filepath.Glob(pattern)
+	matches, _ := filepath.Glob(filepath.Join(configDir, "*.yaml"))
 	for _, path := range matches {
 		data, err := os.ReadFile(path)
 		if err != nil {
 			continue
 		}
-		// Simple scan — look for "file: <name>.gguf"
-		for _, line := range strings.Split(string(data), "\n") {
-			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "file:") {
-				name := strings.TrimSpace(strings.TrimPrefix(line, "file:"))
-				if strings.HasSuffix(name, ".gguf") {
-					refs[name] = true
-				}
-			}
+		var m minimal
+		if err := yaml.Unmarshal(data, &m); err != nil {
+			continue
+		}
+		if m.Model.File != "" {
+			refs[filepath.Base(m.Model.File)] = true
+		}
+		if m.Model.Draft != nil && m.Model.Draft.File != "" {
+			refs[filepath.Base(m.Model.Draft.File)] = true
+		}
+		if m.Model.MMProj != nil && m.Model.MMProj.File != "" {
+			refs[filepath.Base(m.Model.MMProj.File)] = true
 		}
 	}
 	return refs
