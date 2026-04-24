@@ -146,7 +146,7 @@ func newConfigEditCmd() *cobra.Command {
 				}
 			}
 
-			parts := strings.Fields(editor)
+			parts := splitEditorCmd(editor)
 			if len(parts) == 0 {
 				return fmt.Errorf("no editor configured (set $EDITOR)")
 			}
@@ -173,6 +173,36 @@ func newConfigPathCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// splitEditorCmd is a whitespace tokenizer that honors double/single
+// quotes, so `EDITOR='"C:\Program Files\VS Code\Code.exe" --wait'` splits
+// into two tokens instead of shattering the path at every space.
+func splitEditorCmd(s string) []string {
+	var tokens []string
+	var cur strings.Builder
+	inQuote := false
+	var quoteChar rune
+	for _, r := range s {
+		switch {
+		case inQuote && r == quoteChar:
+			inQuote = false
+		case !inQuote && (r == '"' || r == '\''):
+			inQuote = true
+			quoteChar = r
+		case !inQuote && (r == ' ' || r == '\t'):
+			if cur.Len() > 0 {
+				tokens = append(tokens, cur.String())
+				cur.Reset()
+			}
+		default:
+			cur.WriteRune(r)
+		}
+	}
+	if cur.Len() > 0 {
+		tokens = append(tokens, cur.String())
+	}
+	return tokens
 }
 
 func warnDeprecated(cfg *config.Config, p *output.Printer) {

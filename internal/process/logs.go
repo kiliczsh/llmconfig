@@ -62,7 +62,14 @@ func Follow(path string, out chan<- string, stop <-chan struct{}) error {
 				if len(line) > 0 {
 					partial += line
 					if len(partial) > 0 && partial[len(partial)-1] == '\n' {
-						out <- partial[:len(partial)-1]
+						// Guard the send against a caller that has already
+						// signalled stop — otherwise we'd block forever (or
+						// panic if they closed the channel).
+						select {
+						case <-stop:
+							return nil
+						case out <- partial[:len(partial)-1]:
+						}
 						partial = ""
 					}
 				}

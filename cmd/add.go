@@ -39,6 +39,9 @@ func newAddCmd() *cobra.Command {
 			modelPath := absPath
 			if flagCopy {
 				dest := filepath.Join(appCtx.CacheDir, filepath.Base(absPath))
+				if existing, err := os.Stat(dest); err == nil && !os.SameFile(existing, mustStat(absPath)) {
+					return fmt.Errorf("cache already contains %q — check: rename the source file or clear the cached entry (llamaconfig cache clean)", filepath.Base(absPath))
+				}
 				if err := copyFile(absPath, dest); err != nil {
 					return fmt.Errorf("add: copy file: %w", err)
 				}
@@ -76,6 +79,15 @@ func newAddCmd() *cobra.Command {
 	cmd.Flags().StringVar(&flagPath, "path", "", "path to the GGUF file (required)")
 	cmd.Flags().BoolVar(&flagCopy, "copy", false, "copy file to llamaconfig cache")
 	return cmd
+}
+
+// mustStat returns the FileInfo for the given path. Caller has already
+// verified existence, so an error here is a TOCTOU between the check and
+// the copy; we degrade to nil and let os.SameFile fall through to "not
+// same" so the collision guard still fires.
+func mustStat(path string) os.FileInfo {
+	info, _ := os.Stat(path)
+	return info
 }
 
 func copyFile(src, dst string) error {

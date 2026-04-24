@@ -3,6 +3,9 @@ package output
 import (
 	"fmt"
 	"os"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
 // Printer is the output abstraction for all commands.
@@ -14,6 +17,13 @@ func New(noColor bool) *Printer {
 	// Respect the de facto NO_COLOR standard (https://no-color.org).
 	if _, ok := os.LookupEnv("NO_COLOR"); ok {
 		noColor = true
+	}
+	if noColor {
+		// Force lipgloss's package-global renderer into Ascii so *every*
+		// style call (tables, StatusColor, Bold, the handful of direct
+		// lipgloss calls in cmd/*) becomes a no-op. Without this, only
+		// the Printer.Info/Success/… wrappers honored NoColor.
+		lipgloss.SetColorProfile(termenv.Ascii)
 	}
 	return &Printer{NoColor: noColor}
 }
