@@ -73,7 +73,7 @@ func newRmCmd() *cobra.Command {
 							Value(&confirm),
 					),
 				)
-				if err := form.Run(); err != nil {
+				if err := abortOnEsc(form.Run()); err != nil {
 					return err
 				}
 				if !confirm {

@@ -45,11 +45,11 @@ func newImportCmd() *cobra.Command {
 			// Confirm unless --yes.
 			if !flagYes {
 				var confirm bool
-				if err := huh.NewForm(huh.NewGroup(
+				if err := abortOnEsc(huh.NewForm(huh.NewGroup(
 					huh.NewConfirm().
 						Title(fmt.Sprintf("Import %d entry(ies)?", len(manifest.Entries))).
 						Value(&confirm),
-				)).Run(); err != nil {
+				)).Run()); err != nil {
 					return err
 				}
 				if !confirm {

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -10,6 +11,23 @@ import (
 	"github.com/kiliczsh/llmconfig/internal/state"
 	"github.com/spf13/cobra"
 )
+
+// ErrAborted is returned when the user presses ESC or Ctrl+C to cancel a
+// picker or confirmation prompt. main.go treats this as a clean exit (no
+// error message, exit code 0).
+var ErrAborted = errors.New("")
+
+// abortOnEsc converts huh.ErrUserAborted (ESC / Ctrl+C) into ErrAborted so
+// every huh form in the codebase exits cleanly without printing an error.
+func abortOnEsc(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, huh.ErrUserAborted) {
+		return ErrAborted
+	}
+	return err
+}
 
 // pickRunningModel returns a model name to operate on.
 // If name is non-empty it is returned as-is.
@@ -47,7 +65,7 @@ func pickRunningModel(name string, sf *state.StateFile) (string, error) {
 			Options(opts...).
 			Value(&selected),
 	)).Run()
-	if err != nil {
+	if err := abortOnEsc(err); err != nil {
 		return "", err
 	}
 	return selected, nil
@@ -93,7 +111,7 @@ func pickConfig(name, configDir string) (string, error) {
 			Options(opts...).
 			Value(&selected),
 	)).Run()
-	if err != nil {
+	if err := abortOnEsc(err); err != nil {
 		return "", err
 	}
 	return selected, nil

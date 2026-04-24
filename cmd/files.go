@@ -159,7 +159,7 @@ func newFilesCleanCmd() *cobra.Command {
 					Title(fmt.Sprintf("Remove %d file(s)?", len(toRemove))).
 					Value(&confirm),
 			))
-			if err := form.Run(); err != nil {
+			if err := abortOnEsc(form.Run()); err != nil {
 				return err
 			}
 			if !confirm {
