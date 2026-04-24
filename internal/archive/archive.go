@@ -265,7 +265,10 @@ func Extract(archivePath, configDir, cacheDir string, overwrite bool, onProgress
 		return nil, err
 	}
 
-	// Decide per-entry whether to extract.
+	// Decide per-entry whether to extract. Installed is populated only as
+	// each entry's files successfully land on disk, not up front — a
+	// mid-stream failure otherwise claims models were installed when they
+	// weren't.
 	extract := map[string]bool{}
 	result := &ExtractResult{}
 	for _, e := range manifest.Entries {
@@ -285,8 +288,8 @@ func Extract(archivePath, configDir, cacheDir string, overwrite bool, onProgress
 			continue
 		}
 		extract[e.Name] = true
-		result.Installed = append(result.Installed, e.Name)
 	}
+	installed := map[string]bool{}
 
 	// Build a name-lookup so we can map archive paths back to entries.
 	entryByConfig := map[string]*Entry{}
@@ -324,39 +327,70 @@ func Extract(archivePath, configDir, cacheDir string, overwrite bool, onProgress
 		if hdr.Typeflag != tar.TypeReg {
 			continue
 		}
-		// Refuse absolute or traversing paths.
-		if strings.HasPrefix(hdr.Name, "/") || strings.Contains(hdr.Name, "..") {
-			return nil, fmt.Errorf("archive: unsafe path %q", hdr.Name)
-		}
 		if hdr.Name == ManifestName {
 			continue
 		}
 
-		var dest string
-		var progressLabel string
+		var dest, destRoot, progressLabel, entryName string
 		if e, ok := entryByConfig[hdr.Name]; ok {
 			if !extract[e.Name] {
 				continue
 			}
 			dest = filepath.Join(configDir, e.Name+".yaml")
+			destRoot = configDir
 			progressLabel = hdr.Name
+			entryName = e.Name
 		} else if e, ok := entryByModel[hdr.Name]; ok {
 			if !extract[e.Name] {
 				continue
 			}
 			dest = filepath.Join(cacheDir, path.Base(e.ModelFile))
+			destRoot = cacheDir
 			progressLabel = hdr.Name
+			entryName = e.Name
 		} else {
 			// Unknown entry in tar — ignore rather than error, forward compat.
 			continue
 		}
 
+		// Defence-in-depth: verify the computed dest never escapes its
+		// intended root. Covers manifest-driven traversal (the entry map
+		// keys come from the bundle's own manifest) on both Unix and
+		// Windows, where "\" and drive prefixes need active guarding.
+		if !isUnder(dest, destRoot) {
+			return result, fmt.Errorf("archive: unsafe path %q", hdr.Name)
+		}
+
 		if err := extractOne(tr, dest, progressLabel, hdr.Size, onProgress); err != nil {
 			return result, err
 		}
+		installed[entryName] = true
 	}
 
+	for _, e := range manifest.Entries {
+		if installed[e.Name] {
+			result.Installed = append(result.Installed, e.Name)
+		}
+	}
 	return result, nil
+}
+
+// isUnder reports whether path is located inside root, using cleaned
+// absolute paths. Returns false on any error so callers fail safe.
+func isUnder(path, root string) bool {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return false
+	}
+	rel, err := filepath.Rel(absRoot, absPath)
+	if err != nil {
+		return false
+	}
+	return !strings.HasPrefix(rel, "..") && rel != ".."
 }
 
 func extractOne(tr *tar.Reader, dest, label string, size int64, onProgress ProgressFunc) error {

@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/kiliczsh/llamaconfig/internal/config"
@@ -69,8 +70,10 @@ func (r *serverRunner) Stop(ctx context.Context, ms *state.ModelState, timeout t
 		return stopWindows(ms.PID, timeout)
 	}
 
-	// SIGTERM
-	if err := proc.Signal(os.Interrupt); err != nil {
+	// SIGTERM — graceful shutdown; llama/sd/whisper servers all handle it.
+	// SIGINT (os.Interrupt) was previously used but is Ctrl-C semantics and
+	// not guaranteed to reach the process in the same way.
+	if err := proc.Signal(syscall.SIGTERM); err != nil {
 		// Process may have already exited
 		return nil
 	}

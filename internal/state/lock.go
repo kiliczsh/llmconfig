@@ -16,8 +16,6 @@ import (
 // "already in progress, try again later" message to the user.
 var ErrLockHeld = errors.New("lock is held by another process")
 
-const staleLockAge = 30 * time.Second
-
 type fileLock struct {
 	path string
 	f    *os.File
@@ -39,7 +37,7 @@ func acquireLock(lockPath string) (*fileLock, error) {
 			return nil, fmt.Errorf("state lock: %w", err)
 		}
 
-		if isStaleLock(lockPath, staleLockAge) {
+		if isStaleLock(lockPath) {
 			_ = os.Remove(lockPath)
 			continue
 		}
@@ -63,7 +61,7 @@ func tryAcquireLock(lockPath string) (*fileLock, error) {
 		return nil, fmt.Errorf("state lock: %w", err)
 	}
 
-	if isStaleLock(lockPath, staleLockAge) {
+	if isStaleLock(lockPath) {
 		_ = os.Remove(lockPath)
 		if fl, err := createLockFile(lockPath); err == nil {
 			return fl, nil
@@ -81,19 +79,23 @@ func createLockFile(lockPath string) (*fileLock, error) {
 	return &fileLock{path: lockPath, f: f}, nil
 }
 
-func isStaleLock(lockPath string, staleAge time.Duration) bool {
-	if raw, err := os.ReadFile(lockPath); err == nil {
-		if pid, parseErr := strconv.Atoi(strings.TrimSpace(string(raw))); parseErr == nil && pid > 0 {
-			if !process.PidAlive(pid) {
-				return true
-			}
-		}
-	}
-	info, err := os.Stat(lockPath)
+// isStaleLock returns true only when the lock file exists and its holder
+// PID is no longer alive. A previous version also treated any lock older
+// than 30s as stale — that silently stole locks from long-running owners
+// (e.g. a 1 GB model download) and let two processes think they owned the
+// same model. PID liveness is the only safe signal.
+func isStaleLock(lockPath string) bool {
+	raw, err := os.ReadFile(lockPath)
 	if err != nil {
 		return false
 	}
-	return time.Since(info.ModTime()) > staleAge
+	pid, err := strconv.Atoi(strings.TrimSpace(string(raw)))
+	if err != nil || pid <= 0 {
+		// Unreadable PID payload — treat as stale so we can recover from a
+		// previous crash that left a truncated/corrupt lock.
+		return true
+	}
+	return !process.PidAlive(pid)
 }
 
 func (l *fileLock) release() {
