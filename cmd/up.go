@@ -290,11 +290,11 @@ func neededArtifacts(cfg *config.Config, rc *config.RunConfig) []artifact {
 }
 
 func downloadArtifact(ctx context.Context, cfg *config.Config, art artifact, p interface{ Info(string, ...any) }) error {
-	p.Info("%s not cached — downloading %s...", art.kind, art.file)
+	p.Info("%s not downloaded — fetching %s...", art.kind, art.file)
 
-	cacheDir := dirs.ExpandHome(cfg.Model.Download.CacheDir)
+	cacheDir := dirs.ExpandHome(cfg.Model.Download.ModelDir)
 	if cacheDir == "" {
-		cacheDir = dirs.CacheDir()
+		cacheDir = dirs.ModelsDir()
 	}
 
 	req := &downloader.Request{
@@ -302,7 +302,7 @@ func downloadArtifact(ctx context.Context, cfg *config.Config, art artifact, p i
 		File:           art.file,
 		URL:            art.url,
 		Token:          resolveToken(""),
-		CacheDir:       cacheDir,
+		ModelDir:       cacheDir,
 		Resume:         *cfg.Model.Download.Resume,
 		Connections:    cfg.Model.Download.Connections,
 		Checksum:       art.checksum,

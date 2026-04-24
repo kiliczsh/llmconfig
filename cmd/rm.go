@@ -45,7 +45,7 @@ func newRmCmd() *cobra.Command {
 			// Determine cached file path
 			var cachedFile string
 			if !flagKeepFile && cfg.Model.Source != "local" && cfg.Model.File != "" {
-				cachedFile = filepath.Join(appCtx.CacheDir, cfg.Model.File)
+				cachedFile = filepath.Join(appCtx.ModelsDir, cfg.Model.File)
 				if _, err := os.Stat(cachedFile); os.IsNotExist(err) {
 					cachedFile = "" // not cached
 				}

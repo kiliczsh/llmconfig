@@ -9,8 +9,8 @@ func ConfigDir() string {
 	return filepath.Join(BaseDir(), "configs")
 }
 
-func CacheDir() string {
-	return filepath.Join(BaseDir(), "cache")
+func ModelsDir() string {
+	return filepath.Join(BaseDir(), "models")
 }
 
 func LogDir() string {
@@ -41,7 +41,7 @@ func ModelLockFile(name string) string {
 }
 
 func EnsureAll() error {
-	for _, d := range []string{ConfigDir(), CacheDir(), LogDir(), BenchDir()} {
+	for _, d := range []string{ConfigDir(), ModelsDir(), LogDir(), BenchDir()} {
 		if err := EnsureDir(d); err != nil {
 			return err
 		}

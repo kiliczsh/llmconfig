@@ -64,7 +64,7 @@ func resolveSDAux(cfg *Config) []ExtraDownload {
 	if cfg.Backend != "sd" {
 		return nil
 	}
-	cache := modelCacheDir(cfg)
+	cache := modelDir(cfg)
 	var extras []ExtraDownload
 
 	resolveOne := func(kind string, val *string) {
@@ -129,7 +129,7 @@ func resolveModelPath(cfg *Config) (string, error) {
 	case "local":
 		return dirs.ExpandHome(cfg.Model.Path), nil
 	case "huggingface", "url":
-		return filepath.Join(modelCacheDir(cfg), cfg.Model.File), nil
+		return filepath.Join(modelDir(cfg), cfg.Model.File), nil
 	default:
 		return "", fmt.Errorf("unknown model source: %s", cfg.Model.Source)
 	}
@@ -142,7 +142,7 @@ func resolveDraftPath(cfg *Config) (string, error) {
 	if cfg.Model.Draft.Source == "local" {
 		return dirs.ExpandHome(cfg.Model.Draft.File), nil
 	}
-	return filepath.Join(modelCacheDir(cfg), cfg.Model.Draft.File), nil
+	return filepath.Join(modelDir(cfg), cfg.Model.Draft.File), nil
 }
 
 func resolveMMProjPath(cfg *Config) (string, error) {
@@ -152,15 +152,15 @@ func resolveMMProjPath(cfg *Config) (string, error) {
 	if cfg.Model.MMProj.Source == "local" {
 		return dirs.ExpandHome(cfg.Model.MMProj.File), nil
 	}
-	return filepath.Join(modelCacheDir(cfg), cfg.Model.MMProj.File), nil
+	return filepath.Join(modelDir(cfg), cfg.Model.MMProj.File), nil
 }
 
-func modelCacheDir(cfg *Config) string {
-	cacheDir := cfg.Model.Download.CacheDir
-	if cacheDir == "" {
-		return dirs.CacheDir()
+func modelDir(cfg *Config) string {
+	modelDir := cfg.Model.Download.ModelDir
+	if modelDir == "" {
+		return dirs.ModelsDir()
 	}
-	return dirs.ExpandHome(cacheDir)
+	return dirs.ExpandHome(modelDir)
 }
 
 // selectProfile picks the best HardwareProfile from the config.

@@ -53,12 +53,12 @@ func newPullCmd() *cobra.Command {
 				p.Info("found: %s (%s)", file, humanize.Bytes(uint64(size)))
 			}
 
-			cacheDir := dirs.CacheDir()
-			destPath := filepath.Join(cacheDir, file)
+			modelsDir := dirs.ModelsDir()
+			destPath := filepath.Join(modelsDir, file)
 
-			// Already cached?
+			// Already downloaded?
 			if info, err := os.Stat(destPath); err == nil {
-				p.Success("already cached: %s (%s)", file, humanize.Bytes(uint64(info.Size())))
+				p.Success("already downloaded: %s (%s)", file, humanize.Bytes(uint64(info.Size())))
 				if !flagNoConfig {
 					return writeConfigIfNeeded(appCtx, repo, file, flagName)
 				}
@@ -69,7 +69,7 @@ func newPullCmd() *cobra.Command {
 				Repo:        repo,
 				File:        file,
 				Token:       token,
-				CacheDir:    cacheDir,
+				ModelDir:    modelsDir,
 				Resume:      true,
 				Connections: 4,
 			}

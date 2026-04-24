@@ -9,7 +9,7 @@ SRC_DIR="$HOME/.llmconfig/src"
 CONFIG_DIR="$HOME/.llmconfig/configs"
 BIN_DIR="$HOME/.llmconfig/bin"
 LOGS_DIR="$HOME/.llmconfig/logs"
-CACHE_DIR="$HOME/.llmconfig/cache"
+MODELS_DIR="$HOME/.llmconfig/models"
 LLMCONFIG_HOME="$HOME/.llmconfig"
 
 # --- colors ---
@@ -132,7 +132,7 @@ label_llama="llama.cpp binaries       ($(_sz "$BIN_DIR"))"
 label_src="Source code              ($(_sz "$SRC_DIR"))"
 label_configs="Model configs            ($(_sz "$CONFIG_DIR"))"
 label_logs="Logs                     ($(_sz "$LOGS_DIR"))"
-label_cache="Model cache (GGUF files) ($(_sz "$CACHE_DIR"))"
+label_models="Downloaded models (GGUF files) ($(_sz "$MODELS_DIR"))"
 
 ITEMS=(
   "$label_binary"
@@ -140,7 +140,7 @@ ITEMS=(
   "$label_src"
   "$label_configs"
   "$label_logs"
-  "$label_cache"
+  "$label_models"
 )
 
 # cache unchecked by default - reorder so cache is last and uncheck it
@@ -229,17 +229,17 @@ if has_selected 4; then
   fi
 fi
 
-# 5: cache
+# 5: models
 if has_selected 5; then
-  if [[ -d "$CACHE_DIR" ]]; then
-    rm -rf "$CACHE_DIR"
-    step_ok "Removed model cache"
+  if [[ -d "$MODELS_DIR" ]]; then
+    rm -rf "$MODELS_DIR"
+    step_ok "Removed downloaded models"
   else
-    step_skip "Cache dir not found"
+    step_skip "Models dir not found"
   fi
 else
-  if [[ -d "$CACHE_DIR" ]]; then
-    step_skip "Model cache kept at $CACHE_DIR"
+  if [[ -d "$MODELS_DIR" ]]; then
+    step_skip "Downloaded models kept at $MODELS_DIR"
   fi
 fi
 

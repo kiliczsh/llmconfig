@@ -38,15 +38,15 @@ func newAddCmd() *cobra.Command {
 
 			modelPath := absPath
 			if flagCopy {
-				dest := filepath.Join(appCtx.CacheDir, filepath.Base(absPath))
+				dest := filepath.Join(appCtx.ModelsDir, filepath.Base(absPath))
 				if existing, err := os.Stat(dest); err == nil && !os.SameFile(existing, mustStat(absPath)) {
-					return fmt.Errorf("cache already contains %q — check: rename the source file or clear the cached entry (llmconfig cache clean)", filepath.Base(absPath))
+					return fmt.Errorf("models dir already contains %q — check: rename the source file or remove it (llmconfig files clean)", filepath.Base(absPath))
 				}
 				if err := copyFile(absPath, dest); err != nil {
 					return fmt.Errorf("add: copy file: %w", err)
 				}
 				modelPath = dest
-				p.Info("copied to cache: %s", dest)
+				p.Info("copied to models dir: %s", dest)
 			}
 
 			configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
@@ -77,7 +77,7 @@ func newAddCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&flagPath, "path", "", "path to the GGUF file (required)")
-	cmd.Flags().BoolVar(&flagCopy, "copy", false, "copy file to llmconfig cache")
+	cmd.Flags().BoolVar(&flagCopy, "copy", false, "copy file to models dir")
 	return cmd
 }
 

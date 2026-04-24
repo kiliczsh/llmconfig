@@ -16,7 +16,7 @@ import (
 
 type AppContext struct {
 	ConfigDir  string
-	CacheDir   string
+	ModelsDir  string
 	LogDir     string
 	LlamaBin   string
 	Verbose    bool
@@ -97,7 +97,7 @@ func init() {
 
 		appCtx := &AppContext{
 			ConfigDir:  configDir,
-			CacheDir:   dirs.CacheDir(),
+			ModelsDir:  dirs.ModelsDir(),
 			LogDir:     dirs.LogDir(),
 			LlamaBin:   llamaBin,
 			Verbose:    flagVerbose,
@@ -133,7 +133,7 @@ func init() {
 		newLlamaCmd(),
 		newSdCmd(),
 		newWhisperCmd(),
-		newCacheCmd(),
+		newFilesCmd(),
 		newVersionCmd(),
 		newBenchCmd(),
 		newCompatCmd(),

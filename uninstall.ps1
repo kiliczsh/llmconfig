@@ -17,7 +17,7 @@ $SrcDir        = Join-Path $LlamaHome "src"        # legacy (old source-install)
 $BinDir        = Join-Path $LlamaHome "bin"        # llama.cpp, sd, whisper binaries
 $ConfigDir     = Join-Path $LlamaHome "configs"
 $LogsDir       = Join-Path $LlamaHome "logs"
-$CacheDir      = Join-Path $LlamaHome "cache"
+$ModelsDir     = Join-Path $LlamaHome "models"
 
 if ($Help) {
     @"
@@ -161,16 +161,16 @@ if (Test-Path $LogsDir) {
     }
 }
 
-# --- Cache (default no) ---
-if ((Test-Path $CacheDir) -and -not $KeepCache) {
-    if (Ask -Label "model cache (GGUF files)" -Path $CacheDir -DefaultNo) {
-        Remove-Item $CacheDir -Recurse -Force
-        ok "Removed $CacheDir"
+# --- Models (default no) ---
+if ((Test-Path $ModelsDir) -and -not $KeepCache) {
+    if (Ask -Label "downloaded models (GGUF files)" -Path $ModelsDir -DefaultNo) {
+        Remove-Item $ModelsDir -Recurse -Force
+        ok "Removed $ModelsDir"
     } else {
-        skip "Kept model cache at $CacheDir"
+        skip "Kept downloaded models at $ModelsDir"
     }
-} elseif (Test-Path $CacheDir) {
-    skip "Kept model cache at $CacheDir (--KeepCache)"
+} elseif (Test-Path $ModelsDir) {
+    skip "Kept downloaded models at $ModelsDir (--KeepCache)"
 }
 
 # --- Remove home dir if empty ---

@@ -259,7 +259,7 @@ type ExtractResult struct {
 // the manifest is placed according to Entry.Config and Entry.ModelFile.
 // When overwrite is false, entries whose config or model already exists
 // are skipped and reported in ExtractResult.Skipped.
-func Extract(archivePath, configDir, cacheDir string, overwrite bool, onProgress ProgressFunc) (*ExtractResult, error) {
+func Extract(archivePath, configDir, modelsDir string, overwrite bool, onProgress ProgressFunc) (*ExtractResult, error) {
 	manifest, err := Open(archivePath)
 	if err != nil {
 		return nil, err
@@ -278,7 +278,7 @@ func Extract(archivePath, configDir, cacheDir string, overwrite bool, onProgress
 			conflict = true
 		}
 		if e.ModelFile != "" {
-			modelDest := filepath.Join(cacheDir, path.Base(e.ModelFile))
+			modelDest := filepath.Join(modelsDir, path.Base(e.ModelFile))
 			if _, err := os.Stat(modelDest); err == nil && !overwrite {
 				conflict = true
 			}
@@ -305,8 +305,8 @@ func Extract(archivePath, configDir, cacheDir string, overwrite bool, onProgress
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return nil, fmt.Errorf("archive: mkdir %s: %w", configDir, err)
 	}
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
-		return nil, fmt.Errorf("archive: mkdir %s: %w", cacheDir, err)
+	if err := os.MkdirAll(modelsDir, 0755); err != nil {
+		return nil, fmt.Errorf("archive: mkdir %s: %w", modelsDir, err)
 	}
 
 	f, err := os.Open(archivePath)
@@ -344,8 +344,8 @@ func Extract(archivePath, configDir, cacheDir string, overwrite bool, onProgress
 			if !extract[e.Name] {
 				continue
 			}
-			dest = filepath.Join(cacheDir, path.Base(e.ModelFile))
-			destRoot = cacheDir
+			dest = filepath.Join(modelsDir, path.Base(e.ModelFile))
+			destRoot = modelsDir
 			progressLabel = hdr.Name
 			entryName = e.Name
 		} else {

@@ -26,7 +26,7 @@ Every command is also available via the shorter `llmc` alias.
 ```
 ~/.llmconfig/
 ├── configs/          # YAML config files (<name>.yaml)
-├── cache/            # Downloaded model files (GGUF, whisper GGML, SD weights)
+├── models/           # Downloaded model files (GGUF, whisper GGML, SD weights)
 ├── logs/             # Per-model log files (<name>.log)
 ├── bench/            # Saved benchmark results
 ├── bin/
@@ -221,7 +221,7 @@ llmconfig up gemma-4-e2b
 llmconfig up gemma-4-e2b --port 9000          # override port
 llmconfig up gemma-4-e2b --profile cpu        # force hardware profile
 llmconfig up gemma-4-e2b --dry-run            # print command, do not run
-llmconfig up gemma-4-e2b --no-download        # fail if model not cached
+llmconfig up gemma-4-e2b --no-download        # fail if model not downloaded
 ```
 
 Flags:
@@ -395,14 +395,14 @@ Register a local GGUF file as a named model.
 
 ```bash
 llmconfig add gemma-4-e2b --path /path/to/model.gguf
-llmconfig add gemma-4-e2b --path /path/to/model.gguf --copy   # copy to cache dir
+llmconfig add gemma-4-e2b --path /path/to/model.gguf --copy   # copy to models dir
 ```
 
 ---
 
 ### `rm <name>`
 
-Remove a model config (and optionally its cached file).
+Remove a model config (and optionally its downloaded file).
 
 ```bash
 llmconfig rm gemma-4-e2b
@@ -514,15 +514,15 @@ llmconfig version
 
 ---
 
-### `cache`
+### `files`
 
-Manage the model file cache (`~/.llmconfig/cache/`).
+Manage downloaded model files (`~/.llmconfig/models/`).
 
 ```bash
-llmconfig cache list             # list cached files with sizes (alias: ls)
-llmconfig cache clean            # remove files not referenced by any config
-llmconfig cache clean --all      # remove all cached files
-llmconfig cache path             # print cache directory
+llmconfig files list             # list downloaded files with sizes (alias: ls)
+llmconfig files clean            # remove files not referenced by any config
+llmconfig files clean --all      # remove all downloaded files
+llmconfig files path             # print models directory
 ```
 
 ---
@@ -555,7 +555,7 @@ model:
     resume: true            # default: true — resume interrupted downloads
     connections: 4          # parallel download connections (default: 4)
     verify_checksum: true   # default: true — set to false to skip checksum verification
-    cache_dir: ""           # defaults to ~/.llmconfig/cache
+    model_dir: ""           # defaults to ~/.llmconfig/models
 
   # Speculative decoding (optional)
   draft:

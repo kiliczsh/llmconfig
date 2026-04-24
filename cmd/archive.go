@@ -93,7 +93,7 @@ unpack it manually ("tar -xf foo.llmcpkg").`,
 			}
 
 			// Build CreateEntries.
-			entries, totalBytes, err := buildCreateEntries(selected, appCtx.ConfigDir, appCtx.CacheDir, p)
+			entries, totalBytes, err := buildCreateEntries(selected, appCtx.ConfigDir, appCtx.ModelsDir, p)
 			if err != nil {
 				return err
 			}
@@ -179,7 +179,7 @@ func pickModelsToArchive(available []string, configDir string) ([]string, error)
 	return selected, nil
 }
 
-func buildCreateEntries(names []string, configDir, cacheDir string, p interface{ Warn(string, ...any) }) ([]archive.CreateEntry, int64, error) {
+func buildCreateEntries(names []string, configDir, modelsDir string, p interface{ Warn(string, ...any) }) ([]archive.CreateEntry, int64, error) {
 	var entries []archive.CreateEntry
 	var total int64
 	for _, name := range names {
@@ -196,7 +196,7 @@ func buildCreateEntries(names []string, configDir, cacheDir string, p interface{
 			Source:     cfg.Model.Source,
 		}
 
-		// Locate the model file. Prefer cached copy; fall back to explicit
+		// Locate the model file. Prefer downloaded copy; fall back to explicit
 		// local path. Missing files are warned about but don't block the
 		// archive (someone may just want the config).
 		var modelPath string
@@ -205,7 +205,7 @@ func buildCreateEntries(names []string, configDir, cacheDir string, p interface{
 			modelPath = cfg.Model.Path
 		default:
 			if cfg.Model.File != "" {
-				modelPath = filepath.Join(cacheDir, cfg.Model.File)
+				modelPath = filepath.Join(modelsDir, cfg.Model.File)
 			}
 		}
 		switch {

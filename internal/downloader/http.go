@@ -15,11 +15,11 @@ import (
 type httpDownloader struct{}
 
 func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress func(downloaded, total int64)) (string, error) {
-	if err := os.MkdirAll(req.CacheDir, 0755); err != nil {
-		return "", fmt.Errorf("downloader: create cache dir: %w", err)
+	if err := os.MkdirAll(req.ModelDir, 0755); err != nil {
+		return "", fmt.Errorf("downloader: create models dir: %w", err)
 	}
 
-	destPath := filepath.Join(req.CacheDir, req.File)
+	destPath := filepath.Join(req.ModelDir, req.File)
 	// req.File can include a subdirectory (HF repos expose files like
 	// `subdir/model.gguf`); make sure the parent exists before we open it.
 	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {

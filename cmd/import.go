@@ -40,7 +40,7 @@ func newImportCmd() *cobra.Command {
 				return err
 			}
 
-			printManifestSummary(p, manifest, appCtx.ConfigDir, appCtx.CacheDir)
+			printManifestSummary(p, manifest, appCtx.ConfigDir, appCtx.ModelsDir)
 
 			// Confirm unless --yes.
 			if !flagYes {
@@ -59,7 +59,7 @@ func newImportCmd() *cobra.Command {
 			}
 
 			progress := newArchiveProgress()
-			result, err := archive.Extract(archivePath, appCtx.ConfigDir, appCtx.CacheDir, flagOverwrite, progress.update)
+			result, err := archive.Extract(archivePath, appCtx.ConfigDir, appCtx.ModelsDir, flagOverwrite, progress.update)
 			if err != nil {
 				progress.finish()
 				return err
@@ -86,7 +86,7 @@ func newImportCmd() *cobra.Command {
 
 func printManifestSummary(p interface {
 	Info(string, ...any)
-}, m *archive.Manifest, configDir, cacheDir string) {
+}, m *archive.Manifest, configDir, modelsDir string) {
 	p.Info("archive exported by %s at %s", m.ExportedBy, m.ExportedAt.Local().Format("2006-01-02 15:04"))
 	fmt.Println()
 	fmt.Printf("  %-24s %-10s %s\n", "NAME", "SIZE", "STATUS")
@@ -101,7 +101,7 @@ func printManifestSummary(p interface {
 			status = "exists (config)"
 		}
 		if e.ModelFile != "" {
-			modelDest := filepath.Join(cacheDir, filepath.Base(e.ModelFile))
+			modelDest := filepath.Join(modelsDir, filepath.Base(e.ModelFile))
 			if _, err := os.Stat(modelDest); err == nil {
 				if status == "new" {
 					status = "exists (model)"

@@ -7,7 +7,7 @@ type Request struct {
 	File           string
 	URL            string
 	Token          string
-	CacheDir       string
+	ModelDir       string
 	Connections    int
 	Resume         bool
 	Checksum       string

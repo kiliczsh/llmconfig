@@ -61,7 +61,7 @@ model:
     resume: true                  # resume interrupted downloads (default: true)
     connections: 4                # parallel download connections (default: 4)
     verify_checksum: true         # verify checksum after download (default: true; set to false to skip)
-    cache_dir: ""                 # override cache directory (default: ~/.llmconfig/cache)
+    model_dir: ""                 # override models directory (default: ~/.llmconfig/models)
 
   # --- Speculative decoding (optional) ---
   # Requires a smaller draft model from the same family.

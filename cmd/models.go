@@ -41,7 +41,7 @@ func newModelsCmd() *cobra.Command {
 				return err
 			}
 
-			entries, err := buildModelEntries(appCtx.ConfigDir, appCtx.CacheDir, sf, r, appCtx.StateStore)
+			entries, err := buildModelEntries(appCtx.ConfigDir, appCtx.ModelsDir, sf, r, appCtx.StateStore)
 			if err != nil {
 				return err
 			}
@@ -71,7 +71,7 @@ func newModelsCmd() *cobra.Command {
 	return cmd
 }
 
-func buildModelEntries(configDir, cacheDir string, sf *state.StateFile, r runner.Runner, ss *state.Store) ([]modelEntry, error) {
+func buildModelEntries(configDir, modelsDir string, sf *state.StateFile, r runner.Runner, ss *state.Store) ([]modelEntry, error) {
 	pattern := filepath.Join(configDir, "*.yaml")
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
@@ -100,8 +100,8 @@ func buildModelEntries(configDir, cacheDir string, sf *state.StateFile, r runner
 			e.File = filepath.Base(cfg.Model.Path)
 		}
 
-		// Check cache
-		cacheFile := filepath.Join(cacheDir, cfg.Model.File)
+		// Check if downloaded
+		cacheFile := filepath.Join(modelsDir, cfg.Model.File)
 		if cfg.Model.Source == "local" {
 			cacheFile = cfg.Model.Path
 		}

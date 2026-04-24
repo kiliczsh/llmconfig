@@ -70,7 +70,7 @@ func newCompatCmd() *cobra.Command {
 				}
 				config.ApplyDefaults(cfg)
 
-				cacheFile := filepath.Join(dirs.CacheDir(), cfg.Model.File)
+				cacheFile := filepath.Join(dirs.ModelsDir(), cfg.Model.File)
 				if cfg.Model.Source == "local" {
 					cacheFile = cfg.Model.Path
 				}

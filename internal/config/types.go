@@ -55,7 +55,7 @@ type DownloadSpec struct {
 	VerifyChecksum *bool  `yaml:"verify_checksum"`
 	Resume         *bool  `yaml:"resume"`
 	Connections    int    `yaml:"connections"`
-	CacheDir       string `yaml:"cache_dir"`
+	ModelDir       string `yaml:"model_dir"`
 }
 
 type DraftSpec struct {

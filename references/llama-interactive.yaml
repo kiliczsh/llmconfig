@@ -22,7 +22,7 @@ model:
     resume: true
     connections: 4
     verify_checksum: false
-    # cache_dir: ""
+    # model_dir: ""
 
   # --- LoRA adapters (optional) ---
   # lora: []                      # e.g. ["./adapter.gguf"]
