@@ -30,6 +30,13 @@ func newInitCmd() *cobra.Command {
 				name = args[0]
 			}
 
+			if flagTemplate == "PICK" {
+				tmplName, err := pickTemplateName()
+				if err != nil {
+					return err
+				}
+				return initFromTemplate(tmplName, name, flagOutput, appCtx.ConfigDir, p)
+			}
 			if flagTemplate != "" {
 				return initFromTemplate(flagTemplate, name, flagOutput, appCtx.ConfigDir, p)
 			}
@@ -84,8 +91,10 @@ func newInitCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&flagFrom, "from", "", "pre-fill from a HuggingFace repo or URL")
-	cmd.Flags().StringVar(&flagTemplate, "template", "", "start from a built-in template (tab to see options)")
+	cmd.Flags().StringVar(&flagTemplate, "template", "", "start from a built-in template (omit value to pick interactively)")
 	cmd.Flags().StringVarP(&flagOutput, "output", "o", "", "write config to a specific path")
+	// Allow --template without a value: triggers the interactive picker.
+	cmd.Flags().Lookup("template").NoOptDefVal = "PICK"
 	_ = cmd.RegisterFlagCompletionFunc("template", completeTemplateNames)
 	return cmd
 }
