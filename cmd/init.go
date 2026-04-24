@@ -8,46 +8,9 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/kiliczsh/llmconfig/internal/downloader"
+	"github.com/kiliczsh/llmconfig/templates"
 	"github.com/spf13/cobra"
 )
-
-type templateDef struct {
-	backend string
-	repo    string
-	file    string // when set, skips the file picker form
-	mode    string // when set, skips the mode form
-	port    string // when set, skips the port form
-}
-
-// full() reports whether the template has enough info to skip all interactive forms.
-func (t templateDef) full() bool {
-	return t.repo != "" && t.file != "" && t.mode != ""
-}
-
-var builtinTemplates = map[string]templateDef{
-	// llama — unsloth Dynamic 2.0 GGUFs, optimised for 16GB VRAM (RTX 5070 Ti / 4080 / 4090)
-	"gpt-oss":         {backend: "llama", repo: "unsloth/gpt-oss-20b-GGUF"},
-	"qwen36":          {backend: "llama", repo: "unsloth/Qwen3.6-27B-GGUF"},
-	"qwen3-vl":        {backend: "llama", repo: "unsloth/Qwen3-VL-8B-Instruct-GGUF"},
-	"qwen3-coder":     {backend: "llama", repo: "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"},
-	"gemma":           {backend: "llama", repo: "unsloth/gemma-4-E4B-it-GGUF"},
-	"mistral-small":   {backend: "llama", repo: "unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF"},
-	"phi4-reasoning":  {backend: "llama", repo: "unsloth/Phi-4-reasoning-plus-GGUF"},
-	"granite4":        {backend: "llama", repo: "unsloth/granite-4.0-h-tiny-GGUF"},
-	"deepseek":        {backend: "llama", repo: "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF"},
-	"llama3":          {backend: "llama", repo: "unsloth/Llama-3.1-8B-Instruct-GGUF"},
-	// legacy llama — kept for backwards compatibility
-	"codellama": {backend: "llama", repo: "TheBloke/CodeLlama-13B-Instruct-GGUF"},
-	"mistral":   {backend: "llama", repo: "TheBloke/Mistral-7B-Instruct-v0.2-GGUF"},
-	"phi4":      {backend: "llama", repo: "bartowski/phi-4-GGUF"},
-	// sd
-	"sd15":         {backend: "sd", repo: "runwayml/stable-diffusion-v1-5"},
-	"flux-schnell": {backend: "sd", repo: "city96/FLUX.1-schnell-gguf"},
-	"flux-dev":     {backend: "sd", repo: "city96/FLUX.1-dev-gguf"},
-	// whisper
-	"whisper-base":  {backend: "whisper", file: "ggml-base.bin"},
-	"whisper-turbo": {backend: "whisper", file: "ggml-large-v3-turbo.bin"},
-}
 
 func newInitCmd() *cobra.Command {
 	var flagFrom string
@@ -61,91 +24,119 @@ func newInitCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer
-			token := resolveToken("")
 
 			var name string
 			if len(args) > 0 {
 				name = args[0]
 			}
 
-			// Resolve template and inherit name if not supplied.
-			var tmpl templateDef
 			if flagTemplate != "" {
-				if t, ok := builtinTemplates[flagTemplate]; ok {
-					tmpl = t
-					if name == "" {
-						name = flagTemplate
-					}
-					if flagFrom == "" && tmpl.repo != "" {
-						flagFrom = tmpl.repo
-					}
-				}
+				return initFromTemplate(flagTemplate, name, flagOutput, appCtx.ConfigDir, p)
 			}
 
-			// Determine backend: from template, or ask.
-			backend := tmpl.backend
-			if backend == "" {
-				backend = "llama"
-				if err := runForm(huh.NewForm(huh.NewGroup(
-					huh.NewSelect[string]().
-						Title("Backend").
-						Options(
-							huh.NewOption("llama  — text generation (llama.cpp)", "llama"),
-							huh.NewOption("sd     — image generation (stable-diffusion.cpp)", "sd"),
-							huh.NewOption("whisper — speech recognition (whisper.cpp)", "whisper"),
-						).
-						Value(&backend),
-				))); err != nil {
-					return err
-				}
+			token := resolveToken("")
+
+			backend := "llama"
+			if err := runForm(huh.NewForm(huh.NewGroup(
+				huh.NewSelect[string]().
+					Title("Backend").
+					Options(
+						huh.NewOption("llama  — text generation (llama.cpp)", "llama"),
+						huh.NewOption("sd     — image generation (stable-diffusion.cpp)", "sd"),
+						huh.NewOption("whisper — speech recognition (whisper.cpp)", "whisper"),
+					).
+					Value(&backend),
+			))); err != nil {
+				return err
 			}
 
 			switch backend {
 			case "sd":
-				return initSD(name, flagFrom, flagTemplate, flagOutput, appCtx.ConfigDir, p)
+				return initSD(name, flagFrom, flagOutput, appCtx.ConfigDir, p)
 			case "whisper":
-				return initWhisper(name, flagFrom, flagTemplate, flagOutput, appCtx.ConfigDir, p)
+				return initWhisper(name, flagFrom, flagOutput, appCtx.ConfigDir, p)
 			default:
-				return initLlama(name, tmpl, flagFrom, flagOutput, appCtx.ConfigDir, token, p)
+				return initLlama(name, flagFrom, flagOutput, appCtx.ConfigDir, token, p)
 			}
 		},
 	}
 
 	cmd.Flags().StringVar(&flagFrom, "from", "", "pre-fill from a HuggingFace repo or URL")
-	cmd.Flags().StringVar(&flagTemplate, "template", "", "built-in template: gpt-oss|qwen36|qwen3-vl|qwen3-coder|gemma|mistral-small|phi4-reasoning|granite4|deepseek|llama3|sd15|flux-schnell|whisper-base|whisper-turbo")
+	cmd.Flags().StringVar(&flagTemplate, "template", "", "start from a built-in template (tab to see options)")
 	cmd.Flags().StringVarP(&flagOutput, "output", "o", "", "write config to a specific path")
+	_ = cmd.RegisterFlagCompletionFunc("template", completeTemplateNames)
 	return cmd
 }
 
-func initLlama(name string, tmpl templateDef, flagFrom, flagOutput, configDir, token string, p interface {
+func completeTemplateNames(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+	entries, err := templates.FS.ReadDir(".")
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	var names []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".yaml") {
+			names = append(names, strings.TrimSuffix(e.Name(), ".yaml"))
+		}
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
+}
+
+func initFromTemplate(templateName, nameOverride, flagOutput, configDir string, p interface {
+	Success(string, ...any)
+	Info(string, ...any)
+}) error {
+	data, err := templates.FS.ReadFile(templateName + ".yaml")
+	if err != nil {
+		return fmt.Errorf("template %q not found — run: llmconfig init --template [TAB] to see available templates", templateName)
+	}
+
+	name := templateName
+	if nameOverride != "" {
+		name = nameOverride
+	}
+
+	content := string(data)
+	if nameOverride != "" {
+		content = replaceNameField(content, nameOverride)
+	}
+
+	outPath := resolveOutPath(flagOutput, configDir, name)
+	if cancelled, err := confirmOverwrite(outPath, p); err != nil || cancelled {
+		return err
+	}
+
+	if err := os.WriteFile(outPath, []byte(content), 0644); err != nil {
+		return fmt.Errorf("init: write config: %w", err)
+	}
+	p.Success("config created: %s", outPath)
+	p.Info("next: llmconfig up %s", name)
+	return nil
+}
+
+func replaceNameField(content, newName string) string {
+	lines := strings.Split(content, "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "name:") {
+			lines[i] = "name: " + newName
+			break
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+func initLlama(name, flagFrom, flagOutput, configDir, token string, p interface {
 	Info(string, ...any)
 	Warn(string, ...any)
 	Success(string, ...any)
 }) error {
 	var (
 		repo         = flagFrom
-		file         = tmpl.file
-		port         = tmpl.port
-		mode         = tmpl.mode
+		file         string
+		port         = "8080"
+		mode         = "server"
 		systemPrompt string
 	)
-	if port == "" {
-		port = "8080"
-	}
-	if mode == "" {
-		mode = "server"
-	}
-
-	// When the template fully specifies all fields, skip every interactive form.
-	if tmpl.full() && name != "" {
-		name = strings.TrimSpace(name)
-		repo = strings.TrimSpace(repo)
-		outPath := resolveOutPath(flagOutput, configDir, name)
-		if cancelled, err := confirmOverwrite(outPath, p); err != nil || cancelled {
-			return err
-		}
-		return writeLlamaConfig(outPath, name, repo, file, mode, port, systemPrompt, p)
-	}
 
 	fields := []huh.Field{}
 	if name == "" {
@@ -161,18 +152,14 @@ func initLlama(name string, tmpl templateDef, flagFrom, flagOutput, configDir, t
 			Placeholder("user/repo-GGUF").
 			Value(&repo))
 	}
-	if mode == "" {
-		fields = append(fields,
-			huh.NewSelect[string]().
-				Title("Mode").
-				Options(
-					huh.NewOption("server (OpenAI-compatible API)", "server"),
-					huh.NewOption("interactive (llama-cli terminal chat)", "interactive"),
-				).
-				Value(&mode),
-		)
-	}
 	fields = append(fields,
+		huh.NewSelect[string]().
+			Title("Mode").
+			Options(
+				huh.NewOption("server (OpenAI-compatible API)", "server"),
+				huh.NewOption("interactive (llama-cli terminal chat)", "interactive"),
+			).
+			Value(&mode),
 		huh.NewInput().
 			Title("Server port").
 			Placeholder("8080").
@@ -247,17 +234,11 @@ func writeLlamaConfig(outPath, name, repo, file, mode, port, systemPrompt string
 	return writeConfig(outPath, sb.String(), name, p)
 }
 
-func initSD(name, flagFrom, flagTemplate, flagOutput, configDir string, p interface {
+func initSD(name, flagFrom, flagOutput, configDir string, p interface {
 	Info(string, ...any)
 	Warn(string, ...any)
 	Success(string, ...any)
 }) error {
-	if flagTemplate != "" && flagFrom == "" {
-		if tmpl, ok := builtinTemplates[flagTemplate]; ok {
-			flagFrom = tmpl.repo
-		}
-	}
-
 	var (
 		repo           string
 		file           string
@@ -330,7 +311,7 @@ func initSD(name, flagFrom, flagTemplate, flagOutput, configDir string, p interf
 	if name == "" {
 		return fmt.Errorf("name cannot be empty")
 	}
-	height = width // square by default
+	height = width
 
 	if port == "" {
 		port = "8090"
@@ -361,17 +342,11 @@ func initSD(name, flagFrom, flagTemplate, flagOutput, configDir string, p interf
 	return writeConfig(outPath, sb.String(), name, p)
 }
 
-func initWhisper(name, flagFrom, flagTemplate, flagOutput, configDir string, p interface {
+func initWhisper(name, flagFrom, flagOutput, configDir string, p interface {
 	Info(string, ...any)
 	Warn(string, ...any)
 	Success(string, ...any)
 }) error {
-	if flagTemplate != "" && flagFrom == "" {
-		if tmpl, ok := builtinTemplates[flagTemplate]; ok && tmpl.file != "" {
-			flagFrom = tmpl.file
-		}
-	}
-
 	var (
 		file     = "ggml-base.bin"
 		port     = "8082"
