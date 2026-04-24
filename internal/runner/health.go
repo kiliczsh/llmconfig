@@ -53,7 +53,12 @@ func WaitHealthy(ctx context.Context, host string, port int, backend string) err
 			resp, err := client.Get(url)
 			if err == nil {
 				resp.Body.Close()
-				if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+				// 2xx = ready; 401/403 = server up but behind auth (unauthenticated
+				// probe hits the auth wall, which still proves readiness). Anything
+				// else — 404 (reverse-proxy placeholder), 503 (still loading), 5xx —
+				// keeps waiting.
+				if (resp.StatusCode >= 200 && resp.StatusCode < 300) ||
+					resp.StatusCode == 401 || resp.StatusCode == 403 {
 					return nil
 				}
 			}
