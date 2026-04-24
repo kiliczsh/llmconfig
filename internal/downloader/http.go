@@ -53,8 +53,15 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 	}
 	headResp.Body.Close()
 
-	if headResp.StatusCode == 401 {
-		return "", fmt.Errorf("downloader: unauthorized — set HUGGINGFACE_TOKEN or use --token")
+	if headResp.StatusCode == 401 || headResp.StatusCode == 403 {
+		// 401/403 here usually means one of:
+		//   - no/invalid token — set HUGGINGFACE_TOKEN or `hf auth login`
+		//   - gated repo whose license you haven't accepted yet — visit
+		//     the repo on huggingface.co once and click "Agree and access"
+		return "", fmt.Errorf("downloader: %s returned HTTP %d — "+
+			"ensure you have a valid HF token (hf auth login or HUGGINGFACE_TOKEN) "+
+			"and have accepted the repo license at https://huggingface.co/ if it is gated",
+			rawURL, headResp.StatusCode)
 	}
 	if headResp.StatusCode >= 400 {
 		return "", fmt.Errorf("downloader: HEAD %s: HTTP %d", rawURL, headResp.StatusCode)

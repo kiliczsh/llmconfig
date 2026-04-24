@@ -196,7 +196,36 @@ func resolveToken(flagToken string) string {
 	if t := os.Getenv("HUGGINGFACE_TOKEN"); t != "" {
 		return t
 	}
-	return os.Getenv("HF_TOKEN")
+	if t := os.Getenv("HF_TOKEN"); t != "" {
+		return t
+	}
+	// Fall back to the hf CLI's on-disk token so users who ran `hf auth
+	// login` don't have to also export an env var. The file holds just
+	// the token, no JSON — trim whitespace.
+	for _, candidate := range hfTokenFiles() {
+		if data, err := os.ReadFile(candidate); err == nil {
+			if t := strings.TrimSpace(string(data)); t != "" {
+				return t
+			}
+		}
+	}
+	return ""
+}
+
+// hfTokenFiles lists candidate locations for the hf CLI token, in order
+// of preference. Env vars, if set, override the default path — match
+// the CLI's lookup so our fallback picks up the same file the user just
+// logged into.
+func hfTokenFiles() []string {
+	var out []string
+	if h := os.Getenv("HF_HOME"); h != "" {
+		out = append(out, filepath.Join(h, "token"))
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		out = append(out, filepath.Join(home, ".cache", "huggingface", "token"))
+		out = append(out, filepath.Join(home, ".huggingface", "token"))
+	}
+	return out
 }
 
 func writeConfigIfNeeded(appCtx *AppContext, repo, file, nameOverride string) error {
