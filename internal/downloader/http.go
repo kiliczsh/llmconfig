@@ -20,10 +20,16 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 	}
 
 	destPath := filepath.Join(req.ModelDir, req.File)
+	tmpPath := destPath + ".tmp"
 	// req.File can include a subdirectory (HF repos expose files like
 	// `subdir/model.gguf`); make sure the parent exists before we open it.
 	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 		return "", fmt.Errorf("downloader: create dest dir: %w", err)
+	}
+
+	// Already fully downloaded — nothing to do.
+	if _, err := os.Stat(destPath); err == nil {
+		return destPath, nil
 	}
 
 	// Resolve URL
@@ -32,10 +38,10 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 		rawURL = hfResolveURL(req.Repo, req.File)
 	}
 
-	// Check existing file size for resume
+	// Check in-progress temp file size for resume.
 	var resumeFrom int64
 	if req.Resume {
-		if info, err := os.Stat(destPath); err == nil {
+		if info, err := os.Stat(tmpPath); err == nil {
 			resumeFrom = info.Size()
 		}
 	}
@@ -80,10 +86,13 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 	total := headResp.ContentLength
 	acceptsRange := strings.EqualFold(headResp.Header.Get("Accept-Ranges"), "bytes")
 
-	// If file is already complete, skip
+	// Temp file is already complete — just rename and return.
 	if resumeFrom > 0 && total > 0 && resumeFrom >= total {
 		if onProgress != nil {
 			onProgress(total, total)
+		}
+		if err := os.Rename(tmpPath, destPath); err != nil {
+			return "", fmt.Errorf("downloader: rename complete file: %w", err)
 		}
 		return destPath, nil
 	}
@@ -114,7 +123,7 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 		// Prevent corruption when a server ignores Range and sends the full body with 200.
 		if resp.StatusCode == http.StatusOK {
 			resp.Body.Close()
-			if err := os.Remove(destPath); err != nil && !os.IsNotExist(err) {
+			if err := os.Remove(tmpPath); err != nil && !os.IsNotExist(err) {
 				return "", fmt.Errorf("downloader: remove partial file: %w", err)
 			}
 
@@ -140,11 +149,10 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 		return "", fmt.Errorf("downloader: GET %s: HTTP %d", rawURL, resp.StatusCode)
 	}
 
-	f, err := os.OpenFile(destPath, openFlag, 0644)
+	f, err := os.OpenFile(tmpPath, openFlag, 0644)
 	if err != nil {
 		return "", fmt.Errorf("downloader: open dest file: %w", err)
 	}
-	defer f.Close()
 
 	downloaded := resumeFrom
 	buf := make([]byte, 32*1024)
@@ -174,10 +182,20 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 		}
 	}
 
+	// Close before checksum / rename.
+	if err := f.Close(); err != nil {
+		return "", fmt.Errorf("downloader: close: %w", err)
+	}
+
 	if req.VerifyChecksum && req.Checksum != "" {
-		if err := verifyChecksum(destPath, req.Checksum); err != nil {
+		if err := verifyChecksum(tmpPath, req.Checksum); err != nil {
+			_ = os.Remove(tmpPath)
 			return "", err
 		}
+	}
+
+	if err := os.Rename(tmpPath, destPath); err != nil {
+		return "", fmt.Errorf("downloader: rename to final path: %w", err)
 	}
 
 	return destPath, nil
