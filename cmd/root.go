@@ -139,6 +139,7 @@ func init() {
 		newCompatCmd(),
 		newArchiveCmd(),
 		newImportCmd(),
+		newGatewayCmd(),
 	)
 }
 
