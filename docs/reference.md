@@ -76,10 +76,9 @@ llmconfig init --from bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
 > `--template` form is reserved for the picker; a space-separated value
 > would be parsed as the positional config name.
 
-Built-in templates ship embedded in the binary. See the
-[Templates section in README.md](README.md#built-in-templates) for the
-full list with model details and recommended quantizations. As of this
-writing the families are:
+Built-in templates ship embedded in the binary. See
+[templates.md](templates.md) for the full list with model details and
+recommended quantizations. As of this writing the families are:
 
 | Backend | Templates |
 |---------|-----------|

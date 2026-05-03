@@ -71,7 +71,10 @@ llmconfig/
 │   └── embed.go         # //go:embed *.yaml
 ├── references/          # reference YAMLs documenting every backend flag
 ├── .github/             # workflows, issue + PR templates
-├── DOCS.md              # full user-facing reference
+├── docs/                # long-form documentation
+│   ├── README.md        # docs index
+│   ├── reference.md     # full reference (commands, config, env vars, API)
+│   └── templates.md     # built-in template catalogue
 ├── README.md            # short overview + quick start
 └── main.go              # entrypoint — calls cmd.Execute()
 ```
@@ -86,7 +89,7 @@ A few things worth knowing:
   in `templates/` are picked up automatically at the next `go build` —
   no code change required.
 - **Defaults are applied at load time** by `internal/config`, so templates
-  can stay minimal. The full set of fields lives in [DOCS.md](DOCS.md#config-file-reference).
+  can stay minimal. The full set of fields lives in [docs/reference.md](docs/reference.md#config-file-reference).
 
 ---
 
@@ -191,7 +194,7 @@ the change was needed when it isn't obvious from the diff.
 2. Keep PRs focused — one feature or one fix per PR is much easier to
    review than a large bundle.
 3. Make sure `go build ./...` and `go vet ./...` both pass.
-4. Update `README.md` and/or `DOCS.md` if you added or changed a command,
+4. Update `README.md` and/or `docs/reference.md` if you added or changed a command,
    flag, or config field.
 5. Add an entry under `[Unreleased]` in `CHANGELOG.md` for any
    user-visible change.

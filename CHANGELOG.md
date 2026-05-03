@@ -29,8 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (previously `llmconfig cache`).
 - `llmconfig` rebranded from `llamaconfig`. The shorter `llmc` alias works
   everywhere too.
-- Documentation: README rewritten for clarity, `DOCS.md` template list
-  corrected to match the templates that actually ship.
+- Documentation reorganized: README slimmed to fit a single screen,
+  long-form docs moved into a `docs/` folder
+  (`docs/reference.md` for the full reference, `docs/templates.md` for
+  the template catalogue). The reference list of templates was also
+  corrected to match what actually ships.
 
 ### Fixed
 - Downloader now writes to `<file>.tmp` and renames to the final filename

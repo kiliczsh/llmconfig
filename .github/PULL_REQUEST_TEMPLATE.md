@@ -36,6 +36,6 @@ Describe how you verified this change. Examples:
 
 - [ ] Code builds (`go build ./...`)
 - [ ] Touched commands run without error in a quick smoke test
-- [ ] If a flag, command, or config field was added/changed, `README.md` and `DOCS.md` are updated
+- [ ] If a flag, command, or config field was added/changed, `README.md` and `docs/reference.md` are updated
 - [ ] If a template was added, it has a header comment describing the model and target VRAM
 - [ ] `CHANGELOG.md` has an `[Unreleased]` entry for user-visible changes
