@@ -80,7 +80,8 @@ Commands marked with `*` show an interactive selector when no name is given and 
 | `config show <name>` | Print a config with defaults applied |
 | `config edit <name>` | Edit a config in `$EDITOR` |
 | `config path <name>` | Print the resolved config file path |
-| `cache list` \| `cache clean` \| `cache path` | Manage the downloaded-model cache |
+| `files list` \| `files clean` \| `files path` | Manage the downloaded-model cache |
+| `gateway` | Start a unified OpenAI-compatible gateway for all running models |
 | `install llama` \| `install sd` \| `install whisper` | Install a backend binary |
 | `llama` \| `sd` \| `whisper` | Show backend status (supports `--version`, `--path`) |
 | `version` | Show the llmconfig CLI version |

@@ -514,6 +514,32 @@ llmconfig version
 
 ---
 
+### `gateway`
+
+Start a unified OpenAI-compatible HTTP gateway that routes requests to the correct running model based on the `"model"` parameter.
+
+```bash
+llmconfig gateway              # listen on default port 4000
+llmconfig gateway --port 8000  # custom port
+```
+
+Flags:
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-p, --port` | 4000 | Port to listen on |
+
+Once running, you can target any model by name without knowing its individual port:
+
+```bash
+curl http://localhost:4000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gemma-4-e2b","messages":[{"role":"user","content":"Hello!"}]}'
+```
+
+`GET /v1/models` returns all currently running models. If the requested model is not running, the gateway returns `503 Service Unavailable`.
+
+---
+
 ### `files`
 
 Manage downloaded model files (`~/.llmconfig/models/`).
