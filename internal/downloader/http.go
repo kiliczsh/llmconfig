@@ -160,6 +160,7 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 		n, readErr := resp.Body.Read(buf)
 		if n > 0 {
 			if _, writeErr := f.Write(buf[:n]); writeErr != nil {
+				f.Close()
 				return "", fmt.Errorf("downloader: write: %w", writeErr)
 			}
 			downloaded += int64(n)
@@ -171,12 +172,14 @@ func (d *httpDownloader) Download(ctx context.Context, req *Request, onProgress 
 			break
 		}
 		if readErr != nil {
+			f.Close()
 			return "", fmt.Errorf("downloader: read: %w", readErr)
 		}
 
 		// Check context cancellation
 		select {
 		case <-ctx.Done():
+			f.Close()
 			return "", ctx.Err()
 		default:
 		}

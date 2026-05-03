@@ -27,7 +27,7 @@ Example:
 			appCtx := appCtxFrom(cmd.Context())
 			proxy := gateway.New(appCtx.StateStore)
 			addr := fmt.Sprintf(":%d", port)
-			appCtx.Printer.Info(fmt.Sprintf("gateway listening on %s  (OpenAI-compatible)", addr))
+			appCtx.Printer.Info("gateway listening on %s", addr)
 			return http.ListenAndServe(addr, proxy.Handler())
 		},
 	}

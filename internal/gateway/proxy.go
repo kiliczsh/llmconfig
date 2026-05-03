@@ -58,13 +58,13 @@ func (p *Proxy) handleModels(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(listResp{Object: "list", Data: data})
+	_ = json.NewEncoder(w).Encode(listResp{Object: "list", Data: data})
 }
 
 func (p *Proxy) handleProxy(w http.ResponseWriter, r *http.Request) {
 	modelName, body, err := extractModel(r)
 	if err != nil {
-		writeErr(w, http.StatusBadRequest, "failed to read request body")
+		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if modelName == "" {
@@ -108,7 +108,9 @@ func extractModel(r *http.Request) (string, []byte, error) {
 	var req struct {
 		Model string `json:"model"`
 	}
-	_ = json.Unmarshal(body, &req)
+	if err := json.Unmarshal(body, &req); err != nil {
+		return "", body, fmt.Errorf("invalid JSON: %w", err)
+	}
 	return req.Model, body, nil
 }
 
