@@ -26,6 +26,10 @@ llmconfig up gemma                    # or just: llmc up gemma
 ## Install
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/kiliczsh/llmconfig/refs/heads/main/install.sh | bash
+```
+
+```bash
 go install github.com/kiliczsh/llmconfig@latest
 ```
 
