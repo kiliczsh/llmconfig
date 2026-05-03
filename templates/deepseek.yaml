@@ -1,3 +1,6 @@
+# DeepSeek R1 0528 Qwen3 8B — reasoning model distilled from R1 onto Qwen3 8B.
+# Source: unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF
+# Recommended: 16 GB VRAM at Q8_K_XL (~8.7 GB).
 version: 1
 name: deepseek
 backend: llama

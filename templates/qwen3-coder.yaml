@@ -1,3 +1,6 @@
+# Qwen 3 Coder 30B A3B — code-tuned MoE (~3B active params, 30B total).
+# Source: unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF
+# Recommended: 32 GB RAM, 16 GB VRAM. Offload experts to CPU; few-active-params MoE makes this practical.
 version: 1
 name: qwen3-coder
 backend: llama

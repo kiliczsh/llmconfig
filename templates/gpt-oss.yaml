@@ -1,3 +1,6 @@
+# GPT-OSS 20B — open-weight 20B-parameter chat model.
+# Source: unsloth/gpt-oss-20b-GGUF
+# Recommended: 16 GB VRAM at UD-Q4_K_XL (~12.3 GB); Q6_K_XL is tight at full context.
 version: 1
 name: gpt-oss
 backend: llama

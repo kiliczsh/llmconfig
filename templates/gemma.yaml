@@ -1,3 +1,6 @@
+# Google Gemma 4 E4B Instruct — efficient general-purpose chat (~4B effective params).
+# Source: unsloth/gemma-4-E4B-it-GGUF
+# Recommended: 16 GB VRAM at Q8_K_XL (~4.4 GB) — comfortable headroom for long contexts.
 version: 1
 name: gemma
 backend: llama

@@ -1,3 +1,6 @@
+# FLUX.1 Dev — Black Forest Labs' guidance-distilled image model (1024x1024).
+# Source: city96/FLUX.1-dev-gguf
+# Recommended: 16 GB VRAM at Q4_0 (~8.1 GB). Dev uses CFG; keep cfg_scale ~3.5 and steps ~20.
 version: 1
 name: flux-dev
 backend: sd

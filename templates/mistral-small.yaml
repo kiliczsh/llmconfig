@@ -1,3 +1,6 @@
+# Mistral Small 3.2 24B Instruct — strong reasoning at moderate VRAM cost.
+# Source: unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF
+# Recommended: 16 GB VRAM at Q3_K_XL (~11.4 GB); Q4 variants are tight.
 version: 1
 name: mistral-small
 backend: llama

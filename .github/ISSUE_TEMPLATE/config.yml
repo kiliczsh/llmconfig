@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/kiliczsh/llmconfig/discussions
+    about: Ask a question, share a setup, or propose an idea before filing a feature request.

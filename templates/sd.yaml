@@ -1,3 +1,6 @@
+# Stable Diffusion 1.5 — classic 512x512 image generation checkpoint (RunwayML).
+# Source: huggingface.co/runwayml/stable-diffusion-v1-5 (direct URL — no auth required)
+# Recommended: any hardware. ~4.3 GB safetensors checkpoint.
 version: 1
 name: sd
 backend: sd

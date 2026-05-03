@@ -1,3 +1,6 @@
+# Microsoft Phi-4 Reasoning Plus — 14B reasoning-tuned variant.
+# Source: unsloth/Phi-4-reasoning-plus-GGUF
+# Recommended: 16 GB VRAM at Q6_K_XL (~11.7 GB); Q4 variants are faster.
 version: 1
 name: phi4-reasoning
 backend: llama

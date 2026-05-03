@@ -1,3 +1,6 @@
+# Qwen 2.5 1.5B Instruct — tiny, fast chat model (~1 GB).
+# Source: bartowski/Qwen2.5-1.5B-Instruct-GGUF
+# Recommended: any hardware. Switch to the 7B repo (commented below) for ~16 GB VRAM.
 version: 1
 name: qwen
 backend: llama
@@ -11,11 +14,11 @@ model:
   download:
     resume: true
 hardware_profiles:
-  apple_silicon:
-    n_gpu_layers: 99
-    metal: true
   nvidia:
     n_gpu_layers: 99
     cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
   cpu:
     n_gpu_layers: 0

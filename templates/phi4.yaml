@@ -1,3 +1,6 @@
+# Microsoft Phi-4 (14B) — strong reasoning for its size.
+# Source: bartowski/phi-4-GGUF
+# Recommended: 16 GB VRAM at Q4_K_M (~8.4 GB); Q6_K (~11.1 GB) for higher quality.
 version: 1
 name: phi4
 backend: llama

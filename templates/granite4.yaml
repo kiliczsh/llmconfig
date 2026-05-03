@@ -1,3 +1,6 @@
+# IBM Granite 4.0 H Tiny — compact hybrid (Mamba + attention) chat model.
+# Source: unsloth/granite-4.0-h-tiny-GGUF
+# Recommended: 16 GB VRAM at Q6_K_XL (~5.9 GB); Q4_K_M (~4.2 GB) for headroom.
 version: 1
 name: granite4
 backend: llama

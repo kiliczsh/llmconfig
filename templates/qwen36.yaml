@@ -1,3 +1,6 @@
+# Qwen 3.6 27B — large general-purpose model from Alibaba.
+# Source: unsloth/Qwen3.6-27B-GGUF
+# Recommended: 16 GB VRAM at Q3_K_XL (~12.8 GB); Q4_K_M (~16.2 GB) is very tight.
 version: 1
 name: qwen36
 backend: llama

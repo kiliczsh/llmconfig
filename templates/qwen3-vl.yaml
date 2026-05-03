@@ -1,3 +1,6 @@
+# Qwen 3 VL 8B Instruct — vision-language model (text + image input).
+# Source: unsloth/Qwen3-VL-8B-Instruct-GGUF (with mmproj projector)
+# Recommended: 16 GB VRAM at Q6_K_XL (~6.7 GB) — leaves room for the vision projector.
 version: 1
 name: qwen3-vl
 backend: llama

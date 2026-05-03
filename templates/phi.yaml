@@ -1,3 +1,6 @@
+# Microsoft Phi-4 Mini Instruct — small, fast chat model (~4B params).
+# Source: bartowski/phi-4-mini-instruct-GGUF
+# Recommended: 16 GB VRAM at Q8_0 (~4.6 GB); Q4_K_M (~2.3 GB) fits 8 GB.
 version: 1
 name: phi
 backend: llama
@@ -10,11 +13,11 @@ model:
   download:
     resume: true
 hardware_profiles:
-  apple_silicon:
-    n_gpu_layers: 99
-    metal: true
   nvidia:
     n_gpu_layers: 99
     cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
   cpu:
     n_gpu_layers: 0

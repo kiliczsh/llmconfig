@@ -65,20 +65,31 @@ The same `--version` / `--path` flags work for `llmconfig sd` and
 **Option A — Interactive wizard:**
 
 ```bash
-llmconfig init
-llmconfig init --template llama3    # pre-fill with a known model
+llmconfig init                            # full wizard (template vs. manual)
+llmconfig init --template                 # template picker (bare flag)
+llmconfig init --template=gemma           # use a specific template
+llmconfig init my-llama --template=llama  # custom config name + template
 llmconfig init --from bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
 ```
 
-Built-in templates:
+> Pass template values with `--template=<name>` (with `=`). The bare
+> `--template` form is reserved for the picker; a space-separated value
+> would be parsed as the positional config name.
+
+Built-in templates ship embedded in the binary. See the
+[Templates section in README.md](README.md#built-in-templates) for the
+full list with model details and recommended quantizations. As of this
+writing the families are:
 
 | Backend | Templates |
 |---------|-----------|
-| llama   | `codellama`, `mistral`, `llama3`, `deepseek`, `phi4`, `gemma` |
-| sd      | `sd15`, `flux-schnell`, `flux-dev` |
-| whisper | `whisper-base`, `whisper-turbo` |
+| llama   | `gemma`, `llama`, `mistral`, `mistral-small`, `phi`, `phi4`, `phi4-reasoning`, `qwen`, `qwen36`, `qwen3-coder`, `qwen3-vl`, `granite4`, `deepseek`, `gpt-oss` |
+| sd      | `sd`, `flux-schnell`, `flux-dev` |
+| whisper | `whisper` |
 
-The wizard asks which backend to use; pass `--template` to skip the picker.
+`--template` with **no value** opens the interactive picker;
+`--template <name>` skips the picker and uses that template directly. Run
+`llmconfig init --template [TAB]` for shell completion of available names.
 
 **Option B — Pull and auto-generate (llama only):**
 
@@ -336,11 +347,13 @@ llmconfig pull <repo> --name my-custom-name
 Interactive config wizard.
 
 ```bash
-llmconfig init
-llmconfig init gemma-4-e2b
-llmconfig init --template llama3
+llmconfig init                                                      # full wizard
+llmconfig init gemma-4-e2b                                          # set name up front
+llmconfig init --template                                           # interactive template picker
+llmconfig init --template=gemma                                     # use a specific template (note the =)
+llmconfig init my-llama --template=llama                            # custom name + template
 llmconfig init --from bartowski/google_gemma-4-E2B-it-GGUF
-llmconfig init --from https://huggingface.co/.../model.gguf   # direct URL
+llmconfig init --from https://huggingface.co/.../model.gguf         # direct URL
 llmconfig init --output ./gemma-4-e2b.yaml
 ```
 
@@ -550,6 +563,23 @@ llmconfig files clean            # remove files not referenced by any config
 llmconfig files clean --all      # remove all downloaded files
 llmconfig files path             # print models directory
 ```
+
+---
+
+### `state prune`
+
+Maintenance command for the running-state file (`~/.llmconfig/state.json`).
+If a model process was killed or crashed without llmconfig noticing, its
+entry can linger as `running` even though the PID is dead. `state prune`
+walks the state file, drops or marks any entry whose PID is no longer
+alive, and reports what it changed.
+
+```bash
+llmconfig state prune
+```
+
+Use this if `llmconfig ps` shows a model as running that you can't actually
+reach, or after a crash / forced shutdown.
 
 ---
 

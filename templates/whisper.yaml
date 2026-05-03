@@ -1,3 +1,6 @@
+# OpenAI Whisper (whisper.cpp ggml port) — speech-to-text.
+# Source: ggerganov/whisper.cpp (ggml-* model files)
+# Recommended: switch `file:` to ggml-large-v3-turbo.bin (~1.6 GB) for the best accuracy/speed balance.
 version: 1
 name: whisper
 backend: whisper
