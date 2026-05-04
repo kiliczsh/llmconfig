@@ -597,7 +597,33 @@ Print the llmconfig CLI version.
 
 ```bash
 llmconfig version
+llmconfig version --check     # also report whether a newer release exists
 ```
+
+---
+
+### `update`
+
+Replace the running llmconfig binary with a newer release pulled from
+GitHub. The download is verified against the published `checksums.txt`
+before anything on disk is touched, and the previous binary is kept
+beside the new one as `<binary>.old` so you can roll back manually if
+needed.
+
+```bash
+llmconfig update                  # install the latest release
+llmconfig update --check          # report whether an update is available
+llmconfig update --version v1.2.0 # install (or downgrade to) a specific tag
+llmconfig update --force          # reinstall even if already on target
+```
+
+If an `llmc` alias binary is found next to the main binary, it is
+updated in the same operation.
+
+The selfupdater only fetches assets from
+`https://github.com/kiliczsh/llmconfig/releases` — every other host is
+refused, and the SHA256 must match the one published in `checksums.txt`
+or the install is aborted.
 
 ---
 

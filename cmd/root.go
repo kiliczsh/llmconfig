@@ -141,6 +141,7 @@ func init() {
 		newArchiveCmd(),
 		newImportCmd(),
 		newGatewayCmd(),
+		newUpdateCmd(),
 	)
 }
 

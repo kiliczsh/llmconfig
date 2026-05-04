@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- `llmconfig update` — self-update command. Downloads the latest
+  release from GitHub, verifies its SHA256 against `checksums.txt`, and
+  atomically replaces the running binary (the previous binary is kept
+  as `<binary>.old`). Flags: `--check` (no install), `--version <tag>`
+  (pin a specific release / downgrade), `--force` (reinstall on
+  current). Updates the `llmc` alias binary in the same operation
+  when present.
+
+### Changed
+- `llmconfig version --check` now points users at `llmconfig update`
+  instead of the bootstrap install scripts.
 
 ## [1.1.0] - 2026-05-04
 

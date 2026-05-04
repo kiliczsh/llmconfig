@@ -81,8 +81,7 @@ func newVersionCmd() *cobra.Command {
 					fmt.Printf("  you are up to date (%s)\n", latest)
 				} else {
 					fmt.Printf("  new version available: %s\n", latest)
-					fmt.Printf("  update: irm https://raw.githubusercontent.com/kiliczsh/llmconfig/main/install.ps1 | iex\n")
-					fmt.Printf("     or:  curl -fsSL https://raw.githubusercontent.com/kiliczsh/llmconfig/main/install.sh | bash\n")
+					fmt.Printf("  update: llmconfig update\n")
 				}
 			}
 			return nil
