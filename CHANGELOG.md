@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.1.0] - 2026-05-04
+
 ### Added
 - `ik_llama` backend — drop-in alternative to `llama` that runs the
   [ikawrakow/ik_llama.cpp](https://github.com/ikawrakow/ik_llama.cpp)
