@@ -28,9 +28,19 @@ llmconfig up gemma                    # or just: llmc up gemma
 
 ## Install
 
+Linux / macOS:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kiliczsh/llmconfig/refs/heads/main/install.sh | bash
 ```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/kiliczsh/llmconfig/refs/heads/main/install.ps1 | iex
+```
+
+Or via Go:
 
 ```bash
 go install github.com/kiliczsh/llmconfig@latest
