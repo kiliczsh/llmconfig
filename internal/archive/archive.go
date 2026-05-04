@@ -3,12 +3,18 @@
 // A bundle is an uncompressed POSIX tar containing:
 //
 //	manifest.yaml          -> list of entries in this bundle
-//	configs/<name>.yaml    -> one per entry
+//	configs/<name>.llmc    -> one per entry (legacy bundles may carry .yaml)
 //	models/<file>          -> the cached GGUF/etc. (optional per entry)
 //
 // Compression is intentionally omitted: GGUF files are already quantised,
 // so gzip spends minutes of CPU for <1% savings on large models. `tar -xf
 // foo.llmcpkg` works on any POSIX system without llmconfig.
+//
+// The manifest filename and YAML body are unchanged for backwards
+// compatibility; only the per-entry config files now ship as .llmc.
+// Bundles produced by older llmconfig versions still load — the reader
+// drops whichever extension the in-bundle path carries and writes .llmc
+// on disk.
 package archive
 
 import (
@@ -92,7 +98,7 @@ func Create(outPath string, entries []CreateEntry, exportedBy string, onProgress
 	for _, e := range entries {
 		me := Entry{
 			Name:   e.Name,
-			Config: path.Join(ConfigsDir, e.Name+".yaml"),
+			Config: path.Join(ConfigsDir, e.Name+".llmc"),
 			Source: e.Source,
 		}
 		if e.ModelPath != "" {
@@ -272,10 +278,14 @@ func Extract(archivePath, configDir, modelsDir string, overwrite bool, onProgres
 	extract := map[string]bool{}
 	result := &ExtractResult{}
 	for _, e := range manifest.Entries {
-		cfgDest := filepath.Join(configDir, e.Name+".yaml")
+		// Conflict check looks for both extensions so a legacy .yaml
+		// already on disk is treated as "exists" too.
 		conflict := false
-		if _, err := os.Stat(cfgDest); err == nil && !overwrite {
-			conflict = true
+		for _, ext := range []string{".llmc", ".yaml"} {
+			if _, err := os.Stat(filepath.Join(configDir, e.Name+ext)); err == nil && !overwrite {
+				conflict = true
+				break
+			}
 		}
 		if e.ModelFile != "" {
 			modelDest := filepath.Join(modelsDir, path.Base(e.ModelFile))
@@ -336,7 +346,10 @@ func Extract(archivePath, configDir, modelsDir string, overwrite bool, onProgres
 			if !extract[e.Name] {
 				continue
 			}
-			dest = filepath.Join(configDir, e.Name+".yaml")
+			// Always extract to .llmc on disk, regardless of which
+			// extension the bundle entry carried. Legacy .yaml bundles
+			// thus migrate transparently on import.
+			dest = filepath.Join(configDir, e.Name+".llmc")
 			destRoot = configDir
 			progressLabel = hdr.Name
 			entryName = e.Name

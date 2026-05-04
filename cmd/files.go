@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/dustin/go-humanize"
+	"github.com/kiliczsh/llmconfig/internal/config"
 	"github.com/kiliczsh/llmconfig/internal/dirs"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -195,7 +196,7 @@ func referencedFiles(configDir string) map[string]bool {
 	}
 
 	refs := map[string]bool{}
-	matches, _ := filepath.Glob(filepath.Join(configDir, "*.yaml"))
+	matches, _ := config.ListConfigPaths(configDir)
 	for _, path := range matches {
 		data, err := os.ReadFile(path)
 		if err != nil {

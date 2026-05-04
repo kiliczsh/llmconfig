@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/kiliczsh/llmconfig/internal/config"
 	"github.com/kiliczsh/llmconfig/internal/dirs"
 	"github.com/kiliczsh/llmconfig/internal/output"
 	"github.com/kiliczsh/llmconfig/internal/state"
@@ -106,6 +107,11 @@ func init() {
 			StateStore: store,
 		}
 
+		// One-shot migration of legacy *.yaml configs in the user's
+		// configs dir to *.llmc. Marker file gates the run so we only
+		// scan once per machine; subsequent invocations short-circuit.
+		runYamlMigration(configDir, appCtx.Printer)
+
 		ctx := context.WithValue(cmd.Context(), contextKey{}, appCtx)
 		cmd.SetContext(ctx)
 		return nil
@@ -150,4 +156,52 @@ func findLlamaBinary() string {
 		return path
 	}
 	return "llama-server"
+}
+
+// yamlMigrationMarker is the dirs.MarkerFile name that records a
+// completed .yaml→.llmc migration sweep. The presence of the file is
+// the only signal — its contents are ignored.
+const yamlMigrationMarker = "yaml-to-llmc-v1"
+
+// runYamlMigration renames any leftover .yaml configs in configDir to
+// .llmc on first run, then writes a marker file so future invocations
+// skip the work. Failures are logged but never abort the user's
+// command — a botched migration must not block `up`/`models`/etc.
+func runYamlMigration(configDir string, p *output.Printer) {
+	marker := dirs.MarkerFile(yamlMigrationMarker)
+	if _, err := os.Stat(marker); err == nil {
+		return
+	}
+
+	if _, err := os.Stat(configDir); err != nil {
+		// No config dir yet (fresh install) — nothing to migrate.
+		// Drop the marker so we don't keep checking.
+		_ = writeMarker(marker)
+		return
+	}
+
+	res, err := config.MigrateLegacyConfigs(configDir)
+	if err != nil {
+		p.Warn("config migration: %v (you can rename %s/*.yaml to *.llmc by hand)", err, configDir)
+		// Don't write the marker — we want to retry next run.
+		return
+	}
+
+	if len(res.Renamed) > 0 {
+		p.Info("migrated %d yaml config(s) to .llmc (backups: *.yaml.bak in %s)",
+			len(res.Renamed), configDir)
+	}
+	if len(res.Skipped) > 0 {
+		p.Warn("skipped %d yaml config(s) in %s — both .llmc and .yaml exist; remove one to disambiguate",
+			len(res.Skipped), configDir)
+	}
+
+	_ = writeMarker(marker)
+}
+
+func writeMarker(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, nil, 0644)
 }

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/charmbracelet/huh"
@@ -125,22 +123,13 @@ unpack it manually ("tar -xf foo.llmcpkg").`,
 }
 
 func listConfigNames(configDir string) ([]string, error) {
-	entries, err := os.ReadDir(configDir)
-	if err != nil {
+	if _, err := os.Stat(configDir); err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	var names []string
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".yaml") {
-			continue
-		}
-		names = append(names, strings.TrimSuffix(e.Name(), ".yaml"))
-	}
-	sort.Strings(names)
-	return names, nil
+	return config.ListConfigNames(configDir)
 }
 
 func contains(ss []string, s string) bool {
@@ -183,7 +172,10 @@ func buildCreateEntries(names []string, configDir, modelsDir string, p interface
 	var entries []archive.CreateEntry
 	var total int64
 	for _, name := range names {
-		cfgPath := filepath.Join(configDir, name+".yaml")
+		cfgPath, err := config.FindConfigInDir(configDir, name)
+		if err != nil {
+			return nil, 0, fmt.Errorf("locate %s: %w", name, err)
+		}
 		cfg, err := config.LoadFile(cfgPath)
 		if err != nil {
 			return nil, 0, fmt.Errorf("load %s: %w", name, err)

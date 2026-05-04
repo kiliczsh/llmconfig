@@ -33,8 +33,8 @@ func newRmCmd() *cobra.Command {
 			p := appCtx.Printer
 			r := runner.New()
 
-			configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
-			if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			configPath, err := config.FindConfigInDir(appCtx.ConfigDir, name)
+			if err != nil {
 				return fmt.Errorf("model %q not found", name)
 			}
 

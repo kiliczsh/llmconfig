@@ -262,9 +262,13 @@ try {
     if (Test-Path $templatesDir) {
         $configsDir = Join-Path $env:USERPROFILE ".llmconfig\configs"
         New-Item -ItemType Directory -Force -Path $configsDir | Out-Null
-        Get-ChildItem $templatesDir -Filter "*.yaml" | ForEach-Object {
+        Get-ChildItem $templatesDir -Filter "*.llmc" | ForEach-Object {
             $dest2 = Join-Path $configsDir $_.Name
-            if (-not (Test-Path $dest2)) {
+            $legacy = Join-Path $configsDir ([IO.Path]::ChangeExtension($_.Name, ".yaml"))
+            # Skip if either extension is already present so existing
+            # users keep their tweaks (the in-process migrator handles
+            # the .yaml->.llmc rename for old installs).
+            if (-not (Test-Path $dest2) -and -not (Test-Path $legacy)) {
                 Copy-Item $_.FullName $dest2
                 ok "Template: $($_.Name)"
             }

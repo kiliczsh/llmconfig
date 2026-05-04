@@ -49,9 +49,9 @@ func newAddCmd() *cobra.Command {
 				p.Info("copied to models dir: %s", dest)
 			}
 
-			configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
-			if _, err := os.Stat(configPath); err == nil {
-				return fmt.Errorf("config %q already exists at %q — check: choose a different name or run: llmconfig rm %s", name, configPath, name)
+			configPath := config.ConfigPath(appCtx.ConfigDir, name)
+			if existing, err := config.FindConfigInDir(appCtx.ConfigDir, name); err == nil {
+				return fmt.Errorf("config %q already exists at %q — check: choose a different name or run: llmconfig rm %s", name, existing, name)
 			}
 
 			cfg := &config.Config{

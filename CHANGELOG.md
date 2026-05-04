@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `.llmc` is now the canonical extension for config files. New
+  templates, `init`, `add`, `pull`, and archive imports all write
+  `.llmc`. Built-in templates were renamed (e.g. `templates/gemma.yaml`
+  → `templates/gemma.llmc`); files are still YAML inside.
+- Auto-migration on first run: existing `~/.llmconfig/configs/*.yaml`
+  files are renamed to `*.llmc` with a `*.yaml.bak` backup left
+  alongside, gated by a marker file so the scan only runs once.
+  Conflicts (both extensions for the same name) are skipped with a
+  warning.
+- `internal/config` exports `ConfigPath`, `FindConfigInDir`,
+  `ListConfigNames`, `ListConfigPaths`, `IsConfigFile`, and
+  `TrimConfigExt` so cmd/ doesn't have to repeat extension-aware
+  globs.
+
+### Changed
+- Loader (`internal/config.Load`) now searches for both `.llmc` and
+  `.yaml`, with `.llmc` winning when both exist. Bare-name lookups via
+  CLI args resolve transparently to whichever file is present.
+- Archive bundles (`.llmcpkg`) now ship configs as
+  `configs/<name>.llmc`. Reading still accepts legacy bundles whose
+  inner config is `.yaml`; on import the file lands as `.llmc` on
+  disk regardless.
+
 - `llmconfig update` — self-update command. Downloads the latest
   release from GitHub, verifies its SHA256 against `checksums.txt`, and
   atomically replaces the running binary (the previous binary is kept

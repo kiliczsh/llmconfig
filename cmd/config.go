@@ -36,8 +36,7 @@ func newConfigListCmd() *cobra.Command {
 			appCtx := appCtxFrom(cmd.Context())
 			p := appCtx.Printer
 
-			entries, err := os.ReadDir(appCtx.ConfigDir)
-			if err != nil {
+			if _, err := os.Stat(appCtx.ConfigDir); err != nil {
 				if os.IsNotExist(err) {
 					p.Info("no configs found (dir: %s)", appCtx.ConfigDir)
 					return nil
@@ -52,12 +51,12 @@ func newConfigListCmd() *cobra.Command {
 				path string
 			}
 			var rows []row
-			for _, e := range entries {
-				if e.IsDir() || !strings.HasSuffix(e.Name(), ".yaml") {
-					continue
-				}
-				name := strings.TrimSuffix(e.Name(), ".yaml")
-				fullPath := filepath.Join(appCtx.ConfigDir, e.Name())
+			paths, err := config.ListConfigPaths(appCtx.ConfigDir)
+			if err != nil {
+				return err
+			}
+			for _, fullPath := range paths {
+				name := config.TrimConfigExt(filepath.Base(fullPath))
 				mode, port := "-", "-"
 				if cfg, err := config.Load(name, appCtx.ConfigDir); err == nil {
 					mode = cfg.Mode
@@ -143,9 +142,9 @@ func newConfigEditCmd() *cobra.Command {
 				return err
 			}
 
-			configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
-			if _, err := os.Stat(configPath); os.IsNotExist(err) {
-				return fmt.Errorf("config %q not found at %s", name, configPath)
+			configPath, err := config.FindConfigInDir(appCtx.ConfigDir, name)
+			if err != nil {
+				return err
 			}
 
 			editor := os.Getenv("EDITOR")
@@ -192,7 +191,10 @@ func newConfigPathCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
+			configPath, err := config.FindConfigInDir(appCtx.ConfigDir, name)
+			if err != nil {
+				return err
+			}
 			fmt.Println(configPath)
 			return nil
 		},

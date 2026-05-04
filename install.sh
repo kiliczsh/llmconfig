@@ -341,9 +341,14 @@ TEMPLATES_DIR="$(dirname "$0")/templates"
 if [[ -d "$TEMPLATES_DIR" ]]; then
     CONFIGS_DIR="$HOME/.llmconfig/configs"
     mkdir -p "$CONFIGS_DIR"
-    for f in "$TEMPLATES_DIR"/*.yaml; do
+    for f in "$TEMPLATES_DIR"/*.llmc; do
+        [[ -e "$f" ]] || continue
         dest="$CONFIGS_DIR/$(basename "$f")"
-        if [[ ! -f "$dest" ]]; then
+        # Skip if either extension is already present so existing
+        # users keep their tweaks (the in-process migrator handles
+        # the .yaml→.llmc rename for old installs).
+        base="$(basename "${f%.llmc}")"
+        if [[ ! -f "$dest" && ! -f "$CONFIGS_DIR/$base.yaml" ]]; then
             cp "$f" "$dest"
             step_ok "Template: $(basename "$f")"
         fi

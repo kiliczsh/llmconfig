@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/dustin/go-humanize"
 	"github.com/kiliczsh/llmconfig/internal/config"
@@ -72,12 +71,10 @@ func newModelsCmd() *cobra.Command {
 }
 
 func buildModelEntries(configDir, modelsDir string, sf *state.StateFile, r runner.Runner, ss *state.Store) ([]modelEntry, error) {
-	pattern := filepath.Join(configDir, "*.yaml")
-	matches, err := filepath.Glob(pattern)
+	matches, err := config.ListConfigPaths(configDir)
 	if err != nil {
 		return nil, err
 	}
-	sort.Strings(matches)
 
 	var entries []modelEntry
 	for _, path := range matches {

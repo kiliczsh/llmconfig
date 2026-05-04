@@ -40,6 +40,14 @@ func ModelLockFile(name string) string {
 	return filepath.Join(ModelLockDir(), name+".lock")
 }
 
+// MarkerFile returns the path of an opaque "we did this once" marker
+// under BaseDir(). Used by one-shot bookkeeping like the .yaml→.llmc
+// migration: the file's presence is the only signal; its contents are
+// ignored.
+func MarkerFile(name string) string {
+	return filepath.Join(BaseDir(), "markers", name)
+}
+
 func EnsureAll() error {
 	for _, d := range []string{ConfigDir(), ModelsDir(), LogDir(), BenchDir()} {
 		if err := EnsureDir(d); err != nil {

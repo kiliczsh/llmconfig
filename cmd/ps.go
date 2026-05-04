@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"path/filepath"
 	"sort"
 
 	"github.com/kiliczsh/llmconfig/internal/config"
@@ -47,7 +46,7 @@ func newPsCmd() *cobra.Command {
 			}
 
 			// Add interactive-mode models from lock files
-			if matches, err := filepath.Glob(filepath.Join(appCtx.ConfigDir, "*.yaml")); err == nil {
+			if matches, err := config.ListConfigPaths(appCtx.ConfigDir); err == nil {
 				for _, path := range matches {
 					cfg, err := config.LoadFile(path)
 					if err != nil || cfg.Mode != "interactive" {

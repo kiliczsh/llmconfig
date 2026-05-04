@@ -68,8 +68,8 @@ llmconfig/
 │   ├── stablediffusioncpp/
 │   └── whispercpp/
 ├── templates/           # built-in YAML templates, embedded via go:embed
-│   └── embed.go         # //go:embed *.yaml
-├── references/          # reference YAMLs documenting every backend flag
+│   └── embed.go         # //go:embed *.llmc
+├── references/          # reference configs documenting every backend flag
 ├── .github/             # workflows, issue + PR templates
 ├── docs/                # long-form documentation
 │   ├── README.md        # docs index
@@ -85,9 +85,10 @@ A few things worth knowing:
   command (`up.go`, `gateway.go`, `state.go`, ...). Adding a new command
   means: create a `new<Name>Cmd()` function and register it in
   `cmd/root.go` inside the `rootCmd.AddCommand(...)` block.
-- **Templates are embedded** via `templates/embed.go`. New `.yaml` files
+- **Templates are embedded** via `templates/embed.go`. New `.llmc` files
   in `templates/` are picked up automatically at the next `go build` —
-  no code change required.
+  no code change required. (Configs are still YAML inside; the `.llmc`
+  extension is just the canonical filename for an llmconfig config.)
 - **Defaults are applied at load time** by `internal/config`, so templates
   can stay minimal. The full set of fields lives in [docs/reference.md](docs/reference.md#config-file-reference).
 
@@ -125,12 +126,13 @@ For end-to-end smoke tests, the cheapest path is:
 ## Adding a new model template
 
 Templates are the easiest way to contribute. They're plain YAML files in
-`templates/` and ship in the binary via `go:embed`.
+`templates/` (with the `.llmc` extension) and ship in the binary via
+`go:embed`.
 
-1. Pick a short, lowercase name: `templates/<name>.yaml`. The name doubles
+1. Pick a short, lowercase name: `templates/<name>.llmc`. The name doubles
    as the user-visible `--template` value and as the default config name.
-2. Copy the closest existing template (e.g. `gemma.yaml` for a llama-based
-   chat model, `flux-schnell.yaml` for an image model, `whisper.yaml` for
+2. Copy the closest existing template (e.g. `gemma.llmc` for a llama-based
+   chat model, `flux-schnell.llmc` for an image model, `whisper.llmc` for
    speech).
 3. Start the file with a 2–3 line header comment that tells the user what
    they're configuring:

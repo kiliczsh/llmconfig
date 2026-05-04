@@ -18,14 +18,15 @@ llmconfig init my-name --template=llama # custom config name + template
 > instead.
 
 The resulting config is written to
-`~/.llmconfig/configs/<name>.yaml` (or
-`%USERPROFILE%\.llmconfig\configs\<name>.yaml` on Windows). The default
+`~/.llmconfig/configs/<name>.llmc` (or
+`%USERPROFILE%\.llmconfig\configs\<name>.llmc` on Windows). The default
 config name matches the template name unless you override it with a
-positional argument.
+positional argument. Files are YAML inside; the `.llmc` extension is
+the canonical filename for an llmconfig config.
 
 Sizes below are the recommended quantization for ~16 GB VRAM; each
 template ships with commented alternatives for other VRAM budgets.
-Open the YAML after `init` to see them.
+Open the `.llmc` file after `init` to see them.
 
 ---
 
@@ -66,11 +67,11 @@ Open the YAML after `init` to see them.
 
 ## Adding your own template
 
-Templates are plain YAML files in `templates/`, embedded into the binary
-via `go:embed`. To add one:
+Templates are plain YAML files in `templates/` (with the `.llmc`
+extension), embedded into the binary via `go:embed`. To add one:
 
-1. Create `templates/<name>.yaml` based on the closest existing template
-   (`gemma.yaml` for chat, `flux-schnell.yaml` for image, `whisper.yaml`
+1. Create `templates/<name>.llmc` based on the closest existing template
+   (`gemma.llmc` for chat, `flux-schnell.llmc` for image, `whisper.llmc`
    for speech).
 2. Start with a 2–3 line header comment describing the model.
 3. Use the canonical `hardware_profiles` ordering: `nvidia →

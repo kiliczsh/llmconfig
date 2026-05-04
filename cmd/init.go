@@ -3,10 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/kiliczsh/llmconfig/internal/config"
 	"github.com/kiliczsh/llmconfig/internal/downloader"
 	"github.com/kiliczsh/llmconfig/templates"
 	"github.com/spf13/cobra"
@@ -106,8 +106,8 @@ func pickTemplateName() (string, error) {
 	}
 	var opts []huh.Option[string]
 	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".yaml") {
-			name := strings.TrimSuffix(e.Name(), ".yaml")
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".llmc") {
+			name := strings.TrimSuffix(e.Name(), ".llmc")
 			opts = append(opts, huh.NewOption(name, name))
 		}
 	}
@@ -130,8 +130,8 @@ func completeTemplateNames(_ *cobra.Command, _ []string, _ string) ([]string, co
 	}
 	var names []string
 	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".yaml") {
-			names = append(names, strings.TrimSuffix(e.Name(), ".yaml"))
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".llmc") {
+			names = append(names, strings.TrimSuffix(e.Name(), ".llmc"))
 		}
 	}
 	return names, cobra.ShellCompDirectiveNoFileComp
@@ -141,7 +141,7 @@ func initFromTemplate(templateName, nameOverride, flagOutput, configDir string, 
 	Success(string, ...any)
 	Info(string, ...any)
 }) error {
-	data, err := templates.FS.ReadFile(templateName + ".yaml")
+	data, err := templates.FS.ReadFile(templateName + ".llmc")
 	if err != nil {
 		return fmt.Errorf("template %q not found — run: llmconfig init --template [TAB] to see available templates", templateName)
 	}
@@ -477,7 +477,7 @@ func resolveOutPath(flagOutput, configDir, name string) string {
 	if flagOutput != "" {
 		return flagOutput
 	}
-	return filepath.Join(configDir, name+".yaml")
+	return config.ConfigPath(configDir, name)
 }
 
 func confirmOverwrite(outPath string, p interface{ Info(string, ...any) }) (cancelled bool, err error) {

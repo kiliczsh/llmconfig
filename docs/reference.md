@@ -25,7 +25,7 @@ Every command is also available via the shorter `llmc` alias.
 
 ```
 ~/.llmconfig/
-├── configs/          # YAML config files (<name>.yaml)
+├── configs/          # YAML config files (<name>.llmc; legacy .yaml is still read)
 ├── models/           # Downloaded model files (GGUF, whisper GGML, SD weights)
 ├── logs/             # Per-model log files (<name>.log)
 ├── bench/            # Saved benchmark results
@@ -100,8 +100,12 @@ Downloads the model and creates a config in one step.
 
 **Option C — Write manually:**
 
-Create `<configs>/<name>.yaml` under your llmconfig directory (see
-[Config File Reference](#config-file-reference)).
+Create `<configs>/<name>.llmc` under your llmconfig directory (see
+[Config File Reference](#config-file-reference)). Files are YAML
+inside; the `.llmc` extension is the canonical filename for an
+llmconfig config — legacy `.yaml` files are still loaded but are
+auto-renamed (with a `.yaml.bak` backup) the first time the new
+binary runs.
 
 ### 3. Start a Model
 
@@ -424,7 +428,7 @@ llmconfig init --template=gemma                                     # use a spec
 llmconfig init my-llama --template=llama                            # custom name + template
 llmconfig init --from bartowski/google_gemma-4-E2B-it-GGUF
 llmconfig init --from https://huggingface.co/.../model.gguf         # direct URL
-llmconfig init --output ./gemma-4-e2b.yaml
+llmconfig init --output ./gemma-4-e2b.llmc
 ```
 
 The wizard first asks which backend to use (`llama`, `sd`, `whisper`), then
@@ -453,7 +457,7 @@ Validate a config without starting anything. Without a name, shows an interactiv
 ```bash
 llmconfig validate                     # interactive selector
 llmconfig validate gemma-4-e2b
-llmconfig validate --file ./path/to/config.yaml
+llmconfig validate --file ./path/to/config.llmc
 ```
 
 ---

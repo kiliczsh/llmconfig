@@ -3,11 +3,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/huh"
+	"github.com/kiliczsh/llmconfig/internal/config"
 	"github.com/kiliczsh/llmconfig/internal/dirs"
 	"github.com/kiliczsh/llmconfig/internal/state"
 	"github.com/spf13/cobra"
@@ -94,16 +93,9 @@ func pickConfig(name, configDir string) (string, error) {
 		return name, nil
 	}
 
-	entries, err := os.ReadDir(configDir)
+	names, err := config.ListConfigNames(configDir)
 	if err != nil {
 		return "", fmt.Errorf("cannot read config dir: %w", err)
-	}
-
-	var names []string
-	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".yaml") {
-			names = append(names, strings.TrimSuffix(e.Name(), ".yaml"))
-		}
 	}
 
 	switch len(names) {
@@ -136,15 +128,9 @@ func completeConfigNames(_ *cobra.Command, args []string, _ string) ([]string, c
 	if len(args) > 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
-	entries, err := os.ReadDir(dirs.ConfigDir())
+	names, err := config.ListConfigNames(dirs.ConfigDir())
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-	var names []string
-	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".yaml") {
-			names = append(names, strings.TrimSuffix(e.Name(), ".yaml"))
-		}
 	}
 	return names, cobra.ShellCompDirectiveNoFileComp
 }

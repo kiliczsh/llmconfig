@@ -2,5 +2,5 @@ package templates
 
 import "embed"
 
-//go:embed *.yaml
+//go:embed *.llmc
 var FS embed.FS

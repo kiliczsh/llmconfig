@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/dustin/go-humanize"
 	"github.com/kiliczsh/llmconfig/internal/bench"
@@ -46,12 +45,10 @@ func newCompatCmd() *cobra.Command {
 			}
 			fmt.Printf("Hardware: %s — %s — ~%.0f GB/s\n\n", hw.GPUName, ramLabel, bwGBs)
 
-			pattern := filepath.Join(appCtx.ConfigDir, "*.yaml")
-			matches, err := filepath.Glob(pattern)
+			matches, err := config.ListConfigPaths(appCtx.ConfigDir)
 			if err != nil {
 				return err
 			}
-			sort.Strings(matches)
 
 			type row struct {
 				name   string

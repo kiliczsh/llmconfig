@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/dustin/go-humanize"
 	"github.com/kiliczsh/llmconfig/internal/archive"
+	"github.com/kiliczsh/llmconfig/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -96,8 +97,7 @@ func printManifestSummary(p interface {
 			size = humanize.Bytes(uint64(e.Size))
 		}
 		status := "new"
-		cfgDest := filepath.Join(configDir, e.Name+".yaml")
-		if _, err := os.Stat(cfgDest); err == nil {
+		if _, err := config.FindConfigInDir(configDir, e.Name); err == nil {
 			status = "exists (config)"
 		}
 		if e.ModelFile != "" {

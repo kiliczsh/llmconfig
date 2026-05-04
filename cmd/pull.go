@@ -243,9 +243,9 @@ func writeConfigIfNeeded(appCtx *AppContext, repo, file, nameOverride string) er
 		name = deriveName(repo, file)
 	}
 
-	configPath := filepath.Join(appCtx.ConfigDir, name+".yaml")
-	if _, err := os.Stat(configPath); err == nil {
-		return nil // already exists
+	configPath := config.ConfigPath(appCtx.ConfigDir, name)
+	if _, err := config.FindConfigInDir(appCtx.ConfigDir, name); err == nil {
+		return nil // already exists (either extension)
 	}
 
 	cfg := &config.Config{

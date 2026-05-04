@@ -9,10 +9,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Load finds and loads a named config. Searches:
-//  1. ./llmconfig/<name>.yaml (current dir)
-//  2. configDir/<name>.yaml
+// Load finds and loads a named config. Searches in this order, trying
+// both the canonical .llmc and the legacy .yaml extension at each step:
+//  1. ./llmconfig/<name>.{llmc,yaml} (current dir)
+//  2. configDir/<name>.{llmc,yaml}
 //  3. <name> treated as a direct file path
+//
+// .llmc wins when both extensions are present in the same directory.
 func Load(name, configDir string) (*Config, error) {
 	path, err := findConfig(name, configDir)
 	if err != nil {
@@ -46,11 +49,17 @@ func LoadFile(path string) (*Config, error) {
 }
 
 func findConfig(name, configDir string) (string, error) {
-	candidates := []string{
-		filepath.Join("llmconfig", name+".yaml"),
-		filepath.Join(configDir, name+".yaml"),
-		name,
+	// Build the search list: each directory tried with both extensions,
+	// then the bare name as a literal path. The order matters: .llmc
+	// always beats .yaml within a single directory, but later
+	// directories never override earlier ones.
+	var candidates []string
+	for _, dir := range []string{"llmconfig", configDir} {
+		for _, ext := range allExts {
+			candidates = append(candidates, filepath.Join(dir, name+ext))
+		}
 	}
+	candidates = append(candidates, name)
 
 	for _, p := range candidates {
 		if _, err := os.Stat(p); err == nil {
