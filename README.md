@@ -21,7 +21,10 @@ llmconfig up gemma                    # or just: llmc up gemma
   API. The optional `gateway` command exposes every running model on a
   single port.
 - **No build chain.** Backend binaries are downloaded for you;
-  `llmconfig install <llama|sd|whisper>` is a one-shot.
+  `llmconfig install <llama|sd|whisper>` is a one-shot. Optional:
+  `llmconfig install ik_llama` builds the
+  [ik_llama.cpp](https://github.com/ikawrakow/ik_llama.cpp) fork from
+  source for SOTA quants and faster CPU / MoE inference.
 
 ## Install
 

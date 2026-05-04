@@ -47,10 +47,10 @@ func Validate(cfg *Config) error {
 	}
 
 	switch cfg.Backend {
-	case "", "llama", "sd", "whisper":
+	case "", "llama", "ik_llama", "sd", "whisper":
 		// valid
 	default:
-		errs = append(errs, fmt.Sprintf("backend %q is invalid (llama | sd | whisper)", cfg.Backend))
+		errs = append(errs, fmt.Sprintf("backend %q is invalid (llama | ik_llama | sd | whisper)", cfg.Backend))
 	}
 
 	validModes := map[string]bool{"": true, "server": true, "interactive": true}
@@ -90,7 +90,7 @@ func Validate(cfg *Config) error {
 	}
 
 	switch cfg.Backend {
-	case "llama", "":
+	case "llama", "ik_llama", "":
 		validateLlama(cfg, &errs)
 	case "sd":
 		validateSD(cfg, &errs)

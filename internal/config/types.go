@@ -6,7 +6,7 @@ type Config struct {
 	Description      string           `yaml:"description"`
 	Tags             []string         `yaml:"tags"`
 	Meta             Meta             `yaml:"meta"`
-	Backend          string           `yaml:"backend"` // "llama" | "sd" | "whisper" (default: "llama")
+	Backend          string           `yaml:"backend"` // "llama" | "ik_llama" | "sd" | "whisper" (default: "llama")
 	Model            ModelSpec        `yaml:"model"`
 	Mode             string           `yaml:"mode"`
 	Server           ServerSpec       `yaml:"server"`
@@ -19,6 +19,7 @@ type Config struct {
 	Logging          LoggingSpec      `yaml:"logging"`
 	Whisper          WhisperSpec      `yaml:"whisper,omitempty"`
 	SD               SDSpec           `yaml:"sd,omitempty"`
+	IKLlama          IKLlamaSpec      `yaml:"ik_llama,omitempty"`
 
 	// internal: resolved file path
 	FilePath string `yaml:"-"`
@@ -326,6 +327,17 @@ type LoggingSpec struct {
 	ShowTimings *bool  `yaml:"show_timings"` // show timing info after each response (default: true)
 }
 
+// IKLlamaSpec collects flags only meaningful when Engine == "ik_llama".
+// All fields default to their zero value and add nothing to the command line
+// unless explicitly set, so an empty block is safe to leave in any config.
+type IKLlamaSpec struct {
+	RunTimeRepack bool   `yaml:"rtr"`         // -rtr: repack tensors held in RAM at load time (CPU-only quants)
+	MLA           int    `yaml:"mla"`         // -mla N: multi-head latent attention level (DeepSeek)
+	FusedMoE      bool   `yaml:"fmoe"`        // -fmoe: fused MoE matmul kernels
+	SmartExperts  string `yaml:"ser"`         // -ser N,thresh: smart expert reduction
+	CUDAGraphs    *bool  `yaml:"cuda_graphs"` // nil=default; false → -cuda graphs=0 workaround for split-mode graph corruption
+}
+
 // RunConfig is the flattened, resolved configuration passed to the runner.
 type RunConfig struct {
 	Config         *Config
@@ -336,7 +348,7 @@ type RunConfig struct {
 	ProfileName    string
 	LogFile        string
 	BinaryPath     string
-	Backend        string // "llama" | "sd" | "whisper"
+	Backend        string // "llama" | "ik_llama" | "sd" | "whisper"
 
 	// ExtraDownloads lists auxiliary artifacts that must exist on disk
 	// before the backend starts — e.g. Flux's separate CLIP/T5/VAE

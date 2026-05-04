@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- `ik_llama` backend — drop-in alternative to `llama` that runs the
+  [ikawrakow/ik_llama.cpp](https://github.com/ikawrakow/ik_llama.cpp)
+  fork (SOTA quants, MLA, fused MoE). Set `backend: ik_llama` in any
+  config; ik-only flags live under a new optional `ik_llama` block
+  (`rtr`, `mla`, `fmoe`, `ser`, `cuda_graphs`).
+- `llmconfig install ik_llama` — clones and cmake-builds ik_llama.cpp
+  into `~/.llmconfig/cache/` and installs `llama-server` / `llama-cli`
+  into `~/.llmconfig/bin/ik-llama/`. Supports `--backend cpu|cuda`,
+  `--ref <tag|commit>`, `--jobs N`, `--verbose`, and `--file <archive>`
+  (bring-your-own-binary). Build log lands at
+  `~/.llmconfig/logs/install-ik-llama.log`.
+- `llmconfig ik_llama` — status command (path, version) mirroring
+  `llmconfig llama`.
 
 ## [1.0.0] - 2026-05-03
 

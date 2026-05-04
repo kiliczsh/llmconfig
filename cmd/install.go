@@ -18,10 +18,11 @@ import (
 func newInstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install",
-		Short: "Install AI inference binaries (llama, sd, whisper)",
+		Short: "Install AI inference binaries (llama, ik_llama, sd, whisper)",
 	}
 	cmd.AddCommand(
 		newInstallLlamaCmd(),
+		newInstallIkLlamaCmd(),
 		newInstallSdCmd(),
 		newInstallWhisperCmd(),
 	)

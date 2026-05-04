@@ -13,6 +13,7 @@ import (
 	"github.com/kiliczsh/llmconfig/internal/hardware"
 	"github.com/kiliczsh/llmconfig/internal/runner"
 	"github.com/kiliczsh/llmconfig/internal/state"
+	"github.com/kiliczsh/llmconfig/pkg/ikllamacpp"
 	"github.com/kiliczsh/llmconfig/pkg/llamacpp"
 	"github.com/kiliczsh/llmconfig/pkg/stablediffusioncpp"
 	"github.com/kiliczsh/llmconfig/pkg/whispercpp"
@@ -206,6 +207,8 @@ func resolveBackendBinary(backend string) (string, error) {
 		return stablediffusioncpp.FindServer()
 	case "whisper":
 		return whispercpp.FindServer()
+	case "ik_llama":
+		return ikllamacpp.FindServer()
 	default:
 		return llamacpp.FindServer()
 	}

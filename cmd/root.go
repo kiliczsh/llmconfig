@@ -131,6 +131,7 @@ func init() {
 		newHardwareCmd(),
 		newInstallCmd(),
 		newLlamaCmd(),
+		newIkLlamaCmd(),
 		newSdCmd(),
 		newWhisperCmd(),
 		newFilesCmd(),

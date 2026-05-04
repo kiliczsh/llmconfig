@@ -8,6 +8,8 @@ import (
 )
 
 // healthURL returns the appropriate health-check endpoint for each backend.
+// "ik_llama" falls through to the default since the fork keeps llama.cpp's
+// /health endpoint and HTTP semantics.
 func healthURL(backend, host string, port int) string {
 	base := fmt.Sprintf("http://%s:%d", host, port)
 	switch backend {
@@ -28,6 +30,8 @@ func healthTimeout(backend string) time.Duration {
 	case "whisper":
 		return 30 * time.Second
 	default:
+		// llama and ik_llama both load weights at server start; the timeout
+		// covers cold-start mmap + GPU offload for moderate-sized models.
 		return 60 * time.Second
 	}
 }

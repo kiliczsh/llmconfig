@@ -15,7 +15,6 @@ import (
 	"github.com/kiliczsh/llmconfig/internal/dirs"
 	"github.com/kiliczsh/llmconfig/internal/hardware"
 	"github.com/kiliczsh/llmconfig/internal/runner"
-	"github.com/kiliczsh/llmconfig/pkg/llamacpp"
 	"github.com/spf13/cobra"
 )
 
@@ -54,17 +53,22 @@ func newBenchCmd() *cobra.Command {
 			}
 
 			// bench runs llama-cli with timing-parse output; sd/whisper
-			// don't speak that protocol, so reject them up front.
-			if cfg.Backend != "" && cfg.Backend != "llama" {
-				return fmt.Errorf("bench only supports the llama backend (config backend: %q)", cfg.Backend)
+			// don't speak that protocol, so reject them up front. ik_llama
+			// is a llama.cpp drop-in that emits the same timing lines, so
+			// it's allowed.
+			if cfg.Backend != "" && cfg.Backend != "llama" && cfg.Backend != "ik_llama" {
+				return fmt.Errorf("bench only supports the llama / ik_llama backends (config backend: %q)", cfg.Backend)
 			}
 
 			// Resolve server binary (which is what appCtx.LlamaBin points at
 			// when found) and derive the matching CLI. Fall back to
 			// exec.LookPath so a PATH-installed 'llama-server' works even if
 			// llmconfig's managed bin dir doesn't have it.
-			serverBin, err := llamacpp.FindServer()
+			serverBin, err := resolveBackendBinary(cfg.Backend)
 			if err != nil {
+				if cfg.Backend == "ik_llama" {
+					return err
+				}
 				if _, lookErr := exec.LookPath("llama-server"); lookErr != nil {
 					return fmt.Errorf("llama-server not found — run: llmconfig install llama")
 				}

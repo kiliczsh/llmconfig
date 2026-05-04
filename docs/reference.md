@@ -141,18 +141,20 @@ llmconfig down --all         # stop all running models
 
 ## Backends
 
-llmconfig drives three inference backends. The `backend` field in a config
+llmconfig drives four inference backends. The `backend` field in a config
 picks which one runs:
 
 ```yaml
-backend: llama      # default — text generation via llama.cpp
-# backend: sd       # image generation via stable-diffusion.cpp
-# backend: whisper  # speech recognition via whisper.cpp
+backend: llama       # default — text generation via llama.cpp
+# backend: ik_llama  # text generation via ik_llama.cpp (CPU/MoE-tuned fork)
+# backend: sd        # image generation via stable-diffusion.cpp
+# backend: whisper   # speech recognition via whisper.cpp
 ```
 
 | Backend | Binary used | Install command | Managed bin dir |
 |---------|-------------|-----------------|-----------------|
 | `llama` (default) | `llama-server` (server) / `llama-cli` (interactive) | `llmconfig install llama` | `~/.llmconfig/bin/llama/` |
+| `ik_llama` | `llama-server` / `llama-cli` (built from source) | `llmconfig install ik_llama` | `~/.llmconfig/bin/ik-llama/` |
 | `sd` | `sd-cli` (server build) | `llmconfig install sd` | `~/.llmconfig/bin/sd/` |
 | `whisper` | `whisper-server` / `whisper-cli` | `llmconfig install whisper` | `~/.llmconfig/bin/whisper/` |
 
@@ -213,8 +215,77 @@ whisper:
   processors: 1
 ```
 
-See [Config File Reference](#config-file-reference) for the shared fields
-(`model`, `server`, `hardware_profiles`, `context`, ...).
+### `ik_llama` — llama.cpp fork (ikawrakow)
+
+A drop-in alternative to the `llama` backend that runs the
+[ikawrakow/ik_llama.cpp](https://github.com/ikawrakow/ik_llama.cpp) fork.
+The fork ships SOTA quants (IQ_K, trellis quants), MLA / FlashMLA for
+DeepSeek, fused MoE kernels, and faster CPU and hybrid CPU/GPU paths.
+
+**Build chain required.** Unlike the other backends, ik_llama.cpp publishes
+no prebuilt release binaries. `llmconfig install ik_llama` clones the
+source into `~/.llmconfig/cache/ik_llama.cpp/` and runs cmake. Prerequisites:
+
+- `git`
+- `cmake`
+- A C++ compiler — gcc / clang on Linux/macOS, MSVC (`cl.exe` from a
+  "Developer PowerShell for VS") on Windows
+- CUDA toolkit if building with `--backend cuda`
+
+Officially supported compute backends are CPU (AVX2+) and CUDA (Turing+).
+ROCm, Vulkan, Metal, Intel GPU, and pre-AVX2 CPUs may compile but are
+unsupported upstream.
+
+```bash
+llmconfig install ik_llama                       # auto-detect cpu vs cuda
+llmconfig install ik_llama --backend cuda        # force CUDA
+llmconfig install ik_llama --ref v0.1.2          # pin a tag/commit
+llmconfig install ik_llama --jobs 4              # cap parallel jobs
+llmconfig install ik_llama --verbose             # stream cmake output live
+llmconfig install ik_llama --file build.zip      # bring-your-own-binary
+```
+
+The full build log is written to `~/.llmconfig/logs/install-ik-llama.log`.
+
+```yaml
+version: 1
+name: ikqwen
+backend: ik_llama
+
+model:
+  source: huggingface
+  repo: bartowski/Qwen2.5-1.5B-Instruct-GGUF
+  file: Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
+
+mode: server
+server:
+  host: 127.0.0.1
+  port: 8080
+
+hardware_profiles:
+  cpu:
+    n_gpu_layers: 0
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+
+# Optional ik_llama-only flags. Omit this block entirely for stock behavior.
+ik_llama:
+  rtr: true            # -rtr  : run-time repack RAM-resident tensors (CPU quants)
+  fmoe: true           # -fmoe : fused MoE matmul kernels
+  mla: 2               # -mla N: multi-head latent attention level (DeepSeek)
+  ser: "8,1"           # -ser N,thresh: smart expert reduction
+  cuda_graphs: false   # → -cuda graphs=0 (workaround for split-mode graph corruption)
+```
+
+All the regular `llama` config blocks (`server`, `context`, `sampling`,
+`hardware_profiles`, ...) work unchanged — ik_llama.cpp accepts the same
+CLI flags as upstream llama.cpp.
+
+> **Heads up on `-rtr`:** when running hybrid CPU/GPU inference for MoE
+> models with experts left on CPU, do not enable `rtr` unless you know
+> what you're doing. It forces matmuls on CPU-side tensors to stay on
+> CPU even when GPU offload would be faster.
 
 ---
 
@@ -455,6 +526,7 @@ matching release from GitHub.
 
 ```bash
 llmconfig install llama               # text generation (llama.cpp)
+llmconfig install ik_llama            # llama.cpp fork — built from source
 llmconfig install sd                  # image generation (stable-diffusion.cpp)
 llmconfig install whisper             # speech recognition (whisper.cpp)
 
@@ -464,7 +536,10 @@ llmconfig install llama --force         # reinstall even if already present
 
 Each backend is installed into its own directory under
 `~/.llmconfig/bin/<backend>/`, so they never collide. To update to the
-latest release, run `install` again with `--force`.
+latest release, run `install` again with `--force`. `ik_llama` works
+differently — it builds from source rather than downloading a release;
+see [`ik_llama` — llama.cpp fork](#ik_llama--llamacpp-fork-ikawrakow)
+for prerequisites and flags.
 
 Available `--backend` values depend on the backend and platform; common ones
 are `cuda`, `metal`, `rocm`, and `cpu`.

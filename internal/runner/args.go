@@ -11,15 +11,47 @@ import (
 
 // BuildArgs converts a RunConfig into the argv slice for the appropriate backend binary.
 // This is a pure function — both --dry-run and inspect use it.
+//
+// The "ik_llama" backend is treated as a llama.cpp drop-in: it shares the
+// llama-server CLI and reuses every flag buildLlamaArgs produces, then layers
+// on the ik-only flags from cfg.IKLlama at the end. The fork is forgiving of
+// unknown flags it has dropped from upstream, so we don't filter the base
+// set; if a specific upstream flag becomes incompatible, gate it here.
 func BuildArgs(rc *config.RunConfig) []string {
 	switch rc.Backend {
 	case "whisper":
 		return buildWhisperArgs(rc)
 	case "sd":
 		return buildSDArgs(rc)
+	case "ik_llama":
+		return appendIKLlamaArgs(buildLlamaArgs(rc), rc)
 	default:
 		return buildLlamaArgs(rc)
 	}
+}
+
+// appendIKLlamaArgs adds flags only meaningful to ik_llama.cpp. All flags are
+// gated on the IKLlamaSpec field being explicitly set so an empty block is a
+// no-op (the same config can be flipped between backends without touching the
+// ik_llama section).
+func appendIKLlamaArgs(args []string, rc *config.RunConfig) []string {
+	ik := rc.Config.IKLlama
+	if ik.RunTimeRepack {
+		args = append(args, "-rtr")
+	}
+	if ik.MLA > 0 {
+		args = append(args, "-mla", strconv.Itoa(ik.MLA))
+	}
+	if ik.FusedMoE {
+		args = append(args, "-fmoe")
+	}
+	if ik.SmartExperts != "" {
+		args = append(args, "-ser", ik.SmartExperts)
+	}
+	if ik.CUDAGraphs != nil && !*ik.CUDAGraphs {
+		args = append(args, "-cuda", "graphs=0")
+	}
+	return args
 }
 
 func buildLlamaArgs(rc *config.RunConfig) []string {
