@@ -64,12 +64,12 @@ archives:
     name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
     files:
       - README.md
-      - config.reference.yaml
+      - config.reference.llmc
       # Ship only the scripts that make sense for the target OS:
       # .ps1 on Windows, .sh on Linux/macOS.
       - src: "install.{{ if eq .Os \"windows\" }}ps1{{ else }}sh{{ end }}"
       - src: "uninstall.{{ if eq .Os \"windows\" }}ps1{{ else }}sh{{ end }}"
-      - src: "templates/*.yaml"
+      - src: "templates/*.llmc"
         dst: "templates"
 
 checksum:
