@@ -85,7 +85,7 @@ or `install whisper` and pick a matching template.
 | Page | What you'll find |
 |------|------------------|
 | [docs/reference.md](docs/reference.md) | Full reference — commands, config fields, hardware profiles, env vars, API |
-| [docs/templates.md](docs/templates.md) | All 18 built-in templates with model details and recommended sizes |
+| [docs/templates.md](docs/templates.md) | All 19 built-in templates with model details and recommended sizes |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Project layout, build, adding a template, sending a PR |
 

@@ -1,6 +1,6 @@
 # Built-in Templates
 
-llmconfig ships with 18 ready-to-use templates embedded in the binary.
+llmconfig ships with 19 ready-to-use templates embedded in the binary.
 Each template is a YAML config tuned to a specific model with sensible
 defaults and commented alternatives for different VRAM budgets.
 
@@ -35,6 +35,7 @@ Open the `.llmc` file after `init` to see them.
 | Template | Model | Recommended size |
 |----------|-------|------------------|
 | `gemma` | Google Gemma 4 E4B Instruct | ~4.4 GB |
+| `gemma-4-12b` | Google Gemma 4 12B Instruct (multimodal, 256K ctx) | ~7.0 GB |
 | `llama` | Meta Llama 3.1 8B Instruct | ~8.7 GB |
 | `mistral` | Mistral 7B Instruct v0.3 | ~2.4 GB |
 | `mistral-small` | Mistral Small 3.2 24B Instruct | ~11.4 GB |

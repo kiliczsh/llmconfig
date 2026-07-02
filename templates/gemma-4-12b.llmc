@@ -1,0 +1,48 @@
+# Google Gemma 4 12B Instruct — unified multimodal chat (text + image + audio in, 256K context).
+# Source: google/gemma-4-12B-it-qat-q4_0-gguf (official QAT build, Q4_0 only)
+# Recommended: 16 GB VRAM — ~9.3 GB at 32K context, ~13.2 GB at the full 256K.
+# Requires llama.cpp b9860+ for the gemma4uv multimodal projector.
+version: 1
+name: gemma-4-12b
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: google/gemma-4-12B-it-qat-q4_0-gguf
+  file: gemma-4-12b-it-qat-q4_0.gguf               # 7.0GB — official QAT, near-QAT-lossless at 4 bits
+  # For other quant sizes use the community repo instead:
+  # repo: bartowski/gemma-4-12B-it-GGUF
+  # file: gemma-4-12B-it-Q5_K_M.gguf               # ~8.7GB — higher quality
+  # file: gemma-4-12B-it-Q8_0.gguf                 # ~13GB — near-lossless, tight on 16GB
+  mmproj:
+    source: huggingface
+    repo: google/gemma-4-12B-it-qat-q4_0-gguf
+    file: mmproj-gemma-4-12b-it-qat-q4_0.gguf      # vision + audio projector
+  download:
+    resume: true
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0
+context:
+  n_ctx: 32768                # ~9.3GB VRAM; sliding-window attention keeps KV cheap
+  # n_ctx: 262144             # full 256K — ~13.2GB VRAM, still fits 16GB cards
+  n_batch: 512
+  flash_attention: on
+chat:
+  # Do NOT set chat.template — gemma4 ships its own jinja template in the GGUF;
+  # legacy template names (e.g. "gemma") corrupt the prompt.
+  reasoning_budget: 1024      # thinking model: unlimited budget starves answers of tokens;
+                              # 256-1024 tested equal in quality, 2048+ degrades
+sampling:
+  temperature: 0.7
+  top_p: 0.95
+  top_k: 64
