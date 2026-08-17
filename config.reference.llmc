@@ -342,7 +342,9 @@ sampling:
 # ── Chat ──────────────────────────────────────────────────────────────────────
 
 chat:
-  system_prompt: ""               # system prompt prepended to every conversation
+  system_prompt: ""               # interactive mode only (llama-cli --system-prompt). llama-server dropped
+                                  # this flag upstream (ggml-org/llama.cpp#9811) — for mode: server, send
+                                  # the system prompt as a "system" role message in each chat request instead.
   template: ""                    # chat template name (leave empty to use model's built-in)
                                   # examples: llama3, chatml, gemma, mistral, phi3
   # jinja: true                   # true=--jinja, false=--no-jinja, omit=use llama.cpp default (enabled)

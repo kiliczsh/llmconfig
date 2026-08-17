@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+- `up`/`restart` no longer pass `--system-prompt` to `llama-server`, which
+  dropped the flag upstream (ggml-org/llama.cpp#9811) and rejects it with
+  `error: invalid argument: --system-prompt`, failing every start when
+  `chat.system_prompt` was set on a `mode: server` config. The flag is still
+  sent for `mode: interactive` (llama-cli kept `-sys`/`--system-prompt`). A
+  warning is now printed when `chat.system_prompt` is set on a server config,
+  since it silently has no effect there — send it as a `"system"` role
+  message in `/v1/chat/completions` requests instead.
 
 ## [1.2.0] - 2026-05-04
 

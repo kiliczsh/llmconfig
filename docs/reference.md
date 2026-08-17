@@ -800,6 +800,10 @@ sampling:
 # ── Chat ───────────────────────────────────────────────────────────────────
 
 chat:
+  # system_prompt only applies in `mode: interactive` (passed as llama-cli's
+  # --system-prompt). llama-server dropped that flag upstream
+  # (ggml-org/llama.cpp#9811); for `mode: server` send the system prompt as a
+  # "system" role message in each /v1/chat/completions request instead.
   system_prompt: |
     You are a helpful assistant.
   template: ""      # override chat template (leave empty to use model default)

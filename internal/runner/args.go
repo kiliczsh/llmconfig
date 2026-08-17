@@ -442,7 +442,12 @@ func appendSharedArgs(args []string, rc *config.RunConfig, interactive bool) []s
 	if !interactive && cfg.Chat.Template != "" {
 		args = add("--chat-template", cfg.Chat.Template)
 	}
-	if cfg.Chat.SystemPrompt != "" {
+	// llama-server dropped --system-prompt support (ggml-org/llama.cpp#9811);
+	// llama-cli (interactive) still accepts it. Passing the flag to the server
+	// binary fails startup with "error: invalid argument: --system-prompt".
+	// Server-mode callers should send the system prompt as a "system" role
+	// message in their chat completion requests instead.
+	if cfg.Chat.SystemPrompt != "" && interactive {
 		args = add("--system-prompt", cfg.Chat.SystemPrompt)
 	}
 	if cfg.Chat.Jinja != nil {

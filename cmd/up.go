@@ -11,6 +11,7 @@ import (
 	"github.com/kiliczsh/llmconfig/internal/dirs"
 	"github.com/kiliczsh/llmconfig/internal/downloader"
 	"github.com/kiliczsh/llmconfig/internal/hardware"
+	"github.com/kiliczsh/llmconfig/internal/output"
 	"github.com/kiliczsh/llmconfig/internal/runner"
 	"github.com/kiliczsh/llmconfig/internal/state"
 	"github.com/kiliczsh/llmconfig/pkg/ikllamacpp"
@@ -52,6 +53,7 @@ func newUpCmd() *cobra.Command {
 			if err := config.Validate(cfg); err != nil {
 				return err
 			}
+			warnServerSystemPrompt(cfg, p)
 
 			// Override port if specified
 			if flagPort > 0 {
@@ -199,6 +201,18 @@ func newUpCmd() *cobra.Command {
 		return []string{"apple_silicon", "nvidia", "amd", "intel_gpu", "cpu"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	return cmd
+}
+
+// warnServerSystemPrompt flags chat.system_prompt configs that will silently
+// have no effect: llama-server dropped --system-prompt support upstream
+// (ggml-org/llama.cpp#9811), so the field only still works in interactive
+// mode (llama-cli). Server-mode callers need to send it as a "system" role
+// message in their chat completion requests instead.
+func warnServerSystemPrompt(cfg *config.Config, p *output.Printer) {
+	if cfg.Chat.SystemPrompt == "" || cfg.Mode == "interactive" {
+		return
+	}
+	p.Warn("chat.system_prompt is set but llama-server no longer accepts --system-prompt (removed upstream) — it will NOT be applied. Send it as a \"system\" role message in your /v1/chat/completions requests instead.")
 }
 
 func resolveBackendBinary(backend string) (string, error) {

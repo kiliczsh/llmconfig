@@ -75,6 +75,7 @@ func newRestartCmd() *cobra.Command {
 					continue
 				}
 				config.ApplyDefaults(cfg)
+				warnServerSystemPrompt(cfg, p)
 
 				hw := hardware.Detect()
 				binaryPath, err := resolveBackendBinary(cfg.Backend)
