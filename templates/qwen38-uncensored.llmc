@@ -2,8 +2,28 @@
 # Source: orcarouter/Qwen3.8-27B-Uncensored-GGUF (base: Qwen/Qwen3.8-27B)
 # q8_0 KV cache halves KV memory for ~no speed loss.
 # Measured on RTX 5070 Ti (16GB), fully GPU-offloaded (n_gpu_layers=99, no CPU/RAM spillover):
-#   speed profile (32768 ctx + draft-mtp):    ~73 tok/s gen, ~1.5GB VRAM headroom
-#   context profile (65536 ctx, no draft):    ~56 tok/s gen, ~2.3GB VRAM headroom, ~1360 tok/s prompt eval
+#   speed profile (32768 ctx + draft-mtp, draft_n=3):  ~100 tok/s gen, ~930MB VRAM headroom
+#   context profile (98304 ctx, no draft):              ~54 tok/s gen, ~994MB VRAM headroom
+# draft_n sweep at 32768 ctx: 2 -> ~98 t/s (1.5GB free), 3 -> ~100 t/s (930MB free, best),
+#                              4 -> ~99 t/s (330MB free, too risky), 6 -> 23 t/s (28MB free, VRAM-thrashed).
+# n_ctx sweep with MTP active: 32768 -> best (944MB free/100 t/s); 65536 -> 34MB free/52 t/s
+# (worse AND riskier) -- don't combine MTP with a high ctx.
+# n_ctx sweep without draft: 65536 -> 2.3GB free/56 t/s; 98304 -> 994MB free/54 t/s (best
+# ceiling); 114688 -> 354MB free/56 t/s (tight); 131072 -> 66MB free/56 t/s (too risky);
+# >=196608 -> generation collapses to ~20 t/s even though VRAM stays flat (this model is
+# hybrid-attention, so KV barely grows with ctx, but compute cost falls off a cliff).
+#
+# Concurrency (total_slots=4, kv_unified -> ctx pool shared, not multiplied):
+#   MTP (speed profile) scales BADLY under concurrency: 1 req ~100 t/s, 4 concurrent
+#   ~15-20 t/s each (~70 t/s total) -- draft verification competes for the same compute.
+#   No-draft profiles (balance/max-ctx) scale well: 1 req ~56 t/s, 4 concurrent
+#   ~35-45 t/s each (~150 t/s total). For multi-client/API use, prefer a no-draft
+#   profile over the speed profile despite its lower single-stream number.
+# Batching (n_batch/n_ubatch) under 4 concurrent long prompts (~1800 tok each):
+#   512/512 -> 5.5s wall/2.4GB free; 2048/1024 -> 5.2s/2.3GB (default, good balance);
+#   4096/2048 -> 5.0s/1.95GB; 8192/4096 -> 4.9s/1.26GB. Diminishing returns past 2048/1024
+#   (~11% faster at 8192/4096 for half the VRAM headroom) -- not worth it. With short/
+#   decode-bound prompts, batch size has ~zero effect on throughput, only costs VRAM.
 version: 1
 name: qwen38-uncensored
 backend: llama
@@ -20,7 +40,7 @@ model:
   # Comment this block out and switch n_ctx below to use the context profile instead.
   draft:
     spec_type: draft-mtp
-    draft_n: 2
+    draft_n: 3
 server:
   host: 127.0.0.1
   port: 8080
@@ -36,7 +56,7 @@ hardware_profiles:
     n_gpu_layers: 0
 context:
   n_ctx: 32768                    # speed profile (active) — use with draft-mtp above
-  # n_ctx: 65536                  # context profile (alternative) — disable draft-mtp above when using this
+  # n_ctx: 98304                  # context profile (alternative) — disable draft-mtp above when using this
   flash_attention: on
   cache_type_k: q8_0
   cache_type_v: q8_0
