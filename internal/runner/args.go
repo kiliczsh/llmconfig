@@ -507,15 +507,19 @@ func appendSharedArgs(args []string, rc *config.RunConfig, interactive bool) []s
 		}
 	}
 
-	// Draft model (speculative decoding)
-	if rc.DraftModelPath != "" {
-		args = add("--model-draft", rc.DraftModelPath)
+	// Draft model (speculative decoding). A draft model file is only needed for
+	// external-draft types (draft-simple, draft-eagle3, ...); self-speculative
+	// types (draft-mtp, ngram-*) draw from the main model and need no draft file.
+	if rc.DraftModelPath != "" || (cfg.Model.Draft != nil && cfg.Model.Draft.SpecType != "") {
+		if rc.DraftModelPath != "" {
+			args = add("--model-draft", rc.DraftModelPath)
+		}
 		if d := cfg.Model.Draft; d != nil {
 			if d.DraftN > 0 {
-				args = add("--draft", strconv.Itoa(d.DraftN))
+				args = add("--spec-draft-n-max", strconv.Itoa(d.DraftN))
 			}
 			if d.DraftMin > 0 {
-				args = add("--draft-min", strconv.Itoa(d.DraftMin))
+				args = add("--spec-draft-n-min", strconv.Itoa(d.DraftMin))
 			}
 			if d.DraftPMin > 0 {
 				args = add("--draft-p-min", fmt.Sprintf("%.4f", d.DraftPMin))

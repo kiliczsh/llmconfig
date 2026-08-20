@@ -1,0 +1,44 @@
+# Qwen 3.8 27B Uncensored — large general-purpose model, alignment-stripped fine-tune.
+# Source: orcarouter/Qwen3.8-27B-Uncensored-GGUF (base: Qwen/Qwen3.8-27B)
+# q8_0 KV cache halves KV memory for ~no speed loss.
+# Measured on RTX 5070 Ti (16GB), fully GPU-offloaded (n_gpu_layers=99, no CPU/RAM spillover):
+#   speed profile (32768 ctx + draft-mtp):    ~73 tok/s gen, ~1.5GB VRAM headroom
+#   context profile (65536 ctx, no draft):    ~56 tok/s gen, ~2.3GB VRAM headroom, ~1360 tok/s prompt eval
+version: 1
+name: qwen38-uncensored
+backend: llama
+mode: server
+model:
+  source: huggingface
+  repo: orcarouter/Qwen3.8-27B-Uncensored-GGUF
+  file: Qwen3.8-27B-Uncensored-IQ3_XXS.gguf   # ~11.6GB — recommended for 16GB VRAM
+  # file: Qwen3.8-27B-Uncensored-IQ2_M.gguf   # ~10.5GB — lower quality, more headroom
+  download:
+    resume: true
+  # --- Speed profile (active): MTP self-speculative decoding ---
+  # Uses the model's own nextn/MTP head as draft, no extra download.
+  # Comment this block out and switch n_ctx below to use the context profile instead.
+  draft:
+    spec_type: draft-mtp
+    draft_n: 2
+server:
+  host: 127.0.0.1
+  port: 8080
+hardware_profiles:
+  # GPU-only: all layers forced onto the GPU, no CPU/RAM offload.
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0
+context:
+  n_ctx: 32768                    # speed profile (active) — use with draft-mtp above
+  # n_ctx: 65536                  # context profile (alternative) — disable draft-mtp above when using this
+  flash_attention: on
+  cache_type_k: q8_0
+  cache_type_v: q8_0
+  n_batch: 2048
+  n_ubatch: 1024
