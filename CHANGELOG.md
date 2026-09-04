@@ -7,7 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.3.0] - 2026-09-04
+
+### Added
+- MiniMax-H3 video generation support for the `sd` backend, including native
+  stereo audio, first/last-frame conditioning, repeatable image/video/audio
+  references, Hugging Face auxiliary-model downloads, and a built-in
+  `minimax-h3` template tuned for 16 GB GPUs.
+- Stable Diffusion config fields for prompts, audio VAE, runtime and parameter
+  backend assignment, segmented VRAM budgets, and streamed layers.
+- Built-in templates for Google Gemma 4 12B multimodal, Qwen 3.8 27B, and
+  Qwen 3.8 27B Uncensored. The latter includes tuned self-speculative decoding
+  and concurrency profiles for 16 GB GPUs.
+- Self-speculative decoding modes such as `draft-mtp` can now run without a
+  separate draft model.
+
+### Changed
+- Interactive `sd` and `whisper` configs now dispatch to their corresponding
+  CLI binaries instead of always using `llama-cli`.
+- The Windows installation command is now documented alongside the Unix
+  installer in the README.
+
 ### Fixed
+- Speculative n-gram options now map to the current type-specific llama.cpp
+  flags, including `--spec-ngram-mod-n-match`, `-n-min`, and `-n-max`.
 - `up`/`restart` no longer pass `--system-prompt` to `llama-server`, which
   dropped the flag upstream (ggml-org/llama.cpp#9811) and rejects it with
   `error: invalid argument: --system-prompt`, failing every start when
@@ -121,5 +146,8 @@ a deprecation cycle and a major version bump.
 - Concurrency and safety: state-file locking, signal handling, archive
   collision handling.
 
-[Unreleased]: https://github.com/kiliczsh/llmconfig/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/kiliczsh/llmconfig/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/kiliczsh/llmconfig/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/kiliczsh/llmconfig/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/kiliczsh/llmconfig/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/kiliczsh/llmconfig/releases/tag/v1.0.0
