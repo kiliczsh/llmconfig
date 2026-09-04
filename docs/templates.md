@@ -1,6 +1,6 @@
 # Built-in Templates
 
-llmconfig ships with 19 ready-to-use templates embedded in the binary.
+llmconfig ships with 23 ready-to-use templates embedded in the binary.
 Each template is a YAML config tuned to a specific model with sensible
 defaults and commented alternatives for different VRAM budgets.
 
@@ -50,13 +50,14 @@ Open the `.llmc` file after `init` to see them.
 | `deepseek` | DeepSeek R1 0528 Qwen3 8B (reasoning) | ~8.7 GB |
 | `gpt-oss` | GPT-OSS 20B | ~12.3 GB |
 
-## Image — `sd` backend
+## Image and video — `sd` backend
 
 | Template | Model | Notes |
 |----------|-------|-------|
 | `sd` | Stable Diffusion 1.5 (RunwayML) | Classic checkpoint, 512×512 |
 | `flux-schnell` | Black Forest Labs FLUX.1 Schnell | Distilled, 4 steps, 1024×1024 |
 | `flux-dev` | Black Forest Labs FLUX.1 Dev | Higher quality, 20 steps, 1024×1024 |
+| `minimax-h3` | MiniMax-H3 | Video with native stereo audio; T2VA/I2VA/FL2VA/Ref2VA |
 
 ## Speech — `whisper` backend
 

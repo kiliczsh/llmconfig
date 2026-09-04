@@ -83,7 +83,7 @@ recommended quantizations. As of this writing the families are:
 | Backend | Templates |
 |---------|-----------|
 | llama   | `gemma`, `llama`, `mistral`, `mistral-small`, `phi`, `phi4`, `phi4-reasoning`, `qwen`, `qwen36`, `qwen3-coder`, `qwen3-vl`, `granite4`, `deepseek`, `gpt-oss` |
-| sd      | `sd`, `flux-schnell`, `flux-dev` |
+| sd      | `sd`, `flux-schnell`, `flux-dev`, `minimax-h3` |
 | whisper | `whisper` |
 
 `--template` with **no value** opens the interactive picker;

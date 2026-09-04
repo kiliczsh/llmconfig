@@ -32,11 +32,12 @@ func (r *interactiveRunner) Start(ctx context.Context, rc *config.RunConfig) (*s
 	if err := cmd.Run(); err != nil {
 		// Exit code 1 from llama-cli on normal quit is fine
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			if exitErr.ExitCode() == 1 {
+			isLlamaCLI := rc.Backend == "" || rc.Backend == "llama" || rc.Backend == "ik_llama"
+			if isLlamaCLI && exitErr.ExitCode() == 1 {
 				return nil, nil
 			}
 		}
-		return nil, fmt.Errorf("llama-cli: %w", err)
+		return nil, fmt.Errorf("%s: %w", binaryPath, err)
 	}
 	return nil, nil
 }
@@ -50,6 +51,13 @@ func (r *interactiveRunner) IsAlive(_ *state.ModelState) bool {
 }
 
 func buildInteractiveArgs(rc *config.RunConfig) []string {
+	switch rc.Backend {
+	case "sd":
+		return buildSDArgs(rc)
+	case "whisper":
+		return buildWhisperArgs(rc)
+	}
+
 	var args []string
 
 	// Model

@@ -29,7 +29,7 @@ func buildSDArgs(rc *config.RunConfig) []string {
 	case sd.DiffusionModel != "":
 		// Explicit diffusion_model wins; skip --model to avoid sd.cpp
 		// trying to detect an SD version from the main gguf.
-	case sd.ClipL != "" || sd.T5XXL != "":
+	case sd.ClipL != "" || sd.T5XXL != "" || sd.LLM != "" || sd.AudioVAE != "":
 		add("--diffusion-model", rc.ModelPath)
 	default:
 		add("--model", rc.ModelPath)
@@ -46,6 +46,12 @@ func buildSDArgs(rc *config.RunConfig) []string {
 		// CLI output & preview
 		if sd.Output != "" {
 			add("--output", sd.Output)
+		}
+		if sd.Prompt != "" {
+			add("--prompt", sd.Prompt)
+		}
+		if sd.PromptFile != "" {
+			add("--prompt-file", sd.PromptFile)
 		}
 		if sd.PreviewPath != "" {
 			add("--preview-path", sd.PreviewPath)
@@ -94,6 +100,9 @@ func buildSDArgs(rc *config.RunConfig) []string {
 	if sd.VAE != "" {
 		add("--vae", sd.VAE)
 	}
+	if sd.AudioVAE != "" {
+		add("--audio-vae", sd.AudioVAE)
+	}
 	if sd.TAESD != "" {
 		add("--taesd", sd.TAESD)
 	}
@@ -120,6 +129,16 @@ func buildSDArgs(rc *config.RunConfig) []string {
 	if sd.Type != "" {
 		add("--type", sd.Type)
 	}
+	if sd.BackendAssignment != "" {
+		add("--backend", sd.BackendAssignment)
+	}
+	if sd.ParamsBackend != "" {
+		add("--params-backend", sd.ParamsBackend)
+	}
+	if sd.MaxVRAM != "" {
+		add("--max-vram", sd.MaxVRAM)
+	}
+	addIf("--stream-layers", sd.StreamLayers)
 	if sd.RNG != "" {
 		add("--rng", sd.RNG)
 	}
@@ -233,8 +252,26 @@ func buildSDArgs(rc *config.RunConfig) []string {
 	if sd.Sigmas != "" {
 		add("--sigmas", sd.Sigmas)
 	}
+	if sd.InitImage != "" {
+		add("--init-img", sd.InitImage)
+	}
+	if sd.EndImage != "" {
+		add("--end-img", sd.EndImage)
+	}
 	if sd.RefImage != "" {
-		add("-r", sd.RefImage)
+		add("--ref-image", sd.RefImage)
+	}
+	for _, path := range sd.RefImages {
+		add("--ref-image", path)
+	}
+	for _, path := range sd.RefVideos {
+		add("--ref-video", path)
+	}
+	for _, path := range sd.RefVideoAudios {
+		add("--ref-video-audio", path)
+	}
+	for _, path := range sd.RefAudios {
+		add("--ref-audio", path)
 	}
 	addIf("--vae-tiling", sd.VAETiling)
 	if sd.VAETileSize != "" {

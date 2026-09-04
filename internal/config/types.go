@@ -79,9 +79,9 @@ type DraftSpec struct {
 	ThreadsDraft      int      `yaml:"threads_draft"`       // draft model generation threads (server only)
 	ThreadsBatchDraft int      `yaml:"threads_batch_draft"` // draft model batch threads (server only)
 	SpecType          string   `yaml:"spec_type"`           // speculative decoding type: none|ngram-cache|ngram-simple|...
-	SpecNgramSizeN    int      `yaml:"spec_ngram_size_n"`   // ngram lookup size N (default: 12)
+	SpecNgramSizeN    int      `yaml:"spec_ngram_size_n"`   // ngram lookup/match size N (type-specific upstream flag)
 	SpecNgramSizeM    int      `yaml:"spec_ngram_size_m"`   // ngram draft size M (default: 48)
-	SpecNgramMinHits  int      `yaml:"spec_ngram_min_hits"` // min hits for ngram-map (default: 1)
+	SpecNgramMinHits  int      `yaml:"spec_ngram_min_hits"` // min hits for ngram-simple/map (default: 1)
 }
 
 type MMProjSpec struct {
@@ -468,6 +468,8 @@ type WhisperSpec struct {
 type SDSpec struct {
 	// Output (cli only)
 	Output          string `yaml:"output"`           // output path, supports %d for sequences (default: ./output.png)
+	Prompt          string `yaml:"prompt"`           // prompt to render
+	PromptFile      string `yaml:"prompt_file"`      // file containing the prompt to render
 	PreviewPath     string `yaml:"preview_path"`     // preview image path
 	PreviewInterval int    `yaml:"preview_interval"` // preview update interval in steps (default: 1)
 	Preview         string `yaml:"preview"`          // preview method: none|proj|tae|vae
@@ -486,6 +488,7 @@ type SDSpec struct {
 	DiffusionModel          string `yaml:"diffusion_model"`
 	HighNoiseDiffusionModel string `yaml:"high_noise_diffusion_model"`
 	VAE                     string `yaml:"vae"`
+	AudioVAE                string `yaml:"audio_vae"`
 	TAESD                   string `yaml:"taesd"`
 	ControlNet              string `yaml:"control_net"`
 	EmbedDir                string `yaml:"embd_dir"`
@@ -496,6 +499,10 @@ type SDSpec struct {
 
 	// Hardware & weight type
 	Type                string `yaml:"type"`                  // weight type: f32|f16|q4_0|q8_0|...
+	BackendAssignment   string `yaml:"backend"`               // runtime backend assignment, e.g. te=cpu,diffusion=cuda0
+	ParamsBackend       string `yaml:"params_backend"`        // parameter placement assignment, e.g. te=cpu,diffusion=cuda0
+	MaxVRAM             string `yaml:"max_vram"`              // graph-cut VRAM budget in GiB, optionally per device
+	StreamLayers        bool   `yaml:"stream_layers"`         // prefetch layers when max_vram is active
 	RNG                 string `yaml:"rng"`                   // RNG: std_default|cuda|cpu
 	SamplerRNG          string `yaml:"sampler_rng"`           // sampler RNG (default: use --rng)
 	Prediction          string `yaml:"prediction"`            // prediction type: eps|v|edm_v|sd3_flow|flux_flow|flux2_flow
@@ -514,40 +521,46 @@ type SDSpec struct {
 	CircularY           bool   `yaml:"circular_y"`            // circular RoPE on y-axis (height)
 
 	// Generation defaults
-	Width                   int     `yaml:"width"`                      // image width in pixels (default: 512)
-	Height                  int     `yaml:"height"`                     // image height in pixels (default: 512)
-	Steps                   int     `yaml:"steps"`                      // sampling steps (default: 20)
-	HighNoiseSteps          int     `yaml:"high_noise_steps"`           // high noise steps (-1 = auto)
-	ClipSkip                int     `yaml:"clip_skip"`                  // CLIP layers to skip (-1 = auto)
-	BatchCount              int     `yaml:"batch_count"`                // batch count
-	VideoFrames             int     `yaml:"video_frames"`               // video frames (default: 1)
-	FPS                     int     `yaml:"fps"`                        // FPS for video (default: 24)
-	TimestepShift           int     `yaml:"timestep_shift"`             // timestep shift for NitroFusion
-	UpscaleRepeats          int     `yaml:"upscale_repeats"`            // ESRGAN upscale repeats (default: 1)
-	UpscaleTileSize         int     `yaml:"upscale_tile_size"`          // ESRGAN tile size (default: 128)
-	CFGScale                float64 `yaml:"cfg_scale"`                  // guidance scale (default: 7.0)
-	ImgCFGScale             float64 `yaml:"img_cfg_scale"`              // image guidance scale for inpaint
-	Guidance                float64 `yaml:"guidance"`                   // distilled guidance scale (default: 3.5)
-	SLGScale                float64 `yaml:"slg_scale"`                  // skip layer guidance scale (0 = disabled)
-	SkipLayerStart          float64 `yaml:"skip_layer_start"`           // SLG enabling point (default: 0.01)
-	SkipLayerEnd            float64 `yaml:"skip_layer_end"`             // SLG disabling point (default: 0.2)
-	Eta                     float64 `yaml:"eta"`                        // noise multiplier
-	FlowShift               float64 `yaml:"flow_shift"`                 // flow shift for SD3/WAN (0 = auto)
-	Strength                float64 `yaml:"strength"`                   // noise strength for img2img (default: 0.75)
-	ControlStrength         float64 `yaml:"control_strength"`           // control net strength (default: 0.9)
-	VAETileOverlap          float64 `yaml:"vae_tile_overlap"`           // VAE tile overlap fraction (default: 0.5)
-	Seed                    int64   `yaml:"seed"`                       // RNG seed (default: 42, <0 = random)
-	SamplingMethod          string  `yaml:"sampling_method"`            // euler|euler_a|heun|dpm++2m|dpm++2s_a|...
-	HighNoiseSamplingMethod string  `yaml:"high_noise_sampling_method"` // sampling method for high noise stage
-	Scheduler               string  `yaml:"scheduler"`                  // sigma scheduler: discrete|karras|exponential|ays|...
-	NegativePrompt          string  `yaml:"negative_prompt"`            // default negative prompt
-	VAETiling               bool    `yaml:"vae_tiling"`                 // process VAE in tiles to reduce memory
-	VAETileSize             string  `yaml:"vae_tile_size"`              // VAE tile size, format: "32x32"
-	VAERelativeTileSize     string  `yaml:"vae_relative_tile_size"`     // relative VAE tile size
-	DisableImageMetadata    bool    `yaml:"disable_image_metadata"`     // do not embed generation metadata
-	SkipLayers              string  `yaml:"skip_layers"`                // SLG skip layers, e.g. "[7,8,9]"
-	Sigmas                  string  `yaml:"sigmas"`                     // custom sigma values, comma-separated
-	RefImage                string  `yaml:"ref_image"`                  // reference image for Flux Kontext
+	Width                   int      `yaml:"width"`                      // image width in pixels (default: 512)
+	Height                  int      `yaml:"height"`                     // image height in pixels (default: 512)
+	Steps                   int      `yaml:"steps"`                      // sampling steps (default: 20)
+	HighNoiseSteps          int      `yaml:"high_noise_steps"`           // high noise steps (-1 = auto)
+	ClipSkip                int      `yaml:"clip_skip"`                  // CLIP layers to skip (-1 = auto)
+	BatchCount              int      `yaml:"batch_count"`                // batch count
+	VideoFrames             int      `yaml:"video_frames"`               // video frames (default: 1)
+	FPS                     int      `yaml:"fps"`                        // FPS for video (default: 24)
+	TimestepShift           int      `yaml:"timestep_shift"`             // timestep shift for NitroFusion
+	UpscaleRepeats          int      `yaml:"upscale_repeats"`            // ESRGAN upscale repeats (default: 1)
+	UpscaleTileSize         int      `yaml:"upscale_tile_size"`          // ESRGAN tile size (default: 128)
+	CFGScale                float64  `yaml:"cfg_scale"`                  // guidance scale (default: 7.0)
+	ImgCFGScale             float64  `yaml:"img_cfg_scale"`              // image guidance scale for inpaint
+	Guidance                float64  `yaml:"guidance"`                   // distilled guidance scale (default: 3.5)
+	SLGScale                float64  `yaml:"slg_scale"`                  // skip layer guidance scale (0 = disabled)
+	SkipLayerStart          float64  `yaml:"skip_layer_start"`           // SLG enabling point (default: 0.01)
+	SkipLayerEnd            float64  `yaml:"skip_layer_end"`             // SLG disabling point (default: 0.2)
+	Eta                     float64  `yaml:"eta"`                        // noise multiplier
+	FlowShift               float64  `yaml:"flow_shift"`                 // flow shift for SD3/WAN (0 = auto)
+	Strength                float64  `yaml:"strength"`                   // noise strength for img2img (default: 0.75)
+	ControlStrength         float64  `yaml:"control_strength"`           // control net strength (default: 0.9)
+	VAETileOverlap          float64  `yaml:"vae_tile_overlap"`           // VAE tile overlap fraction (default: 0.5)
+	Seed                    int64    `yaml:"seed"`                       // RNG seed (default: 42, <0 = random)
+	SamplingMethod          string   `yaml:"sampling_method"`            // euler|euler_a|heun|dpm++2m|dpm++2s_a|...
+	HighNoiseSamplingMethod string   `yaml:"high_noise_sampling_method"` // sampling method for high noise stage
+	Scheduler               string   `yaml:"scheduler"`                  // sigma scheduler: discrete|karras|exponential|ays|...
+	NegativePrompt          string   `yaml:"negative_prompt"`            // default negative prompt
+	VAETiling               bool     `yaml:"vae_tiling"`                 // process VAE in tiles to reduce memory
+	VAETileSize             string   `yaml:"vae_tile_size"`              // VAE tile size, format: "32x32"
+	VAERelativeTileSize     string   `yaml:"vae_relative_tile_size"`     // relative VAE tile size
+	DisableImageMetadata    bool     `yaml:"disable_image_metadata"`     // do not embed generation metadata
+	SkipLayers              string   `yaml:"skip_layers"`                // SLG skip layers, e.g. "[7,8,9]"
+	Sigmas                  string   `yaml:"sigmas"`                     // custom sigma values, comma-separated
+	InitImage               string   `yaml:"init_image"`                 // first frame / img2img input
+	EndImage                string   `yaml:"end_image"`                  // last frame for FL2VA
+	RefImage                string   `yaml:"ref_image"`                  // legacy single reference image
+	RefImages               []string `yaml:"ref_images"`                 // repeatable reference images
+	RefVideos               []string `yaml:"ref_videos"`                 // repeatable reference video frame directories
+	RefVideoAudios          []string `yaml:"ref_video_audios"`           // WAV soundtracks paired with ref_videos
+	RefAudios               []string `yaml:"ref_audios"`                 // repeatable standalone WAV references
 
 	// High noise stage (two-stage generation)
 	HighNoiseCFGScale       float64 `yaml:"high_noise_cfg_scale"`

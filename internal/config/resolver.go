@@ -86,6 +86,7 @@ func resolveSDAux(cfg *Config) []ExtraDownload {
 	}
 
 	resolveOne("vae", &cfg.SD.VAE)
+	resolveOne("audio_vae", &cfg.SD.AudioVAE)
 	resolveOne("taesd", &cfg.SD.TAESD)
 	resolveOne("clip_l", &cfg.SD.ClipL)
 	resolveOne("clip_g", &cfg.SD.ClipG)
@@ -100,6 +101,22 @@ func resolveSDAux(cfg *Config) []ExtraDownload {
 	resolveOne("upscale_model", &cfg.SD.UpscaleModel)
 	resolveOne("embd_dir", &cfg.SD.EmbedDir)
 	resolveOne("lora_model_dir", &cfg.SD.LoRAModelDir)
+	resolveOne("prompt_file", &cfg.SD.PromptFile)
+	resolveOne("init_image", &cfg.SD.InitImage)
+	resolveOne("end_image", &cfg.SD.EndImage)
+	resolveOne("ref_image", &cfg.SD.RefImage)
+	for i := range cfg.SD.RefImages {
+		resolveOne("ref_image", &cfg.SD.RefImages[i])
+	}
+	for i := range cfg.SD.RefVideos {
+		resolveOne("ref_video", &cfg.SD.RefVideos[i])
+	}
+	for i := range cfg.SD.RefVideoAudios {
+		resolveOne("ref_video_audio", &cfg.SD.RefVideoAudios[i])
+	}
+	for i := range cfg.SD.RefAudios {
+		resolveOne("ref_audio", &cfg.SD.RefAudios[i])
+	}
 
 	return extras
 }

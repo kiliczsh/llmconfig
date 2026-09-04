@@ -69,8 +69,8 @@ model:
   #   source: huggingface
   #   repo: bartowski/some-draft-GGUF
   #   file: draft-model-Q4_K_M.gguf
-  #   draft_n: 5                  # tokens to draft ahead (default: 5)
-  #   draft_min: 0                # minimum draft tokens (default: 0)
+  #   draft_n: 5                  # max draft tokens; ngram-mod maps this to --spec-ngram-mod-n-max
+  #   draft_min: 0                # min draft tokens; ngram-mod maps this to --spec-ngram-mod-n-min
   #   draft_p_min: 0.75           # minimum speculative decoding probability (default: 0.75)
   #   n_ctx: 0                    # draft model context size (0 = same as main model)
   #   n_gpu_layers: 0             # draft model GPU layers (0 = same as main model)
@@ -85,7 +85,7 @@ model:
   #   threads_draft: 0            # draft model generation threads (0 = same as --threads, server only)
   #   threads_batch_draft: 0      # draft model batch threads (0 = same as threads_draft, server only)
   #   spec_type: ""               # speculative decoding type: none|ngram-cache|ngram-simple|ngram-map-k|...
-  #   spec_ngram_size_n: 0        # ngram lookup size N (0 = use default 12)
+  #   spec_ngram_size_n: 0        # lookup size N; ngram-mod maps this to --spec-ngram-mod-n-match
   #   spec_ngram_size_m: 0        # ngram draft size M (0 = use default 48)
   #   spec_ngram_min_hits: 0      # min hits for ngram-map (0 = use default 1)
 
@@ -500,10 +500,12 @@ logging:
 # sd:
 #   # --- Output (cli mode only) ---
 #   output: ./output.png           # output path; use %d for sequences e.g. output_%03d.png
+#   prompt: ""                     # prompt to render
+#   prompt_file: ""                # path to a prompt file
 #   preview_path: ./preview.png    # preview image path
 #   preview_interval: 1            # preview update interval in steps
 #   preview: none                  # preview method: none | proj | tae | vae
-#   mode: img_gen                  # run mode: img_gen | vid_gen | upscale | convert | metadata
+#   mode: img_gen                  # run mode: img_gen | adetailer | vid_gen | upscale | convert | metadata
 #
 #   # --- Server (server mode only) ---
 #   serve_html_path: ""            # path to HTML file to serve at root
@@ -518,6 +520,7 @@ logging:
 #   diffusion_model: ""            # path to standalone diffusion model (split model)
 #   high_noise_diffusion_model: "" # path to high-noise diffusion model
 #   vae: ""                        # path to standalone VAE model
+#   audio_vae: ""                  # path to audio VAE (MiniMax-H3/LTX video)
 #   taesd: ""                      # path to Tiny AutoEncoder (fast decode, low quality)
 #   control_net: ""                # path to ControlNet model
 #   embd_dir: ""                   # embeddings directory
@@ -528,6 +531,10 @@ logging:
 #
 #   # --- Hardware & weight type ---
 #   type: ""                       # weight type: f32 | f16 | q4_0 | q4_1 | q8_0 | q2_K | ...
+#   backend: ""                    # runtime placement, e.g. te=cpu,diffusion=cuda0
+#   params_backend: ""             # parameter placement, e.g. te=cpu,diffusion=cuda0
+#   max_vram: ""                   # segmented-execution VRAM budget in GiB
+#   stream_layers: false           # layer prefetching when max_vram is active
 #   rng: cuda                      # RNG: std_default | cuda | cpu
 #   sampler_rng: ""                # sampler RNG (default: same as --rng)
 #   prediction: ""                 # prediction type: eps | v | edm_v | sd3_flow | flux_flow | flux2_flow
@@ -555,6 +562,13 @@ logging:
 #   scheduler: discrete            # sigma scheduler: discrete|karras|exponential|ays|gits|smoothstep|...
 #   negative_prompt: ""            # default negative prompt
 #   seed: -1                       # RNG seed (-1 = random, default: 42)
+#   init_image: ""                 # first frame / img2img input
+#   end_image: ""                  # last frame for FL2VA (requires init_image)
+#   ref_image: ""                  # legacy single reference image
+#   ref_images: []                 # repeatable MiniMax-H3 Ref2VA images
+#   ref_videos: []                 # repeatable reference video frame directories
+#   ref_video_audios: []           # WAV files paired by index with ref_videos
+#   ref_audios: []                 # repeatable standalone reference WAV files
 #
 #   # --- VAE tiling (reduce VRAM for high-res) ---
 #   vae_tiling: false              # process VAE in tiles

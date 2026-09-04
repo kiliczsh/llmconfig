@@ -1,0 +1,75 @@
+# MiniMax-H3 — joint video and native stereo-audio generation.
+# Source: unsloth/MiniMax-H3-GGUF (community-licensed derivative; review the model licence before use).
+# Tuned for a 16 GB NVIDIA GPU: Q3 denoiser on GPU, 12 GB Q2 text encoder on CPU.
+version: 1
+name: minimax-h3
+backend: sd
+mode: interactive
+
+model:
+  source: huggingface
+  repo: unsloth/MiniMax-H3-GGUF
+  file: minimax_h3_fl2va_pruned-UD-Q3_K_XL.gguf  # 8.9 GiB; text plus optional first/last frames
+  # For image/video/audio reference conditioning, switch to the Ref2VA checkpoint:
+  # file: minimax_h3_ref2va_pruned-Q3_K.gguf
+  download:
+    resume: true
+    connections: 4
+
+sd:
+  mode: vid_gen
+  prompt: "a red panda stepping along a mossy log in a misty forest, cinematic"
+  output: ./minimax-h3.webm
+
+  # MiniMax-H3 uses four separately loaded model components. The main model
+  # above is routed to --diffusion-model automatically because sd.llm is set.
+  llm: hf://unsloth/MiniMax-H3-GGUF/qwen3vl_32b_minimax_h3-Q2_K_M.gguf
+  vae: hf://Comfy-Org/MiniMax-H3/vae/minimax_h3_video_vae_fp16.safetensors
+  audio_vae: hf://Comfy-Org/MiniMax-H3/vae/minimax_h3_audio_vae_fp32.safetensors
+
+  width: 864
+  height: 480
+  video_frames: 56
+  fps: 24
+  steps: 20
+  sampling_method: euler
+  scheduler: discrete
+  cfg_scale: 1.0
+  guidance: 3.5
+  seed: -1
+  diffusion_fa: true
+  params_backend: disk
+  offload_to_cpu: false
+  backend: te=cpu
+  rng: cpu
+  vae_tiling: false
+
+  # Optional segmented placement. Leave disabled initially: upstream currently
+  # tracks a MiniMax-H3 correctness issue when max_vram segmentation is active.
+  # max_vram: "14"
+  # stream_layers: true
+
+  # FL2VA: use the fl2va checkpoint above. init_image alone gives I2VA; adding
+  # end_image conditions both the first and final frame.
+  # init_image: ./first.png
+  # end_image: ./last.png
+
+  # Ref2VA: switch model.file to the ref2va checkpoint, then use any combination
+  # below. ref_video entries are directories of lexicographically sorted frames.
+  # ref_images: [./character.png, ./style.png]
+  # ref_videos: [./reference-frames]
+  # ref_video_audios: [./reference-soundtrack.wav]
+  # ref_audios: [./music-reference.wav]
+
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+    threads: 8
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+    threads: 8
+  cpu:
+    n_gpu_layers: 0
+    threads: 8

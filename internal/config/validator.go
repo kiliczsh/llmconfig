@@ -108,19 +108,47 @@ func validateLlama(cfg *Config, errs *[]string) {
 }
 
 func validateSD(cfg *Config, errs *[]string) {
-	if cfg.SD.Mode == "" {
-		return
-	}
-
 	validModes := map[string]bool{
-		"img_gen":  true,
-		"vid_gen":  true,
-		"upscale":  true,
-		"convert":  true,
-		"metadata": true,
+		"":          true,
+		"img_gen":   true,
+		"adetailer": true,
+		"vid_gen":   true,
+		"upscale":   true,
+		"convert":   true,
+		"metadata":  true,
 	}
 	if !validModes[cfg.SD.Mode] {
-		*errs = append(*errs, fmt.Sprintf("sd.mode %q is invalid (img_gen | vid_gen | upscale | convert | metadata)", cfg.SD.Mode))
+		*errs = append(*errs, fmt.Sprintf("sd.mode %q is invalid (img_gen | adetailer | vid_gen | upscale | convert | metadata)", cfg.SD.Mode))
+	}
+
+	if cfg.SD.EndImage != "" && cfg.SD.InitImage == "" {
+		*errs = append(*errs, "sd.end_image requires sd.init_image")
+	}
+	if len(cfg.SD.RefVideoAudios) > len(cfg.SD.RefVideos) {
+		*errs = append(*errs, "sd.ref_video_audios cannot contain more entries than sd.ref_videos")
+	}
+
+	isMiniMaxH3 := false
+	for _, value := range []string{cfg.Model.Repo, cfg.Model.File, cfg.Model.Path, cfg.Model.URL, cfg.SD.DiffusionModel} {
+		value = strings.ToLower(value)
+		if strings.Contains(value, "minimax-h3") || strings.Contains(value, "minimax_h3") {
+			isMiniMaxH3 = true
+			break
+		}
+	}
+	if isMiniMaxH3 {
+		if cfg.SD.Mode != "vid_gen" {
+			*errs = append(*errs, "MiniMax-H3 requires sd.mode: vid_gen")
+		}
+		if cfg.SD.CFGScale > 1.0 {
+			*errs = append(*errs, "MiniMax-H3 requires sd.cfg_scale <= 1.0")
+		}
+		if cfg.SD.LLM == "" {
+			*errs = append(*errs, "MiniMax-H3 requires sd.llm")
+		}
+		if cfg.SD.VAE == "" {
+			*errs = append(*errs, "MiniMax-H3 requires sd.vae")
+		}
 	}
 }
 
