@@ -515,11 +515,25 @@ func appendSharedArgs(args []string, rc *config.RunConfig, interactive bool) []s
 			args = add("--model-draft", rc.DraftModelPath)
 		}
 		if d := cfg.Model.Draft; d != nil {
+			isNgramMod := d.SpecType == "ngram-mod"
+			isNgramFamily := strings.HasPrefix(d.SpecType, "ngram-")
 			if d.DraftN > 0 {
-				args = add("--spec-draft-n-max", strconv.Itoa(d.DraftN))
+				flag := "--spec-draft-n-max"
+				if isNgramMod {
+					flag = "--spec-ngram-mod-n-max"
+				}
+				if !isNgramFamily || isNgramMod {
+					args = add(flag, strconv.Itoa(d.DraftN))
+				}
 			}
 			if d.DraftMin > 0 {
-				args = add("--spec-draft-n-min", strconv.Itoa(d.DraftMin))
+				flag := "--spec-draft-n-min"
+				if isNgramMod {
+					flag = "--spec-ngram-mod-n-min"
+				}
+				if !isNgramFamily || isNgramMod {
+					args = add(flag, strconv.Itoa(d.DraftMin))
+				}
 			}
 			if d.DraftPMin > 0 {
 				args = add("--draft-p-min", fmt.Sprintf("%.4f", d.DraftPMin))
@@ -560,14 +574,27 @@ func appendSharedArgs(args []string, rc *config.RunConfig, interactive bool) []s
 			if d.SpecType != "" {
 				args = add("--spec-type", d.SpecType)
 			}
+			ngramPrefix := ""
+			switch d.SpecType {
+			case "ngram-simple":
+				ngramPrefix = "--spec-ngram-simple"
+			case "ngram-map-k":
+				ngramPrefix = "--spec-ngram-map-k"
+			case "ngram-map-k4v":
+				ngramPrefix = "--spec-ngram-map-k4v"
+			}
 			if d.SpecNgramSizeN > 0 {
-				args = add("--spec-ngram-size-n", strconv.Itoa(d.SpecNgramSizeN))
+				if isNgramMod {
+					args = add("--spec-ngram-mod-n-match", strconv.Itoa(d.SpecNgramSizeN))
+				} else if ngramPrefix != "" {
+					args = add(ngramPrefix+"-size-n", strconv.Itoa(d.SpecNgramSizeN))
+				}
 			}
-			if d.SpecNgramSizeM > 0 {
-				args = add("--spec-ngram-size-m", strconv.Itoa(d.SpecNgramSizeM))
+			if d.SpecNgramSizeM > 0 && ngramPrefix != "" {
+				args = add(ngramPrefix+"-size-m", strconv.Itoa(d.SpecNgramSizeM))
 			}
-			if d.SpecNgramMinHits > 0 {
-				args = add("--spec-ngram-min-hits", strconv.Itoa(d.SpecNgramMinHits))
+			if d.SpecNgramMinHits > 0 && ngramPrefix != "" {
+				args = add(ngramPrefix+"-min-hits", strconv.Itoa(d.SpecNgramMinHits))
 			}
 		}
 	}
