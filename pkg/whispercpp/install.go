@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -24,6 +25,7 @@ const githubReleasesURL = "https://api.github.com/repos/ggml-org/whisper.cpp/rel
 
 type GithubRelease struct {
 	TagName string        `json:"tag_name"`
+	Body    string        `json:"body"`
 	Assets  []GithubAsset `json:"assets"`
 }
 
@@ -35,7 +37,42 @@ type GithubAsset struct {
 
 // LatestRelease fetches the latest whisper.cpp release metadata from GitHub.
 func LatestRelease() (*GithubRelease, error) {
-	resp, err := httpx.API.Get(githubReleasesURL + "/latest")
+	return latestRelease(githubReleasesURL)
+}
+
+func latestRelease(releasesURL string) (*GithubRelease, error) {
+	rel, err := fetchRelease(releasesURL + "/latest")
+	if err != nil {
+		return nil, err
+	}
+	return resolveBuildRelease(releasesURL, rel)
+}
+
+var nightlyBuildPattern = regexp.MustCompile(`(?i)nightly build:\**\s*\[?(b[0-9]+)`)
+
+func resolveBuildRelease(releasesURL string, rel *GithubRelease) (*GithubRelease, error) {
+	if len(rel.Assets) > 0 {
+		return rel, nil
+	}
+
+	match := nightlyBuildPattern.FindStringSubmatch(rel.Body)
+	if len(match) != 2 {
+		return nil, fmt.Errorf("install: release %s has no binary assets or nightly build pointer", rel.TagName)
+	}
+
+	buildTag := match[1]
+	build, err := releaseByTag(releasesURL, buildTag)
+	if err != nil {
+		return nil, fmt.Errorf("install: resolve stable release %s build %s: %w", rel.TagName, buildTag, err)
+	}
+	// Keep the stable version in user-facing output while sourcing its
+	// platform archives from the associated build release.
+	rel.Assets = build.Assets
+	return rel, nil
+}
+
+func fetchRelease(releaseURL string) (*GithubRelease, error) {
+	resp, err := httpx.API.Get(releaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("install: fetch release info: %w", err)
 	}
@@ -54,21 +91,18 @@ func LatestRelease() (*GithubRelease, error) {
 
 // ReleaseByTag fetches release metadata for a specific whisper.cpp tag from GitHub.
 func ReleaseByTag(tag string) (*GithubRelease, error) {
-	resp, err := httpx.API.Get(githubReleasesURL + "/tags/" + tag)
+	rel, err := releaseByTag(githubReleasesURL, tag)
 	if err != nil {
-		return nil, fmt.Errorf("install: fetch release info: %w", err)
+		return nil, err
 	}
-	defer resp.Body.Close()
+	return resolveBuildRelease(githubReleasesURL, rel)
+}
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("install: GitHub API returned HTTP %d", resp.StatusCode)
+func releaseByTag(releasesURL, tag string) (*GithubRelease, error) {
+	if strings.ContainsAny(tag, "/\\?#") {
+		return nil, fmt.Errorf("install: invalid release tag %q", tag)
 	}
-
-	var rel GithubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
-		return nil, fmt.Errorf("install: parse release: %w", err)
-	}
-	return &rel, nil
+	return fetchRelease(releasesURL + "/tags/" + tag)
 }
 
 // PickAsset selects the best release asset for the current OS/arch/backend.

@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `llmconfig install llama` now follows a stable llama.cpp release's
   `nightly-tag.txt` pointer to the build release containing platform binaries.
+- `llmconfig install whisper` now follows the nightly-build pointer in a stable
+  whisper.cpp release to the build release containing platform binaries.
 
 ## [1.3.0] - 2026-09-04
 
