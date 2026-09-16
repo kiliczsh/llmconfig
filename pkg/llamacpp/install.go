@@ -37,7 +37,46 @@ type GithubAsset struct {
 
 // LatestRelease fetches the latest llama.cpp release metadata from GitHub.
 func LatestRelease() (*GithubRelease, error) {
-	resp, err := httpx.API.Get(githubReleasesURL + "/latest")
+	return latestRelease(githubReleasesURL)
+}
+
+func latestRelease(releasesURL string) (*GithubRelease, error) {
+	rel, err := fetchRelease(releasesURL + "/latest")
+	if err != nil {
+		return nil, err
+	}
+	return resolveBuildRelease(releasesURL, rel)
+}
+
+func resolveBuildRelease(releasesURL string, rel *GithubRelease) (*GithubRelease, error) {
+	// Stable llama.cpp releases no longer carry platform archives directly.
+	// Instead, nightly-tag.txt names the build release containing the binaries
+	// produced from the stable tag (for example, v0.4.1 -> b10964).
+	for i := range rel.Assets {
+		asset := &rel.Assets[i]
+		if asset.Name != "nightly-tag.txt" {
+			continue
+		}
+
+		tag, err := fetchNightlyTag(asset)
+		if err != nil {
+			return nil, fmt.Errorf("install: resolve stable release %s: %w", rel.TagName, err)
+		}
+		build, err := releaseByTag(releasesURL, tag)
+		if err != nil {
+			return nil, fmt.Errorf("install: resolve stable release %s build %s: %w", rel.TagName, tag, err)
+		}
+		// Keep the stable version in user-facing output while sourcing its
+		// platform archives from the associated build release.
+		rel.Assets = build.Assets
+		return rel, nil
+	}
+
+	return rel, nil
+}
+
+func fetchRelease(releaseURL string) (*GithubRelease, error) {
+	resp, err := httpx.API.Get(releaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("install: fetch release info: %w", err)
 	}
@@ -56,21 +95,50 @@ func LatestRelease() (*GithubRelease, error) {
 
 // ReleaseByTag fetches release metadata for a specific llama.cpp tag from GitHub.
 func ReleaseByTag(tag string) (*GithubRelease, error) {
-	resp, err := httpx.API.Get(githubReleasesURL + "/tags/" + tag)
+	rel, err := releaseByTag(githubReleasesURL, tag)
 	if err != nil {
-		return nil, fmt.Errorf("install: fetch release info: %w", err)
+		return nil, err
+	}
+	return resolveBuildRelease(githubReleasesURL, rel)
+}
+
+func releaseByTag(releasesURL, tag string) (*GithubRelease, error) {
+	if strings.ContainsAny(tag, "/\\?#") {
+		return nil, fmt.Errorf("install: invalid release tag %q", tag)
+	}
+	return fetchRelease(releasesURL + "/tags/" + tag)
+}
+
+func fetchNightlyTag(asset *GithubAsset) (string, error) {
+	resp, err := httpx.API.Get(asset.BrowserDownloadURL)
+	if err != nil {
+		return "", fmt.Errorf("fetch %s: %w", asset.Name, err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("install: GitHub API returned HTTP %d", resp.StatusCode)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("fetch %s: HTTP %d", asset.Name, resp.StatusCode)
 	}
 
-	var rel GithubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
-		return nil, fmt.Errorf("install: parse release: %w", err)
+	const maxTagSize = 128
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxTagSize+1))
+	if err != nil {
+		return "", fmt.Errorf("read %s: %w", asset.Name, err)
 	}
-	return &rel, nil
+	if len(body) > maxTagSize {
+		return "", fmt.Errorf("%s is too large", asset.Name)
+	}
+
+	tag := strings.TrimSpace(string(body))
+	if len(tag) < 2 || tag[0] != 'b' {
+		return "", fmt.Errorf("invalid tag %q in %s", tag, asset.Name)
+	}
+	for _, r := range tag[1:] {
+		if r < '0' || r > '9' {
+			return "", fmt.Errorf("invalid tag %q in %s", tag, asset.Name)
+		}
+	}
+	return tag, nil
 }
 
 // PickAsset selects the best release asset for the current OS/arch/backend.
