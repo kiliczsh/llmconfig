@@ -23,6 +23,7 @@ func newInstallCmd() *cobra.Command {
 	cmd.AddCommand(
 		newInstallLlamaCmd(),
 		newInstallIkLlamaCmd(),
+		newInstallPrismLlamaCmd(),
 		newInstallSdCmd(),
 		newInstallWhisperCmd(),
 	)

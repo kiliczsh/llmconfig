@@ -1,0 +1,72 @@
+# Prism ML Ternary Bonsai 2 27B — Qwen3.8-based reasoning and vision model.
+# Source: prism-ml/Ternary-Bonsai-2-27B-gguf
+#
+# IMPORTANT: PQ2_0/PTQ1_0 require Prism ML's llama.cpp fork:
+# https://github.com/PrismML-Eng/llama.cpp
+# Stock llama.cpp cannot run these packed ternary weights correctly.
+version: 1
+name: ternary-bonsai-2-27b
+backend: prism_llama
+mode: server
+
+model:
+  source: huggingface
+  repo: prism-ml/Ternary-Bonsai-2-27B-gguf
+  # PQ2_0 is preferred for Blackwell GPUs: faster prompt processing and decode.
+  file: Ternary-Bonsai-2-27B-PQ2_0.gguf
+  # PTQ1_0 is 1.26 GB smaller and may suit memory-constrained or Ada systems.
+  # file: Ternary-Bonsai-2-27B-PTQ1_0.gguf
+  mmproj:
+    source: huggingface
+    repo: prism-ml/Ternary-Bonsai-2-27B-gguf
+    file: Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf
+  download:
+    resume: true
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  # One dedicated slot gives a daily coding agent predictable latency and
+  # ownership of the full context. Raise this for concurrent clients.
+  parallel: 1
+  endpoints:
+    metrics: true
+
+hardware_profiles:
+  nvidia:
+    n_gpu_layers: 99
+    cuda: true
+  apple_silicon:
+    n_gpu_layers: 99
+    metal: true
+  cpu:
+    n_gpu_layers: 0
+
+context:
+  # RTX 5070 Ti measurements with vision and a unified context pool:
+  # 65K: 11.1GB used / 4.9GB free; 98K: 12.4GB / 3.6GB;
+  # 131K: 13.7GB / 2.3GB with no measurable short-request speed loss.
+  # The model supports 262K, but that is not practical on a 16GB card.
+  n_ctx: 131072
+  flash_attention: on
+  cache_type_k: q8_0
+  cache_type_v: q8_0
+  n_batch: 2048
+  n_ubatch: 1024
+
+# Prism ML's recommended thinking-mode defaults. Clients can override these
+# per request for non-thinking mode.
+sampling:
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 20
+  min_p: 0.0
+  presence_penalty: 0.0
+  repeat_penalty: 1.0
+
+chat:
+  reasoning: auto
+  reasoning_format: deepseek
+  jinja: true
+  # Deliberately omit reasoning_budget so clients can send a dynamic
+  # thinking_budget_tokens value. Use reasoning_effort: medium or xhigh.

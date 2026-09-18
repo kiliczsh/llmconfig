@@ -16,6 +16,7 @@ import (
 	"github.com/kiliczsh/llmconfig/internal/state"
 	"github.com/kiliczsh/llmconfig/pkg/ikllamacpp"
 	"github.com/kiliczsh/llmconfig/pkg/llamacpp"
+	"github.com/kiliczsh/llmconfig/pkg/prismllamacpp"
 	"github.com/kiliczsh/llmconfig/pkg/stablediffusioncpp"
 	"github.com/kiliczsh/llmconfig/pkg/whispercpp"
 	"github.com/spf13/cobra"
@@ -223,6 +224,8 @@ func resolveBackendBinary(backend string) (string, error) {
 		return whispercpp.FindServer()
 	case "ik_llama":
 		return ikllamacpp.FindServer()
+	case "prism_llama":
+		return prismllamacpp.FindServer()
 	default:
 		return llamacpp.FindServer()
 	}

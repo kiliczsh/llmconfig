@@ -56,8 +56,8 @@ func newBenchCmd() *cobra.Command {
 			// don't speak that protocol, so reject them up front. ik_llama
 			// is a llama.cpp drop-in that emits the same timing lines, so
 			// it's allowed.
-			if cfg.Backend != "" && cfg.Backend != "llama" && cfg.Backend != "ik_llama" {
-				return fmt.Errorf("bench only supports the llama / ik_llama backends (config backend: %q)", cfg.Backend)
+			if cfg.Backend != "" && cfg.Backend != "llama" && cfg.Backend != "ik_llama" && cfg.Backend != "prism_llama" {
+				return fmt.Errorf("bench only supports llama-compatible backends (config backend: %q)", cfg.Backend)
 			}
 
 			// Resolve server binary (which is what appCtx.LlamaBin points at
@@ -66,7 +66,7 @@ func newBenchCmd() *cobra.Command {
 			// llmconfig's managed bin dir doesn't have it.
 			serverBin, err := resolveBackendBinary(cfg.Backend)
 			if err != nil {
-				if cfg.Backend == "ik_llama" {
+				if cfg.Backend == "ik_llama" || cfg.Backend == "prism_llama" {
 					return err
 				}
 				if _, lookErr := exec.LookPath("llama-server"); lookErr != nil {

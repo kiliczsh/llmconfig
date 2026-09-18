@@ -209,7 +209,14 @@ func listAssets(rel *GithubRelease) string {
 // Install downloads and extracts a release asset into BinDir().
 // onProgress is called with (downloaded, total) bytes.
 func Install(asset *GithubAsset, onProgress func(downloaded, total int64)) error {
-	if err := os.MkdirAll(BinDir(), 0755); err != nil {
+	return InstallTo(asset, BinDir(), onProgress)
+}
+
+// InstallTo downloads and extracts a llama.cpp-compatible release asset into
+// destDir. Fork integrations use this to share the hardened archive handling
+// while keeping their binaries isolated from stock llama.cpp.
+func InstallTo(asset *GithubAsset, destDir string, onProgress func(downloaded, total int64)) error {
+	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return fmt.Errorf("install: create bin dir: %w", err)
 	}
 
@@ -255,10 +262,10 @@ func Install(asset *GithubAsset, onProgress func(downloaded, total int64)) error
 
 	// Extract
 	if strings.HasSuffix(asset.Name, ".zip") {
-		return extractZip(tmpFile.Name(), BinDir())
+		return extractZip(tmpFile.Name(), destDir)
 	}
 	if strings.HasSuffix(asset.Name, ".tar.gz") {
-		return extractTarGz(tmpFile.Name(), BinDir())
+		return extractTarGz(tmpFile.Name(), destDir)
 	}
 	return fmt.Errorf("install: unsupported archive format: %s", asset.Name)
 }
@@ -349,15 +356,20 @@ func extractTarGz(tarPath, destDir string) error {
 
 // Extract installs llama.cpp from a local archive file (zip or tar.gz).
 func Extract(archivePath string) error {
-	if err := os.MkdirAll(BinDir(), 0755); err != nil {
+	return ExtractTo(archivePath, BinDir())
+}
+
+// ExtractTo installs a local llama.cpp-compatible archive into destDir.
+func ExtractTo(archivePath, destDir string) error {
+	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return fmt.Errorf("install: create bin dir: %w", err)
 	}
 	lower := strings.ToLower(archivePath)
 	if strings.HasSuffix(lower, ".zip") {
-		return extractZip(archivePath, BinDir())
+		return extractZip(archivePath, destDir)
 	}
 	if strings.HasSuffix(lower, ".tar.gz") {
-		return extractTarGz(archivePath, BinDir())
+		return extractTarGz(archivePath, destDir)
 	}
 	return fmt.Errorf("unsupported archive format: %s", archivePath)
 }

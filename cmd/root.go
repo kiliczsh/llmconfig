@@ -138,6 +138,7 @@ func init() {
 		newInstallCmd(),
 		newLlamaCmd(),
 		newIkLlamaCmd(),
+		newPrismLlamaCmd(),
 		newSdCmd(),
 		newWhisperCmd(),
 		newFilesCmd(),

@@ -32,7 +32,7 @@ func (r *interactiveRunner) Start(ctx context.Context, rc *config.RunConfig) (*s
 	if err := cmd.Run(); err != nil {
 		// Exit code 1 from llama-cli on normal quit is fine
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			isLlamaCLI := rc.Backend == "" || rc.Backend == "llama" || rc.Backend == "ik_llama"
+			isLlamaCLI := rc.Backend == "" || rc.Backend == "llama" || rc.Backend == "ik_llama" || rc.Backend == "prism_llama"
 			if isLlamaCLI && exitErr.ExitCode() == 1 {
 				return nil, nil
 			}

@@ -81,7 +81,10 @@ func buildLlamaArgs(rc *config.RunConfig) []string {
 	if cfg.Server.APIKeyFile != "" {
 		add("--api-key-file", cfg.Server.APIKeyFile)
 	}
-	if cfg.Server.Parallel > 1 {
+	// Prism's server defaults to four slots, so emit the resolved value even
+	// when it is one. This makes llmconfig's single-agent default effective
+	// without changing the historical stock llama.cpp command line.
+	if cfg.Server.Parallel > 1 || rc.Backend == "prism_llama" {
 		add("--parallel", strconv.Itoa(cfg.Server.Parallel))
 	}
 	for _, origin := range cfg.Server.CORSOrigins {

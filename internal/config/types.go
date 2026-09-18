@@ -6,7 +6,7 @@ type Config struct {
 	Description      string           `yaml:"description"`
 	Tags             []string         `yaml:"tags"`
 	Meta             Meta             `yaml:"meta"`
-	Backend          string           `yaml:"backend"` // "llama" | "ik_llama" | "sd" | "whisper" (default: "llama")
+	Backend          string           `yaml:"backend"` // "llama" | "ik_llama" | "prism_llama" | "sd" | "whisper" (default: "llama")
 	Model            ModelSpec        `yaml:"model"`
 	Mode             string           `yaml:"mode"`
 	Server           ServerSpec       `yaml:"server"`
@@ -348,7 +348,7 @@ type RunConfig struct {
 	ProfileName    string
 	LogFile        string
 	BinaryPath     string
-	Backend        string // "llama" | "ik_llama" | "sd" | "whisper"
+	Backend        string // "llama" | "ik_llama" | "prism_llama" | "sd" | "whisper"
 
 	// ExtraDownloads lists auxiliary artifacts that must exist on disk
 	// before the backend starts — e.g. Flux's separate CLIP/T5/VAE

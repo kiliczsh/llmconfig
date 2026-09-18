@@ -25,6 +25,9 @@ llmconfig up gemma                    # or just: llmc up gemma
   `llmconfig install ik_llama` builds the
   [ik_llama.cpp](https://github.com/ikawrakow/ik_llama.cpp) fork from
   source for SOTA quants and faster CPU / MoE inference.
+- **Fork isolation.** `backend: prism_llama` installs and runs
+  [Prism ML's llama.cpp fork](https://github.com/PrismML-Eng/llama.cpp)
+  separately for its custom ternary model formats.
 
 ## Install
 
