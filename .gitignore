@@ -6,3 +6,4 @@ llamaconfig.exe
 
 # Claude Code local settings
 .claude/settings.local.json
+/.gocache
