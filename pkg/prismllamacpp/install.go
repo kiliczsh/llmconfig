@@ -50,8 +50,16 @@ func fetchRelease(url string) (*GithubRelease, error) {
 // PickAssets returns the platform archive followed by any required runtime
 // archive. Prism's Windows CUDA release ships cudart separately.
 func PickAssets(rel *GithubRelease, backend string) ([]*GithubAsset, error) {
+	return pickAssets(rel, backend, runtime.GOOS, runtime.GOARCH)
+}
+
+func pickAssets(rel *GithubRelease, backend, goos, goarch string) ([]*GithubAsset, error) {
+	arch := goarch
+	if goarch == "amd64" {
+		arch = "x64"
+	}
 	var patterns []string
-	switch runtime.GOOS {
+	switch goos {
 	case "windows":
 		switch backend {
 		case "cuda":
@@ -62,14 +70,14 @@ func PickAssets(rel *GithubRelease, backend string) ([]*GithubAsset, error) {
 			patterns = []string{"bin-win-cuda", "bin-win-cpu", "bin-win-avx"}
 		}
 	case "darwin":
-		patterns = []string{"bin-macos-arm64", "bin-macos-x64"}
+		patterns = []string{"bin-macos-"}
 	case "linux":
 		if backend == "cuda" {
 			patterns = []string{"bin-ubuntu-cuda", "bin-linux-cuda"}
 		} else if backend == "cpu" {
-			patterns = []string{"bin-ubuntu-x64", "bin-linux-x64"}
+			patterns = []string{"bin-ubuntu-" + arch, "bin-linux-" + arch}
 		} else {
-			patterns = []string{"bin-ubuntu-cuda", "bin-linux-cuda", "bin-ubuntu-x64", "bin-linux-x64"}
+			patterns = []string{"bin-ubuntu-cuda", "bin-linux-cuda", "bin-ubuntu-" + arch, "bin-linux-" + arch}
 		}
 	}
 
@@ -81,7 +89,9 @@ func PickAssets(rel *GithubRelease, backend string) ([]*GithubAsset, error) {
 			if strings.HasPrefix(name, "cudart-") {
 				continue
 			}
-			if strings.Contains(name, pattern) && isArchive(name) {
+			stem := strings.TrimSuffix(strings.TrimSuffix(name, ".tar.gz"), ".zip")
+			stem = strings.TrimSuffix(stem, "-kleidiai")
+			if strings.Contains(stem, pattern) && strings.HasSuffix(stem, "-"+arch) && isArchive(name) {
 				main = asset
 				break
 			}
@@ -95,11 +105,11 @@ func PickAssets(rel *GithubRelease, backend string) ([]*GithubAsset, error) {
 		for i := range rel.Assets {
 			names = append(names, rel.Assets[i].Name)
 		}
-		return nil, fmt.Errorf("no suitable Prism llama.cpp asset for %s/%s (backend: %q); available: %s", runtime.GOOS, runtime.GOARCH, backend, strings.Join(names, ", "))
+		return nil, fmt.Errorf("no suitable Prism llama.cpp asset for %s/%s (backend: %q); available: %s", goos, goarch, backend, strings.Join(names, ", "))
 	}
 
 	assets := []*GithubAsset{main}
-	if runtime.GOOS == "windows" && strings.Contains(strings.ToLower(main.Name), "cuda") {
+	if goos == "windows" && strings.Contains(strings.ToLower(main.Name), "cuda") {
 		mainName := strings.ToLower(main.Name)
 		cudaSuffix := ""
 		if idx := strings.Index(mainName, "bin-win-cuda-"); idx >= 0 {
