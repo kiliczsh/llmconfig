@@ -1,6 +1,6 @@
 # Built-in Templates
 
-llmconfig ships with 23 ready-to-use templates embedded in the binary.
+llmconfig ships with 25 ready-to-use templates embedded in the binary.
 Each template is a YAML config tuned to a specific model with sensible
 defaults and commented alternatives for different VRAM budgets.
 
@@ -44,11 +44,15 @@ Open the `.llmc` file after `init` to see them.
 | `phi4-reasoning` | Microsoft Phi-4 Reasoning Plus | ~11.7 GB |
 | `qwen` | Qwen 2.5 1.5B Instruct | ~1.0 GB |
 | `qwen36` | Qwen 3.6 27B | ~12.8 GB |
+| `qwen38-hauhaucs-iq2` | Qwen 3.8 27B HauhauCS Aggressive (IQ2_M, 128K ctx, MTP off) | ~10.32 GB |
 | `qwen3-coder` | Qwen 3 Coder 30B A3B (MoE) | ~12 GB |
 | `qwen3-vl` | Qwen 3 VL 8B Instruct (vision-language) | ~6.7 GB |
 | `granite4` | IBM Granite 4.0 H Tiny | ~5.9 GB |
 | `deepseek` | DeepSeek R1 0528 Qwen3 8B (reasoning) | ~8.7 GB |
 | `gpt-oss` | GPT-OSS 20B | ~12.3 GB |
+
+For measured context and MTP tradeoffs on a 16 GB RTX 5070 Ti, see the
+[HauhauCS IQ2_M benchmark](benchmarks/qwen38-hauhaucs-iq2-rtx5070ti.md).
 
 ## Image and video — `sd` backend
 
