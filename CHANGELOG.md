@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-11
+
+### Added
+- Dedicated `prism_llama` backend and Ternary Bonsai 2 27B template.
+- HauhauCS Qwen3.8 IQ2_M template with a tested 128K context profile.
+
 ### Fixed
+- Prism installers select an archive matching the host architecture.
+- Explicit `server.parallel: 1` reaches llama-compatible servers.
+- Windows CUDA installs include matching runtime archives when supplied
+  by llama.cpp or stable-diffusion.cpp, and recognize current Whisper CUDA package names.
 - `llmconfig install llama` now follows a stable llama.cpp release's
   `nightly-tag.txt` pointer to the build release containing platform binaries.
 - `llmconfig install whisper` now follows the nightly-build pointer in a stable
@@ -150,7 +160,8 @@ a deprecation cycle and a major version bump.
 - Concurrency and safety: state-file locking, signal handling, archive
   collision handling.
 
-[Unreleased]: https://github.com/kiliczsh/llmconfig/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/kiliczsh/llmconfig/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/kiliczsh/llmconfig/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/kiliczsh/llmconfig/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/kiliczsh/llmconfig/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/kiliczsh/llmconfig/compare/v1.0.0...v1.1.0

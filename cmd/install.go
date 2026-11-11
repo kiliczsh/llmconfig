@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -74,12 +76,28 @@ func newInstallLlamaCmd() *cobra.Command {
 			p.Info("asset:   %s (%s)", asset.Name, humanize.Bytes(uint64(asset.Size)))
 			p.Info("dest:    %s", llamacpp.BinDir())
 
-			return runBinInstallWithProgress(asset.Name, asset.Size, func(onProgress func(int64, int64)) error {
-				return llamacpp.Install(asset, onProgress)
-			}, func() {
-				p.Success("llama.cpp installed to %s", llamacpp.BinDir())
-				p.Success("run: llmconfig llama --version")
-			})
+			assets := []*llamacpp.GithubAsset{asset}
+			if runtime.GOOS == "windows" {
+				if _, suffix, ok := strings.Cut(strings.ToLower(asset.Name), "bin-win-cuda-"); ok {
+					for i := range rel.Assets {
+						name := strings.ToLower(rel.Assets[i].Name)
+						if strings.HasPrefix(name, "cudart-") && strings.HasSuffix(name, "bin-win-cuda-"+suffix) {
+							assets = append(assets, &rel.Assets[i])
+							break
+						}
+					}
+				}
+			}
+			for _, item := range assets {
+				if err := runBinInstallWithProgress(item.Name, item.Size, func(onProgress func(int64, int64)) error {
+					return llamacpp.Install(item, onProgress)
+				}, func() {}); err != nil {
+					return err
+				}
+			}
+			p.Success("llama.cpp installed to %s", llamacpp.BinDir())
+			p.Success("run: llmconfig llama --version")
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&flagBackend, "backend", "", "backend: cuda | metal | cpu (default: auto-detect)")
@@ -132,12 +150,28 @@ func newInstallSdCmd() *cobra.Command {
 			p.Info("asset:   %s (%s)", asset.Name, humanize.Bytes(uint64(asset.Size)))
 			p.Info("dest:    %s", stablediffusioncpp.BinDir())
 
-			return runBinInstallWithProgress(asset.Name, asset.Size, func(onProgress func(int64, int64)) error {
-				return stablediffusioncpp.Install(asset, onProgress)
-			}, func() {
-				p.Success("stable-diffusion.cpp installed to %s", stablediffusioncpp.BinDir())
-				p.Success("run: llmconfig sd --version")
-			})
+			assets := []*stablediffusioncpp.GithubAsset{asset}
+			if runtime.GOOS == "windows" {
+				if _, suffix, ok := strings.Cut(strings.ToLower(asset.Name), "bin-win-cuda"); ok {
+					for i := range rel.Assets {
+						name := strings.ToLower(rel.Assets[i].Name)
+						if strings.HasPrefix(name, "cudart-") && strings.HasPrefix(name, "cudart-sd-bin-win-cu"+suffix) {
+							assets = append(assets, &rel.Assets[i])
+							break
+						}
+					}
+				}
+			}
+			for _, item := range assets {
+				if err := runBinInstallWithProgress(item.Name, item.Size, func(onProgress func(int64, int64)) error {
+					return stablediffusioncpp.Install(item, onProgress)
+				}, func() {}); err != nil {
+					return err
+				}
+			}
+			p.Success("stable-diffusion.cpp installed to %s", stablediffusioncpp.BinDir())
+			p.Success("run: llmconfig sd --version")
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&flagBackend, "backend", "", "backend: cuda | metal | cpu (default: auto-detect)")

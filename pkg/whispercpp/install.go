@@ -119,11 +119,11 @@ func PickAsset(rel *GithubRelease, backend string) (*GithubAsset, error) {
 	var patterns []string
 	switch backend {
 	case "cuda":
-		patterns = []string{"cublas-12", "cublas-11", "cublas"}
+		patterns = []string{"win-cuda-12", "win-cuda-11", "win-cuda-", "cublas-12", "cublas-11", "cublas"}
 	case "cpu":
 		patterns = []string{"whisper-bin-x64", "blas-bin-x64"}
 	default:
-		patterns = []string{"cublas-12", "cublas-11", "cublas", "whisper-bin-x64", "blas-bin-x64"}
+		patterns = []string{"win-cuda-12", "win-cuda-11", "win-cuda-", "cublas-12", "cublas-11", "cublas", "whisper-bin-x64", "blas-bin-x64"}
 	}
 
 	lower := func(s string) string { return strings.ToLower(s) }
@@ -132,6 +132,15 @@ func PickAsset(rel *GithubRelease, backend string) (*GithubAsset, error) {
 		for i := range rel.Assets {
 			a := &rel.Assets[i]
 			name := lower(a.Name)
+			if strings.Contains(name, "win-cuda-") {
+				arch := "x64"
+				if runtime.GOARCH == "arm64" {
+					arch = "arm64"
+				}
+				if !strings.HasSuffix(name, "-"+arch+".zip") {
+					continue
+				}
+			}
 			if strings.Contains(name, pattern) && strings.HasSuffix(name, ".zip") {
 				return a, nil
 			}
