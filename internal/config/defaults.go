@@ -60,7 +60,8 @@ func ApplyDefaults(cfg *Config) {
 	if cfg.Server.Port == 0 {
 		cfg.Server.Port = 8080
 	}
-	if cfg.Server.Parallel == 0 {
+	// Zero lets llama.cpp and ik_llama.cpp select their own slot count.
+	if cfg.Server.Parallel == 0 && cfg.Backend == "prism_llama" {
 		cfg.Server.Parallel = 1
 	}
 	if cfg.Server.QueueSize == 0 {
